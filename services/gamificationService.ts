@@ -11,11 +11,12 @@ export const getTodayString = () => {
 };
 
 /**
- * Calcula a diferença de dias entre duas strings YYYY-MM-DD
+ * Calcula a diferença de dias entre duas strings YYYY-MM-DD de forma infalível
  */
 export const getDaysDiff = (date1: string, date2: string) => {
-  const d1 = new Date(date1);
-  const d2 = new Date(date2);
+  // Garantimos o formato YYYY-MM-DD e resetamos a hora para 00:00:00 UTC
+  const d1 = new Date(date1 + 'T00:00:00');
+  const d2 = new Date(date2 + 'T00:00:00');
   const diffTime = Math.abs(d2.getTime() - d1.getTime());
   return Math.floor(diffTime / (1000 * 60 * 60 * 24));
 };
@@ -38,7 +39,7 @@ export const verifyAndResetStreak = async (uid: string, profile: UserProfile): P
   
   const diff = getDaysDiff(lastDate, today);
 
-  // Se passou mais de 1 dia (pulou ontem), reseta
+  // Se passou mais de 1 dia (ex: último foi dia 08 e hoje é dia 10, diff = 2), reseta
   if (diff > 1) {
     const userRef = doc(db, "users", uid);
     const update = { currentStreak: 0 };

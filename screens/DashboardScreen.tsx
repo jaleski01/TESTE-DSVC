@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
@@ -10,6 +11,7 @@ import { NeuroDebugCard } from '../components/NeuroDebugCard';
 import { DailyHabits } from '../components/DailyHabits';
 import { TriggerModal } from '../components/TriggerModal';
 import { ShortcutPrompt } from '../components/ShortcutPrompt';
+import { HoldToConfirmButton } from '../components/HoldToConfirmButton';
 import { COLORS, Routes, UserProfile } from '../types';
 import { 
   getTodayString, 
@@ -56,7 +58,16 @@ export const DashboardScreen: React.FC = () => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) await loadProfile(user.uid);
+      if (user) {
+        await loadProfile(user.uid);
+        
+        // Listener extra para garantir reset na virada do dia se o app estiver aberto
+        const handleFocus = () => {
+          if (auth.currentUser) loadProfile(auth.currentUser.uid);
+        };
+        window.addEventListener('focus', handleFocus);
+        return () => window.removeEventListener('focus', handleFocus);
+      }
       else navigate(Routes.LOGIN);
     });
     return () => unsubscribe();
@@ -192,22 +203,11 @@ export const DashboardScreen: React.FC = () => {
                   )}
                 </div>
               ) : (
-                <button 
-                  onClick={handleCheckIn}
-                  disabled={isCheckingIn}
-                  className="w-full py-4 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold text-sm shadow-lg shadow-violet-900/20 active:scale-95 transition-all flex items-center justify-center gap-2"
-                >
-                  {isCheckingIn ? (
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  ) : (
-                    <>
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 21.5c-4.1 0-7.5-3.4-7.5-7.5 0-3.5 2.1-6.1 4.5-8.5.6-.6 1.3-1.2 1.8-1.9.4-.5.7-1.1.9-1.8.1-.3.5-.4.8-.2.5.4 1 1.2 1.1 2.1.1.8-.1 1.6-.5 2.3-.3.4-.6.8-.9 1.2-1.8 2.3-3.2 4.1-3.2 6.7 0 3.2 2.6 5.8 5.8 5.8s5.8-2.6 5.8-5.8c0-1.8-.9-3.7-2.6-5.3-.2-.2-.2-.5 0-.7.2-.2.5-.2.7 0 2 1.8 3.1 4.1 3.1 6.1 0 4.1-3.4 7.5-7.5 7.5z"/>
-                      </svg>
-                      Reivindicar Vitória de Hoje
-                    </>
-                  )}
-                </button>
+                <HoldToConfirmButton 
+                  label="Reivindicar Vitória de Hoje"
+                  isLoading={isCheckingIn}
+                  onComplete={handleCheckIn}
+                />
               )}
             </div>
           </section>
