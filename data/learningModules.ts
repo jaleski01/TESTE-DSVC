@@ -151,79 +151,7 @@ export const LEARNING_MODULES: LearningModule[] = [
     ],
   },
 
-  // 2. ARTIGOS
-  {
-    id: 'art_dopa',
-    title: 'Dessensibilização',
-    subtitle: 'A perda de prazer nas coisas reais.',
-    category: 'ARTIGO',
-    duration: '8 min',
-    icon: FileText,
-    colors: { start: '#000000', end: '#1F2937', text: '#F3F4F6', accent: '#9CA3AF' },
-    locked: false,
-    intro: 'O excesso de estímulos causa "downregulation" nos receptores D2, gerando anedonia (incapacidade de sentir prazer).'
-  },
-  {
-    id: 'art_libido',
-    title: 'O Mito da Libido',
-    subtitle: 'Vontade real vs. Fissura química.',
-    category: 'ARTIGO',
-    duration: '6 min',
-    icon: FileText,
-    colors: { start: '#000000', end: '#1F2937', text: '#F3F4F6', accent: '#9CA3AF' },
-    locked: false,
-    intro: 'O que interpretamos como "alta libido" muitas vezes é apenas o sistema de recompensa gritando por alívio de estresse.'
-  },
-
-  // 3. PODCASTS
-  {
-    id: 'pod_rescue',
-    title: 'Protocolo de Resgate',
-    subtitle: 'O que fazer nas primeiras 24h.',
-    category: 'PODCAST',
-    duration: '15 min',
-    icon: Mic,
-    colors: { start: '#0F0A15', end: '#2E1065', text: '#E9D5FF', accent: '#8B5CF6' },
-    locked: false,
-    intro: 'Guia passo a passo: Hidratação, exercício intenso e remoção de gatilhos.'
-  },
-  {
-    id: 'pod_interview',
-    title: 'Cérebro vs. Hiperestímulo',
-    subtitle: 'O encolhimento do córtex pré-frontal.',
-    category: 'PODCAST',
-    duration: '20 min',
-    icon: Mic,
-    colors: { start: '#0F0A15', end: '#2E1065', text: '#E9D5FF', accent: '#8B5CF6' },
-    locked: false,
-    intro: 'Neurocientistas explainam como a neuroplasticidade permite reverter os danos físicos no cérebro.'
-  },
-
-  // 4. VÍDEOS
-  {
-    id: 'vid_huberman',
-    title: 'Controle de Impulso',
-    subtitle: 'Ferramentas visuais para parar a recaída.',
-    category: 'VÍDEO',
-    duration: '10 min',
-    icon: Play,
-    colors: { start: '#0B101A', end: '#112240', text: '#E0E7FF', accent: '#A78BFA' },
-    locked: false,
-    intro: 'Mecanismos como foco panorâmico para desativar o sistema de alerta e reduzir a impulsividade.'
-  },
-  {
-    id: 'vid_habit',
-    title: 'Anatomia do Hábito',
-    subtitle: 'Quebrando o loop Gatilho-Ação-Recompensa.',
-    category: 'VÍDEO',
-    duration: '12 min',
-    icon: Play,
-    colors: { start: '#0B101A', end: '#112240', text: '#E0E7FF', accent: '#A78BFA' },
-    locked: false,
-    intro: 'Você não elimina um hábito, você o substitui mantendo o gatilho mas alterando a rotina.'
-  },
-
-  // 5. FERRAMENTAS
+  // 2. FERRAMENTAS (MOVIDO PARA O TOPO DOS MÓDULOS BASE)
   {
     id: 'tool_neurodebug',
     title: 'NeuroDebug',
@@ -252,5 +180,77 @@ export const LEARNING_MODULES: LearningModule[] = [
         description: 'O momento mais perigoso. Sua libido some, a energia cai e você sente uma "morte emocional". Isso ocorre porque o cérebro cortou a sensibilidade para se proteger. NÃO TESTE SUA LIBIDO AQUI. A Flatline precede a maior fase de recuperação natural. Aguente firme.'
       }
     ]
+  },
+
+  // 3. ARTIGOS
+  {
+    id: 'art_dopa',
+    title: 'Dessensibilização',
+    subtitle: 'A perda de prazer nas coisas reais.',
+    category: 'ARTIGO',
+    duration: '8 min',
+    icon: FileText,
+    colors: { start: '#000000', end: '#1F2937', text: '#F3F4F6', accent: '#9CA3AF' },
+    locked: false,
+    intro: 'O excesso de estímulos causa "downregulation" nos receptores D2, gerando anedonia (incapacidade de sentir prazer).'
+  },
+  {
+    id: 'art_libido',
+    title: 'O Mito da Libido',
+    subtitle: 'Vontade real vs. Fissura química.',
+    category: 'ARTIGO',
+    duration: '6 min',
+    icon: FileText,
+    colors: { start: '#000000', end: '#1F2937', text: '#F3F4F6', accent: '#9CA3AF' },
+    locked: false,
+    intro: 'O que interpretamos como "alta libido" muitas vezes é apenas o sistema de recompensa gritando por alívio de estresse.'
+  },
+
+  // 4. PODCASTS
+  {
+    id: 'pod_rescue',
+    title: 'Protocolo de Resgate',
+    subtitle: 'O que fazer nas primeiras 24h.',
+    category: 'PODCAST',
+    duration: '15 min',
+    icon: Mic,
+    colors: { start: '#0F0A15', end: '#2E1065', text: '#E9D5FF', accent: '#8B5CF6' },
+    locked: false,
+    intro: 'Guia passo a passo: Hidratação, exercício intenso e remoção de gatilhos.'
+  },
+  {
+    id: 'pod_interview',
+    title: 'Cérebro vs. Hiperestímulo',
+    subtitle: 'O encolhimento do córtex pré-frontal.',
+    category: 'PODCAST',
+    duration: '20 min',
+    icon: Mic,
+    colors: { start: '#0F0A15', end: '#2E1065', text: '#E9D5FF', accent: '#8B5CF6' },
+    locked: false,
+    intro: 'Neurocientistas explainam como a neuroplasticidade permite reverter os danos físicos no cérebro.'
+  },
+
+  // 5. VÍDEOS
+  {
+    id: 'vid_huberman',
+    title: 'Controle de Impulso',
+    subtitle: 'Ferramentas visuais para parar a recaída.',
+    category: 'VÍDEO',
+    duration: '10 min',
+    icon: Play,
+    colors: { start: '#0B101A', end: '#112240', text: '#E0E7FF', accent: '#A78BFA' },
+    locked: false,
+    intro: 'Mecanismos como foco panorâmico para desativar o sistema de alerta e reduzir a impulsividade.'
+  },
+  {
+    id: 'vid_habit',
+    title: 'Anatomia do Hábito',
+    subtitle: 'Quebrando o loop Gatilho-Ação-Recompensa.',
+    category: 'VÍDEO',
+    duration: '12 min',
+    icon: Play,
+    colors: { start: '#0B101A', end: '#112240', text: '#E0E7FF', accent: '#A78BFA' },
+    locked: false,
+    intro: 'Você não elimina um hábito, você o substitui mantendo o gatilho mas alterando a rotina.'
   }
 ];
