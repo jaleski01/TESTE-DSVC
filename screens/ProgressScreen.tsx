@@ -141,14 +141,19 @@ export const ProgressScreen: React.FC = () => {
 
   // --- AUTO-SCROLL LOGIC ---
   useEffect(() => {
-    // Scroll Journey to current day (only once on profile load)
-    if (!isLoadingProfile && currentDayNodeRef.current && !hasAutoScrolledJourney.current) {
-      setTimeout(() => {
-        currentDayNodeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        hasAutoScrolledJourney.current = true;
+    // Scroll dinâmico para o dia atual na aba Jornada
+    if (activeTab === 'JOURNEY' && currentDayNodeRef.current && !isLoadingProfile) {
+      // Delay estratégico para garantir a renderização e criar o efeito de "viagem"
+      const timer = setTimeout(() => {
+        currentDayNodeRef.current?.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center' 
+        });
       }, 600);
+
+      return () => clearTimeout(timer);
     }
-  }, [isLoadingProfile]);
+  }, [activeTab, isLoadingProfile]);
 
   // Scroll Analysis Chart to the end (newest data)
   useEffect(() => {
