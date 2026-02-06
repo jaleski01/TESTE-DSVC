@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -15,7 +14,10 @@ import {
 
 const RANGES = [7, 15, 30, 90];
 const MILESTONES = [3, 7, 15, 30, 90];
-const ITEM_HEIGHT = 130; // Maior espaçamento vertical para compensar a largura
+const ITEM_HEIGHT = {
+  mobile: 130,
+  desktop: 130
+}; 
 const TOTAL_DAYS = 90;
 
 type TabType = 'JOURNEY' | 'ANALYSIS';
@@ -44,18 +46,16 @@ export const ProgressScreen: React.FC = () => {
 
   // --- LÓGICA DE POSICIONAMENTO WIDE ZIG-ZAG ---
   const journeyPoints = useMemo<PathPoint[]>(() => {
-    // Ciclo de 4 posições para um zig-zag mais complexo e largo
     const xPattern = [15, 40, 75, 85, 75, 40]; 
     
     return Array.from({ length: TOTAL_DAYS }, (_, i) => {
       const day = i + 1;
       const x = xPattern[i % xPattern.length];
-      const y = i * ITEM_HEIGHT + 100; // Começa em 100px
+      const y = i * ITEM_HEIGHT.mobile + 100; 
       return { x, y, day, isMilestone: MILESTONES.includes(day) };
     });
   }, []);
 
-  // Gerador de Path SVG (Linhas Retas)
   const generatePathData = (points: PathPoint[]) => {
     if (points.length === 0) return "";
     return points.map((p, i) => (i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`)).join(" ");
@@ -177,22 +177,21 @@ export const ProgressScreen: React.FC = () => {
           </div>
         </div>
 
-        {/* CONTENT AREA: flex-1 relative overflow-hidden para prender os filhos absolutos */}
+        {/* CONTENT AREA */}
         <div className="flex-1 relative overflow-hidden">
           {activeTab === 'JOURNEY' ? (
-            /* --- TAB: OFENSIVA (SCROLL INDEPENDENTE) --- */
-            <div className="absolute inset-0 overflow-y-auto scrollbar-hide">
+            /* --- TAB: OFENSIVA (SCROLL ISOLADO) --- */
+            <div className="absolute inset-0 overflow-y-auto scrollbar-hide w-full">
               <div 
                 className="w-full relative px-8" 
-                style={{ height: `${TOTAL_DAYS * ITEM_HEIGHT + 250}px` }}
+                style={{ height: `${TOTAL_DAYS * ITEM_HEIGHT.mobile + 250}px` }}
               >
-                {/* SVG LAYER (BACKGROUND LINES) */}
+                {/* SVG LAYER */}
                 <svg 
                   className="absolute inset-0 w-full h-full pointer-events-none" 
                   preserveAspectRatio="none"
-                  viewBox={`0 0 100 ${TOTAL_DAYS * ITEM_HEIGHT + 250}`}
+                  viewBox={`0 0 100 ${TOTAL_DAYS * ITEM_HEIGHT.mobile + 250}`}
                 >
-                  {/* Linha de Fundo (Total) */}
                   <path 
                     d={fullPathData} 
                     fill="none" 
@@ -202,7 +201,6 @@ export const ProgressScreen: React.FC = () => {
                     strokeLinejoin="round"
                     opacity="0.3"
                   />
-                  {/* Linha de Progresso (Até Streak) */}
                   <path 
                     d={progressPathData} 
                     fill="none" 
@@ -221,8 +219,6 @@ export const ProgressScreen: React.FC = () => {
                   const isCompleted = pt.day <= currentStreak;
                   const isCurrent = pt.day === currentStreak + 1;
                   const isLocked = pt.day > currentStreak + 1;
-                  
-                  // Determina o lado do label para não sobrepor a linha expansiva
                   const labelSide = pt.x < 50 ? 'right' : 'left';
 
                   return (
@@ -232,7 +228,6 @@ export const ProgressScreen: React.FC = () => {
                       className="absolute -translate-x-1/2 -translate-y-1/2 z-10 transition-transform duration-500"
                       style={{ left: `${pt.x}%`, top: `${pt.y}px` }}
                     >
-                      {/* Node (Quadrado Cyberpunk) */}
                       <div 
                         className={`
                           w-16 h-16 rounded-2xl flex items-center justify-center border-2 transition-all duration-500
@@ -260,7 +255,6 @@ export const ProgressScreen: React.FC = () => {
                         )}
                       </div>
 
-                      {/* Day Label & Info */}
                       <div 
                         className={`absolute top-1/2 -translate-y-1/2 whitespace-nowrap px-6
                           ${labelSide === 'right' ? 'left-full text-left' : 'right-full text-right'}
@@ -283,8 +277,9 @@ export const ProgressScreen: React.FC = () => {
               </div>
             </div>
           ) : (
-            /* --- TAB: ANÁLISE (SCROLL INDEPENDENTE) --- */
-            <div className="absolute inset-0 overflow-y-auto scrollbar-hide px-5 pt-8 pb-32 flex flex-col animate-fadeIn">
+            /* --- TAB: ANÁLISE (SCROLL ISOLADO) --- */
+            /* REDUZIDO pt-8 para pt-3 para diminuir o espaço solicitado */
+            <div className="absolute inset-0 overflow-y-auto scrollbar-hide w-full px-5 pt-3 pb-32 flex flex-col animate-fadeIn">
               <div className="w-full max-w-full flex flex-col">
                 <div className="w-full flex p-1 rounded-xl mb-6 bg-[#1F2937]/30 border border-[#2E243D]">
                   {RANGES.map((range) => (
