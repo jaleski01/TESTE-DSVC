@@ -47,15 +47,15 @@ export const DashboardScreen: React.FC = () => {
       const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {
-        let data = docSnap.data() as UserProfile;
+        const data = docSnap.data() as any;
         const result = await verifyAndResetStreak(uid, data);
         if (result.streakStatus === 'NEEDS_RECOVERY') setShowRecoveryModal(true);
-        setProfile(result);
-        localStorage.setItem(CACHE_KEY, JSON.stringify(result));
+        setProfile(data);
+        localStorage.setItem(CACHE_KEY, JSON.stringify(data));
 
         // Selecionar fato do dia se não completou 3
-        if ((result.daily_fact_count || 0) < 3) {
-          const available = REALITY_CHECK_DATA.filter(f => !result.seen_fact_ids?.includes(f.id));
+        if ((data.daily_fact_count || 0) < 3) {
+          const available = REALITY_CHECK_DATA.filter(f => !data.seen_fact_ids?.includes(f.id));
           const list = available.length > 0 ? available : REALITY_CHECK_DATA;
           setCurrentFact(list[Math.floor(Math.random() * list.length)]);
         }
