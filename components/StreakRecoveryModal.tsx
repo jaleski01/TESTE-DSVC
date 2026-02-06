@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getRandomRecoverySet, RecoveryQuestion } from '../data/recoveryQuestions';
 import { Button } from './Button';
@@ -19,7 +19,7 @@ export const StreakRecoveryModal: React.FC<StreakRecoveryModalProps> = ({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [gameState, setGameState] = useState<'IDLE' | 'PLAYING' | 'SUCCESS' | 'FAILED'>('IDLE');
   
-  // Estados de controle de resposta
+  // Educational feedback states
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isAnswered, setIsAnswered] = useState(false);
   const [wasCorrect, setWasCorrect] = useState<boolean | null>(null);
@@ -38,7 +38,7 @@ export const StreakRecoveryModal: React.FC<StreakRecoveryModalProps> = ({
       navigator.vibrate(correct ? 50 : [100, 50, 100]);
     }
 
-    // Se acertou, avança automaticamente após 1.5s
+    // Auto-advance only if correct
     if (correct) {
       setTimeout(() => {
         if (currentIndex < questions.length - 1) {
@@ -51,15 +51,16 @@ export const StreakRecoveryModal: React.FC<StreakRecoveryModalProps> = ({
         }
       }, 1500);
     }
-    // Se errou, o estado fica travado no feedback até o usuário clicar em "Entendi"
   };
 
-  const handleConfirmFailure = () => {
+  const handleAcceptFailure = () => {
+    // Transition to FAILED state to show the final "Game Over" screen
     setGameState('FAILED');
   };
 
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6 bg-black/95 backdrop-blur-xl">
+      {/* Red ambient glow for high-stakes feel */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(220,38,38,0.15)_0%,_transparent_70%)] pointer-events-none" />
       
       <AnimatePresence mode="wait">
@@ -76,15 +77,15 @@ export const StreakRecoveryModal: React.FC<StreakRecoveryModalProps> = ({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
             </div>
-            <h1 className="text-3xl font-black text-white mb-2 tracking-tighter uppercase italic">Ofensiva Comprometida</h1>
+            <h1 className="text-3xl font-black text-white mb-2 tracking-tighter uppercase italic">Ofensiva em Risco</h1>
             <p className="text-gray-400 text-sm mb-8 leading-relaxed">
-              Você falhou em registrar sua vitória ontem. A ofensiva de <strong className="text-white">{streakValue} dias</strong> está em risco iminente de reset.
+              Você falhou ontem. Sua marca de <strong className="text-white">{streakValue} dias</strong> será resetada a menos que você passe no teste biológico.
             </p>
             <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-xl mb-8">
               <p className="text-[10px] font-bold text-red-400 uppercase tracking-widest">Protocolo de Emergência</p>
-              <p className="text-xs text-gray-300 mt-1">Prove seu conhecimento para restaurar o sistema. Um erro custará tudo.</p>
+              <p className="text-xs text-gray-300 mt-1">Acerte 3 perguntas sobre o cérebro. Um erro e o sistema é limpo.</p>
             </div>
-            <Button variant="danger" onClick={() => setGameState('PLAYING')}>Iniciar Ressuscitação</Button>
+            <Button variant="danger" onClick={() => setGameState('PLAYING')}>Iniciar Recuperação</Button>
           </motion.div>
         )}
 
@@ -95,11 +96,9 @@ export const StreakRecoveryModal: React.FC<StreakRecoveryModalProps> = ({
             animate={{ opacity: 1, x: 0 }}
             className="w-full max-w-sm"
           >
-            <div className="flex justify-between items-end mb-6">
-              <div>
-                <span className="text-[10px] font-black text-red-500 uppercase tracking-widest">Desafio {currentIndex + 1}/3</span>
-                <h2 className="text-xl font-bold text-white leading-tight mt-1">{currentQuestion.question}</h2>
-              </div>
+            <div className="mb-6">
+              <span className="text-[10px] font-black text-red-500 uppercase tracking-widest">Desafio {currentIndex + 1}/3</span>
+              <h2 className="text-xl font-bold text-white leading-tight mt-1">{currentQuestion.question}</h2>
             </div>
 
             <div className="space-y-3">
@@ -113,16 +112,15 @@ export const StreakRecoveryModal: React.FC<StreakRecoveryModalProps> = ({
 
                 if (isAnswered) {
                   if (isCorrect) {
-                    // Opção correta sempre fica verde após responder
+                    // Educational rule: Always highlight correct answer in Green
                     borderColor = '#10B981';
-                    bgColor = 'rgba(16, 185, 129, 0.15)';
-                  } else if (isSelected && !isCorrect) {
-                    // Se o usuário selecionou a errada, fica vermelho
+                    bgColor = 'rgba(16, 185, 129, 0.1)';
+                  } else if (isSelected) {
+                    // Educational rule: Highlight user's wrong choice in Red
                     borderColor = '#EF4444';
-                    bgColor = 'rgba(239, 68, 68, 0.15)';
+                    bgColor = 'rgba(239, 68, 68, 0.1)';
                   } else {
-                    // Outras opções erradas ficam apagadas
-                    opacity = '0.4';
+                    opacity = '0.3';
                   }
                 }
 
@@ -146,32 +144,34 @@ export const StreakRecoveryModal: React.FC<StreakRecoveryModalProps> = ({
             </div>
 
             <AnimatePresence>
-              {isAnswered && (
+              {isAnswered && wasCorrect === false && (
                 <motion.div 
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   className="mt-8 space-y-6"
                 >
-                  {wasCorrect === false ? (
-                    <>
-                      <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-xl">
-                        <p className="text-[10px] font-bold text-red-400 uppercase tracking-widest mb-1">Feedback Educativo</p>
-                        <p className="text-xs text-gray-300 leading-relaxed italic">
-                          {currentQuestion.explanation}
-                        </p>
-                      </div>
-                      <Button variant="danger" onClick={handleConfirmFailure}>
-                        Entendi e Aceito o Reset
-                      </Button>
-                    </>
-                  ) : (
-                    <p className="text-center text-green-500 text-xs font-bold uppercase tracking-widest animate-pulse">
-                      Acesso Garantido. Carregando...
+                  <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-xl">
+                    <p className="text-[10px] font-bold text-red-400 uppercase tracking-widest mb-1">Por que está errado?</p>
+                    <p className="text-xs text-gray-300 leading-relaxed italic">
+                      {currentQuestion.explanation}
                     </p>
-                  )}
+                  </div>
+                  <Button variant="danger" onClick={handleAcceptFailure}>
+                    Aceitar Destino e Resetar
+                  </Button>
                 </motion.div>
               )}
             </AnimatePresence>
+
+            {isAnswered && wasCorrect === true && (
+               <motion.p 
+                 initial={{ opacity: 0, y: 10 }}
+                 animate={{ opacity: 1, y: 0 }}
+                 className="text-center text-green-500 text-xs font-bold mt-8 uppercase tracking-widest"
+               >
+                 Correto. Carregando próximo...
+               </motion.p>
+            )}
           </motion.div>
         )}
 
@@ -187,11 +187,11 @@ export const StreakRecoveryModal: React.FC<StreakRecoveryModalProps> = ({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <h1 className="text-3xl font-black text-white mb-2 uppercase italic">Sistema Restaurado</h1>
-            <p className="text-gray-400 text-sm mb-8">
-              Sua consciência biológica salvou sua ofensiva. Não falhe novamente amanhã.
+            <h1 className="text-3xl font-black text-white mb-2 uppercase italic">Acesso Restaurado</h1>
+            <p className="text-gray-400 text-sm mb-8 leading-relaxed">
+              A biologia do seu cérebro foi validada. Sua ofensiva foi salva. Não cometa o mesmo erro hoje.
             </p>
-            <Button onClick={onSuccess}>Retomar Comando</Button>
+            <Button onClick={onSuccess}>Continuar Jornada</Button>
           </motion.div>
         )}
 
@@ -207,10 +207,10 @@ export const StreakRecoveryModal: React.FC<StreakRecoveryModalProps> = ({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </div>
-            <h1 className="text-3xl font-black text-white mb-2 uppercase italic">Acesso Negado</h1>
-            <p className="text-red-500 text-xs font-bold tracking-widest mb-4 uppercase">Reset Protocolado</p>
-            <p className="text-gray-500 text-xs mb-8">Ofensiva de {streakValue} dias perdida.</p>
-            <Button onClick={onFail} variant="danger">Recomeçar do Zero</Button>
+            <h1 className="text-3xl font-black text-white mb-2 uppercase italic">Ofensiva Perdida</h1>
+            <p className="text-red-500 text-xs font-bold tracking-widest mb-4 uppercase">Reset Completo</p>
+            <p className="text-gray-500 text-xs mb-10">Você falhou no teste de consciência. Recomece do zero e aprenda com o processo.</p>
+            <Button onClick={onFail} variant="danger">Recomeçar Agora</Button>
           </motion.div>
         )}
       </AnimatePresence>
