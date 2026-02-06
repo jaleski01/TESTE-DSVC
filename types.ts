@@ -44,12 +44,22 @@ export interface UserProfile {
   lastCheckInDate?: string;      // YYYY-MM-DD do último check-in
   unlockedAchievements?: string[]; // IDs: 'streak_3d', 'streak_7d', etc
   claimed_rewards?: string[];    // IDs das recompensas de milestone resgatadas
+  completed_modules?: string[];  // Módulos de aprendizado concluídos
+
+  gamification?: {
+    level: number;
+    xp: number;
+    achievements: string[];
+  };
 
   // --- Reality Check Progress ---
   reality_check_points?: number; 
   last_fact_date?: string;       // YYYY-MM-DD
   daily_fact_count?: number;     // 0-3
   seen_fact_ids?: number[];      // IDs já respondidos
+
+  // Permite flexibilidade para campos do Firestore que podem variar
+  [key: string]: any; 
 }
 
 export interface HabitDefinition {

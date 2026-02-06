@@ -46,7 +46,7 @@ export const DailyCheckInModal: React.FC<DailyCheckInModalProps> = ({ profile, o
           await logTrigger(user.uid, emotion, context, intensity, 'urgency');
         }
         const result = await performDailyCheckIn(user.uid, profile);
-        if (result.success) {
+        if (result && result.success) {
           setStep('SUCCESS_MSG');
           setTimeout(() => {
             onSuccess({
@@ -55,7 +55,7 @@ export const DailyCheckInModal: React.FC<DailyCheckInModalProps> = ({ profile, o
               lastCheckInDate: new Date().toLocaleDateString('en-CA'),
               unlockedAchievements: [
                 ...(profile.unlockedAchievements || []),
-                ...result.newAchievements.map(a => a.id)
+                ...(result.newAchievements?.map(a => a.id) || [])
               ]
             });
             onClose();
