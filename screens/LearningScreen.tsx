@@ -284,19 +284,19 @@ export const LearningScreen: React.FC = () => {
                <h2 className="text-3xl font-black text-white mb-4 leading-none italic uppercase tracking-tighter">{selectedModule.title}</h2>
                <p className="text-gray-400 text-sm leading-relaxed mb-10 font-medium">{selectedModule.intro}</p>
                
-               {/* RENDERIZAÇÃO DO NEURODEBUG (ABAS) */}
+               {/* RENDERIZAÇÃO DO NEURODEBUG (ATUALIZADA: CORES DNS & SEM RODAPÉ) */}
                {selectedModule.id === 'tool_neurodebug' && selectedModule.neuroTabs && (
-                 <div className="mt-6">
+                 <div className="mt-6 mb-10">
                    {/* Menu de Abas */}
-                   <div className="flex flex-wrap gap-2 mb-6 bg-black/20 p-2 rounded-xl">
+                   <div className="flex flex-wrap gap-2 mb-6 bg-black/40 p-1 rounded-xl">
                      {selectedModule.neuroTabs.map((tab, index) => (
                        <button
                          key={index}
                          onClick={() => setActiveNeuroTab(index)}
-                         className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
+                         className={`flex-1 py-3 px-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
                            activeNeuroTab === index
-                             ? 'bg-white text-black shadow-lg scale-105'
-                             : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                             ? 'bg-white/10 text-white shadow-lg border border-white/10' // Ativo: Neutro/Brilho
+                             : 'text-gray-500 hover:text-gray-300 hover:bg-white/5' // Inativo
                          }`}
                        >
                          {tab.title}
@@ -305,24 +305,25 @@ export const LearningScreen: React.FC = () => {
                    </div>
 
                    {/* Conteúdo da Aba Ativa */}
-                   <div className="bg-white/5 border border-white/10 rounded-2xl p-6 relative overflow-hidden">
-                     {/* Efeito de Fundo */}
-                     <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl -mr-10 -mt-10" />
+                   <div className="bg-black/50 border border-white/10 rounded-2xl p-6 relative overflow-hidden group">
                      
-                     <h4 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                       <Activity size={20} className="text-blue-400" />
+                     {/* Efeito de Fundo (Agora Roxo/DNS em vez de Azul) */}
+                     <div 
+                       className="absolute top-0 right-0 w-40 h-40 rounded-full blur-[60px] opacity-20 -mr-10 -mt-10 pointer-events-none" 
+                       style={{ backgroundColor: selectedModule.colors?.accent || '#A78BFA' }}
+                     />
+                     
+                     <h4 className="text-xl font-black text-white mb-4 flex items-center gap-3 italic">
+                       {/* Ícone usando a cor de accent do módulo */}
+                       <Activity size={20} style={{ color: selectedModule.colors?.accent || '#A78BFA' }} />
                        {selectedModule.neuroTabs[activeNeuroTab].title}
                      </h4>
                      
-                     <p className="text-gray-300 leading-relaxed text-base">
+                     <p className="text-gray-300 leading-relaxed text-sm font-medium">
                        {selectedModule.neuroTabs[activeNeuroTab].description}
                      </p>
 
-                     <div className="mt-4 pt-4 border-t border-white/5">
-                       <span className="text-xs text-blue-400 font-mono uppercase">
-                         Status: Processando Regeneração Neural...
-                       </span>
-                     </div>
+                     {/* RODAPÉ DECORATIVO REMOVIDO CONFORME SOLICITADO */}
                    </div>
                  </div>
                )}

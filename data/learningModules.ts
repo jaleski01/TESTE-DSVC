@@ -196,7 +196,7 @@ export const LEARNING_MODULES: LearningModule[] = [
     icon: Mic,
     colors: { start: '#0F0A15', end: '#2E1065', text: '#E9D5FF', accent: '#8B5CF6' },
     locked: false,
-    intro: 'Neurocientistas explicam como a neuroplasticidade permite reverter os danos físicos no cérebro.'
+    intro: 'Neurocientistas explainam como a neuroplasticidade permite reverter os danos físicos no cérebro.'
   },
 
   // 4. VÍDEOS
@@ -231,7 +231,7 @@ export const LEARNING_MODULES: LearningModule[] = [
     category: 'FERRAMENTA',
     duration: 'Guia',
     icon: Activity,
-    colors: { start: '#0ea5e9', end: '#3b82f6', text: '#eff6ff', accent: '#60a5fa' },
+    colors: { start: '#0B101A', end: '#112240', text: '#E2E8F0', accent: '#A78BFA' },
     locked: false,
     intro: 'Durante a recuperação, seu cérebro passará por fases químicas distintas. Use esta ferramenta para identificar e entender cada sintoma.',
     neuroTabs: [
