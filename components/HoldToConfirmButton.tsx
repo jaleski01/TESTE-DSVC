@@ -102,11 +102,6 @@ export const HoldToConfirmButton: React.FC<HoldToConfirmButtonProps> = ({
           )}
         </div>
       </button>
-      
-      {/* Help text displayed during hold */}
-      <div className={`absolute -top-8 left-1/2 -translate-x-1/2 text-[10px] font-bold text-violet-400 uppercase tracking-widest transition-opacity duration-300 ${isHolding ? 'opacity-100' : 'opacity-0'}`}>
-        Segure por 2 segundos
-      </div>
     </div>
   );
 };

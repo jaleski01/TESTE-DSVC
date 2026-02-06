@@ -235,7 +235,7 @@ export const DashboardScreen: React.FC = () => {
           <div className="mt-10 w-full">
             <Button 
               variant="danger" 
-              className="h-16 text-lg tracking-widest shadow-[0_0_25px_rgba(239,68,68,0.2)] active:scale-95" 
+              className="h-16 text-lg tracking-widest shadow-[0_0_35px_rgba(255,23,68,0.4)] active:scale-95 border-t border-white/10" 
               onClick={() => navigate(Routes.SOS)}
             >
               S.O.S EMERGÊNCIA

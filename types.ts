@@ -7,7 +7,7 @@ export const COLORS = {
   Surface: 'rgba(15, 10, 21, 0.6)', // Glassmorphism sutil
   Border: '#2E243D',          
   Primary: '#8B5CF6',         
-  Danger: '#EF4444',          
+  Danger: '#FF1744',          
   TextPrimary: '#FFFFFF',     
   TextSecondary: '#9CA3AF',   
   Cyan: '#A78BFA',            
