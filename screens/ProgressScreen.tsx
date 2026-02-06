@@ -314,7 +314,8 @@ export const ProgressScreen: React.FC = () => {
                 const renderIcon = () => {
                   const isMilestone = pt.isMilestone || pt.day === 3;
                   const milestoneColor = (isCompleted || isCurrent) && (pt.day !== 3 || !isRewardClaimed) ? 'text-yellow-400 animate-pulse' : 'text-yellow-500';
-                  const iconColor = isLocked ? 'text-gray-600' : (isMilestone ? milestoneColor : 'text-white');
+                  // Milestone gold buttons will have text-black, so we adjust icon color if completed milestone
+                  const iconColor = isLocked ? 'text-gray-600' : (isMilestone ? (isCompleted ? 'text-black' : milestoneColor) : 'text-white');
                   
                   // Milestone: Dia 3 (Check)
                   if (isMilestone || pt.day === 3) {
@@ -345,7 +346,7 @@ export const ProgressScreen: React.FC = () => {
                   if (isLocked) {
                     return (
                       <svg className="w-6 h-6 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                       </svg>
                     );
                   }
@@ -365,11 +366,13 @@ export const ProgressScreen: React.FC = () => {
                       onClick={() => pt.day === 3 && handleClaimReward(pt.day)}
                       disabled={pt.day !== 3 || !canClaimReward || isClaiming}
                       className={`
-                        w-16 h-16 rounded-2xl flex items-center justify-center border-2 transition-all duration-500
-                        ${isCompleted ? 'bg-violet-600 border-violet-400 shadow-[0_0_15px_rgba(139,92,246,0.4)]' : ''}
-                        ${isCurrent ? 'bg-[#0F0A15] border-violet-500 animate-pulse scale-110 shadow-[0_0_25px_rgba(139,92,246,0.8)]' : ''}
-                        ${isLocked ? 'bg-[#111111] border-gray-800 opacity-60' : ''}
-                        ${(pt.isMilestone || pt.day === 3) && isCompleted && (pt.day !== 3 || !isRewardClaimed) ? 'border-yellow-500 bg-yellow-600 shadow-[0_0_20px_rgba(234,179,8,0.8)] animate-bounce' : ''}
+                        w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-500
+                        ${isCompleted ? 'bg-violet-600 border-2 border-violet-400 shadow-[0_0_15px_rgba(139,92,246,0.4)]' : ''}
+                        ${isCurrent ? 'bg-[#0F0A15] border-2 border-violet-500 animate-pulse scale-110 shadow-[0_0_25px_rgba(139,92,246,0.8)]' : ''}
+                        ${isLocked ? 'bg-[#111111] border-2 border-gray-800 opacity-60' : ''}
+                        ${(pt.day === 3 || pt.isMilestone) && isCompleted
+                          ? 'bg-gradient-to-br from-yellow-400 to-yellow-600 text-black shadow-[0_0_20px_rgba(234,179,8,0.5)] scale-105 border-2 border-yellow-300/50' 
+                          : 'border-2'}
                         ${pt.day === 3 && isRewardClaimed ? 'border-yellow-500 bg-yellow-900/40 opacity-100' : ''}
                       `}
                     >
