@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Wrapper } from '../components/Wrapper';
 import { COLORS, UserProfile } from '../types';
@@ -6,11 +7,14 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '../lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Copy } from 'lucide-react';
 
 export const LearningScreen: React.FC = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [selectedModule, setSelectedModule] = useState<LearningModule | null>(null);
   const [showFutureMilestones, setShowFutureMilestones] = useState(false);
+  const [selectedDNS, setSelectedDNS] = useState<'ANDROID' | 'iOS'>('ANDROID');
+  const [showCopyFeedback, setShowCopyFeedback] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -28,8 +32,13 @@ export const LearningScreen: React.FC = () => {
   const initialModules = LEARNING_MODULES.filter(m => !m.requiredStreak || m.requiredStreak <= 3);
   const futureMilestones = LEARNING_MODULES.filter(m => m.requiredStreak && m.requiredStreak > 3);
 
-  const getIcon = (name: string, color: string) => {
-    switch (name) {
+  const getIcon = (icon: any, color: string) => {
+    if (typeof icon !== 'string') {
+      const IconComp = icon;
+      return <IconComp className="w-6 h-6" color={color} strokeWidth={2} />;
+    }
+
+    switch (icon) {
       case 'shield':
         return <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke={color} strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>;
       case 'document':
@@ -57,6 +66,10 @@ export const LearningScreen: React.FC = () => {
     const currentStreak = profile?.currentStreak || 0;
     const isLocked = !!module.requiredStreak && currentStreak < module.requiredStreak;
     const isSpecial = module.isSpecialReward;
+    
+    const gradStart = module.colors?.start || module.gradientStart || '#000000';
+    const gradEnd = module.colors?.end || module.gradientEnd || '#1a1a1a';
+    const accent = module.colors?.accent || module.accentColor || '#8B5CF6';
 
     return (
       <motion.div
@@ -72,7 +85,7 @@ export const LearningScreen: React.FC = () => {
         style={{
           background: isLocked 
             ? `linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%)`
-            : `linear-gradient(135deg, ${module.gradientStart} 0%, ${module.gradientEnd} 100%)`,
+            : `linear-gradient(135deg, ${gradStart} 0%, ${gradEnd} 100%)`,
         }}
       >
         <div className={`flex items-center w-full transition-all duration-500 ${isLocked ? 'blur-md opacity-40 select-none pointer-events-none' : ''}`}>
@@ -81,13 +94,13 @@ export const LearningScreen: React.FC = () => {
               isSpecial ? 'border-yellow-500/30' : 'border-white/5'
             }`}
           >
-            {getIcon(isLocked ? 'lock' : module.icon, isLocked ? '#4B5563' : module.accentColor)}
+            {getIcon(isLocked ? 'lock' : module.icon, isLocked ? '#4B5563' : accent)}
           </div>
 
           <div className="flex-1 text-left z-10 min-w-0">
             <span 
               className="text-[9px] font-black uppercase tracking-[0.2em] mb-1.5 block opacity-80"
-              style={{ color: module.accentColor }}
+              style={{ color: accent }}
             >
               {module.category}
             </span>
@@ -117,7 +130,7 @@ export const LearningScreen: React.FC = () => {
              </div>
              <span 
               className="text-[10px] font-black uppercase tracking-[0.2em] py-1 px-4 rounded-full border border-white/10 bg-black/60 text-center"
-              style={{ color: module.accentColor }}
+              style={{ color: accent }}
              >
                Desbloqueado no {module.requiredStreak}º dia de ofensiva
              </span>
@@ -127,7 +140,7 @@ export const LearningScreen: React.FC = () => {
         {isSpecial && !isLocked && (
           <div 
             className="absolute -right-2 -top-2 w-16 h-16 rounded-full blur-2xl opacity-30 animate-pulse pointer-events-none"
-            style={{ backgroundColor: module.accentColor }}
+            style={{ backgroundColor: accent }}
           />
         )}
       </motion.div>
@@ -219,6 +232,65 @@ export const LearningScreen: React.FC = () => {
                <h2 className="text-3xl font-black text-white mb-4 leading-none italic uppercase tracking-tighter">{selectedModule.title}</h2>
                <p className="text-gray-400 text-sm leading-relaxed mb-10 font-medium">{selectedModule.intro}</p>
                
+               {/* RESTAURAÇÃO DO COMPONENTE DE ABAS DE DNS */}
+               {selectedModule.dnsProvider && (
+                 <div className="mt-6 mb-10">
+                   {/* Seletor de Sistema Operacional */}
+                   <div className="flex bg-black/40 p-1 rounded-lg mb-4">
+                     {['ANDROID', 'iOS'].map((os) => (
+                       <button
+                         key={os}
+                         onClick={() => setSelectedDNS(os as 'ANDROID' | 'iOS')}
+                         className={`flex-1 py-2 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${
+                           selectedDNS === os 
+                             ? 'bg-white/10 text-white shadow-sm' 
+                             : 'text-gray-500 hover:text-gray-300'
+                         }`}
+                       >
+                         {os}
+                       </button>
+                     ))}
+                   </div>
+
+                   {/* Área de Cópia do Endereço */}
+                   <div className="bg-black/50 border border-white/10 rounded-xl p-4 mb-6 relative group">
+                     <p className="text-[10px] text-gray-500 mb-1 uppercase tracking-wider font-bold">
+                       {selectedDNS === 'ANDROID' ? 'Hostname DNS' : 'Servidores DNS'}
+                     </p>
+                     <code className="text-sm text-violet-400 font-mono block break-all font-bold">
+                       {selectedDNS === 'ANDROID' ? selectedModule.dnsProvider : '1.1.1.3 , 1.0.0.3'}
+                     </code>
+                     <button
+                       onClick={() => {
+                         const val = selectedDNS === 'ANDROID' ? selectedModule.dnsProvider! : '1.1.1.3, 1.0.0.3';
+                         navigator.clipboard.writeText(val);
+                         setShowCopyFeedback(true);
+                         setTimeout(() => setShowCopyFeedback(false), 2000);
+                         if (navigator.vibrate) navigator.vibrate(50);
+                       }}
+                       className="absolute right-2 top-2 p-2 bg-white/5 hover:bg-white/10 rounded-lg text-gray-400 transition-colors"
+                     >
+                       <Copy size={16} />
+                     </button>
+                     {showCopyFeedback && (
+                       <span className="absolute right-12 top-4 text-[10px] font-bold text-green-500 uppercase tracking-widest animate-pulse">Copiado!</span>
+                     )}
+                   </div>
+
+                   {/* Lista de Passos */}
+                   <div className="space-y-4">
+                     {(selectedDNS === 'ANDROID' ? selectedModule.androidSteps : selectedModule.iosSteps)?.map((step, index) => (
+                       <div key={index} className="flex items-start gap-4">
+                         <span className="flex-shrink-0 w-6 h-6 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-[10px] text-gray-400 font-black mt-0.5">
+                           {index + 1}
+                         </span>
+                         <span className="text-xs text-gray-300 leading-relaxed font-medium">{step}</span>
+                       </div>
+                     ))}
+                   </div>
+                 </div>
+               )}
+
                {selectedModule.videoUrl ? (
                   <div className="w-full aspect-video rounded-3xl overflow-hidden bg-black border border-white/10 shadow-2xl mb-10">
                     <iframe 
@@ -232,19 +304,28 @@ export const LearningScreen: React.FC = () => {
                   </div>
                ) : null}
 
-               {selectedModule.id === 'dns_shield' && (
-                  <div className="space-y-8">
-                     <div className="p-6 rounded-3xl bg-white/5 border border-white/10">
-                        <h4 className="text-xs font-black text-violet-400 mb-6 uppercase tracking-widest">Configuração Android</h4>
-                        <div className="space-y-6">
-                          {selectedModule.androidSteps?.map((step, idx) => (
-                             <div key={idx} className="flex gap-4">
-                                <span className="text-[10px] font-black text-violet-500 bg-violet-500/10 w-6 h-6 rounded-full flex items-center justify-center shrink-0">0{idx+1}</span>
-                                <p className="text-xs text-gray-300 font-bold leading-relaxed">{step.text}</p>
-                             </div>
-                          ))}
-                        </div>
-                     </div>
+               {/* Renderização de Content Genérico */}
+               {selectedModule.content && (
+                  <div className="space-y-6 mb-10">
+                    {selectedModule.content.map((item, idx) => (
+                      <div key={idx}>
+                        {item.type === 'text' && (
+                          <p className={`text-gray-300 text-sm leading-relaxed ${item.value.toString().startsWith('###') ? 'text-lg font-black text-white mt-4 mb-2 italic' : ''}`}>
+                            {item.value.toString().replace('### ', '')}
+                          </p>
+                        )}
+                        {item.type === 'list' && Array.isArray(item.value) && (
+                          <ul className="space-y-3 mt-3">
+                            {item.value.map((li, lIdx) => (
+                              <li key={lIdx} className="flex gap-4 items-start">
+                                <span className="w-5 h-5 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-[10px] font-black text-gray-500 shrink-0 mt-0.5">{lIdx+1}</span>
+                                <span className="text-xs text-gray-400 leading-relaxed">{li}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    ))}
                   </div>
                )}
              </div>
