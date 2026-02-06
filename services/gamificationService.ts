@@ -1,5 +1,5 @@
 
-import { doc, updateDoc, serverTimestamp, arrayUnion } from 'firebase/firestore';
+import { doc, updateDoc, serverTimestamp, arrayUnion, increment } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { UserProfile } from '../types';
 
@@ -29,11 +29,39 @@ export interface VerifyStreakResult {
 }
 
 /**
+ * Reality Check Logic
+ */
+export const saveRealityCheckResult = async (uid: string, factId: number, isCorrect: boolean) => {
+  const userRef = doc(db, "users", uid);
+  const today = getTodayString();
+  
+  const update: any = {
+    daily_fact_count: increment(1),
+    last_fact_date: today,
+    seen_fact_ids: arrayUnion(factId),
+    last_updated: serverTimestamp()
+  };
+
+  if (isCorrect) {
+    update.reality_check_points = increment(1);
+  }
+
+  await updateDoc(userRef, update);
+};
+
+/**
  * Verifica se a ofensiva precisa ser resetada ou recuperada.
  */
 export const verifyAndResetStreak = async (uid: string, profile: UserProfile): Promise<UserProfile & { streakStatus?: StreakStatus }> => {
   const today = getTodayString();
   const lastDate = profile.lastCheckInDate;
+
+  // Reset daily facts if day changed
+  if (profile.last_fact_date && profile.last_fact_date !== today) {
+    const userRef = doc(db, "users", uid);
+    await updateDoc(userRef, { daily_fact_count: 0 });
+    profile.daily_fact_count = 0;
+  }
 
   if (!lastDate) return profile;
   if (lastDate === today) return { ...profile, streakStatus: 'OK' };
@@ -52,9 +80,6 @@ export const verifyAndResetStreak = async (uid: string, profile: UserProfile): P
   return { ...profile, streakStatus: 'OK' };
 };
 
-/**
- * Recupera a ofensiva após sucesso no quiz
- */
 export const restoreStreak = async (uid: string, profile: UserProfile) => {
   const userRef = doc(db, "users", uid);
   const today = getTodayString();
@@ -68,9 +93,6 @@ export const restoreStreak = async (uid: string, profile: UserProfile) => {
   return { ...profile, ...update };
 };
 
-/**
- * Força o reset da ofensiva
- */
 export const forceResetStreak = async (uid: string) => {
   const userRef = doc(db, "users", uid);
   const today = getTodayString();
@@ -83,9 +105,6 @@ export const forceResetStreak = async (uid: string) => {
   return update;
 };
 
-/**
- * Resgata uma recompensa de milestone
- */
 export const claimStreakReward = async (uid: string, rewardId: string) => {
   const userRef = doc(db, "users", uid);
   await updateDoc(userRef, {
