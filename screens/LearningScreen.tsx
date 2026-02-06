@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Wrapper } from '../components/Wrapper';
 import { COLORS, UserProfile } from '../types';
@@ -29,8 +28,41 @@ export const LearningScreen: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
-  const initialModules = LEARNING_MODULES.filter(m => !m.requiredStreak || m.requiredStreak <= 3);
-  const futureMilestones = LEARNING_MODULES.filter(m => m.requiredStreak && m.requiredStreak > 3);
+  // Lógica de Filtragem Dinâmica
+  const currentStreak = profile?.currentStreak || 0;
+
+  const baseModules = LEARNING_MODULES.filter((m) => {
+    // Regra 1: Conteúdo Base (sem streak) sempre aparece
+    if (!m.requiredStreak) return true;
+    // Regra 2: Recompensa de 3 Dias sempre aparece (como teaser ou conquista)
+    if (m.requiredStreak === 3) return true;
+    // Regra 3: Outras recompensas sobem para o topo APENAS se desbloqueadas
+    return m.requiredStreak <= currentStreak;
+  }).sort((a, b) => {
+    // Lógica de Ordenação: Recompensas no topo, Conteúdo depois
+    const aIsReward = !!a.requiredStreak;
+    const bIsReward = !!b.requiredStreak;
+
+    // Se ambos são recompensas, ordene pelo dia (Crescente: 3, 7, 15...)
+    if (aIsReward && bIsReward) {
+      return (a.requiredStreak || 0) - (b.requiredStreak || 0);
+    }
+    // Se apenas A é recompensa, A vem primeiro
+    if (aIsReward) return -1;
+    // Se apenas B é recompensa, B vem primeiro
+    if (bIsReward) return 1;
+    // Se nenhum é recompensa, mantenha a ordem original
+    return 0;
+  });
+
+  const futureModules = LEARNING_MODULES.filter((m) => {
+    // Mostra na lista futura (embaixo) apenas se tiver streak, for maior que 3 dias E ainda estiver bloqueado
+    return (
+      m.requiredStreak && 
+      m.requiredStreak > 3 && 
+      currentStreak < m.requiredStreak
+    );
+  });
 
   const getIcon = (icon: any, color: string) => {
     if (typeof icon !== 'string') {
@@ -65,10 +97,18 @@ export const LearningScreen: React.FC = () => {
   const renderModuleCard = (module: LearningModule) => {
     const currentStreak = profile?.currentStreak || 0;
     const isLocked = !!module.requiredStreak && currentStreak < module.requiredStreak;
+    const isUnlockedReward = !!module.requiredStreak && currentStreak >= module.requiredStreak;
     const isSpecial = module.isSpecialReward;
     
-    const gradStart = module.colors?.start || module.gradientStart || '#000000';
-    const gradEnd = module.colors?.end || module.gradientEnd || '#1a1a1a';
+    // Configuração de cores baseada no estado
+    const baseGradStart = module.colors?.start || module.gradientStart || '#000000';
+    const baseGradEnd = module.colors?.end || module.gradientEnd || '#1a1a1a';
+    
+    // Se for uma recompensa desbloqueada, assume o fundo dourado
+    const gradStart = isUnlockedReward ? '#B45309' : baseGradStart;
+    const gradEnd = isUnlockedReward ? '#FBBF24' : baseGradEnd;
+    
+    // O sotaque (accent) permanece o original para o ícone
     const accent = module.colors?.accent || module.accentColor || '#8B5CF6';
 
     return (
@@ -107,7 +147,7 @@ export const LearningScreen: React.FC = () => {
             <h3 className="text-base font-black text-white leading-none mb-1.5 truncate italic">
               {module.title}
             </h3>
-            <p className="text-xs font-bold text-gray-400 truncate tracking-tight">
+            <p className={`text-xs truncate tracking-tight ${isUnlockedReward ? 'text-black font-semibold' : 'text-gray-400 font-bold'}`}>
                {module.subtitle}
             </p>
           </div>
@@ -162,11 +202,11 @@ export const LearningScreen: React.FC = () => {
           </div>
 
           <div className="flex flex-col gap-5 w-full">
-            {/* Renderiza Módulos Iniciais */}
-            {initialModules.map(renderModuleCard)}
+            {/* Renderiza Módulos do Topo (Recompensas desbloqueadas + Conteúdo Base) */}
+            {baseModules.map(renderModuleCard)}
 
             {/* Divisor / Botão de Expansão para Futuros Marcos */}
-            {futureMilestones.length > 0 && (
+            {futureModules.length > 0 && (
               <div className="flex flex-col gap-5 mt-4">
                 <button
                   onClick={() => setShowFutureMilestones(!showFutureMilestones)}
@@ -186,7 +226,7 @@ export const LearningScreen: React.FC = () => {
                     </span>
                   </div>
                   <div className="flex gap-1">
-                    {!showFutureMilestones && futureMilestones.slice(0, 3).map((m, i) => (
+                    {!showFutureMilestones && futureModules.slice(0, 3).map((m, i) => (
                       <div key={i} className="w-1.5 h-1.5 rounded-full bg-gray-700" />
                     ))}
                   </div>
@@ -200,7 +240,7 @@ export const LearningScreen: React.FC = () => {
                       exit={{ opacity: 0, height: 0 }}
                       className="flex flex-col gap-5 overflow-hidden"
                     >
-                      {futureMilestones.map(renderModuleCard)}
+                      {futureModules.map(renderModuleCard)}
                     </motion.div>
                   )}
                 </AnimatePresence>
