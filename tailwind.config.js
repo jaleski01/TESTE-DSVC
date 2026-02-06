@@ -14,7 +14,7 @@ export default {
         }
       },
       backgroundImage: {
-        'top-neon-glow': 'radial-gradient(circle at 50% 0%, rgba(176, 38, 255, 0.25) 0%, rgba(0, 0, 0, 1) 75%)',
+        'top-neon-glow': 'radial-gradient(circle at 50% 0%, rgba(176, 38, 255, 0.6) 0%, rgba(176, 38, 255, 0.15) 40%, rgba(0, 0, 0, 1) 90%)',
       }
     },
   },

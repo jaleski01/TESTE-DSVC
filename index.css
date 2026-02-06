@@ -3,11 +3,21 @@
 @tailwind utilities;
 
 @layer base {
+  html, body, #root {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    @apply bg-void;
+  }
+
   body {
-    @apply bg-void bg-top-neon-glow text-white min-h-screen selection:bg-neon-purple selection:text-black;
-    /* Configurações críticas para iluminação ambiente estática */
+    @apply text-white selection:bg-neon-purple selection:text-black;
+    /* Aplicamos o gradiente diretamente via CSS com !important para garantir visibilidade total e override de camadas */
+    background-image: radial-gradient(circle at 50% 0%, rgba(176, 38, 255, 0.6) 0%, rgba(176, 38, 255, 0.15) 50%, #000000 100%) !important;
     background-attachment: fixed;
     background-repeat: no-repeat;
+    background-size: cover;
   }
 
   /* Custom scrollbar to match the cyberpunk aesthetic */
