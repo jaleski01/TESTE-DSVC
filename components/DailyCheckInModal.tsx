@@ -55,7 +55,7 @@ export const DailyCheckInModal: React.FC<DailyCheckInModalProps> = ({ profile, o
               lastCheckInDate: new Date().toLocaleDateString('en-CA'),
               unlockedAchievements: [
                 ...(profile.unlockedAchievements || []),
-                ...(result.newAchievements?.map(a => a.id) || [])
+                ...(result?.newAchievements?.map((a: any) => a.id) || [])
               ]
             });
             onClose();

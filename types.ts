@@ -35,16 +35,16 @@ export interface UserProfile {
   daily_addiction_minutes?: number;
   created_at?: string;
   email?: string | null;
-  last_updated?: string;
+  last_updated?: any; // Alterado para any para aceitar FieldValue do Firebase ou string
   selected_habits?: string[]; 
   
-  // --- Gamification Fields ---
-  currentStreak?: number;        // Dias seguidos
-  longestStreak?: number;        // Recorde
-  lastCheckInDate?: string;      // YYYY-MM-DD do último check-in
-  unlockedAchievements?: string[]; // IDs: 'streak_3d', 'streak_7d', etc
-  claimed_rewards?: string[];    // IDs das recompensas de milestone resgatadas
-  completed_modules?: string[];  // Módulos de aprendizado concluídos
+  // --- Gamification Fields (Fix TS2345) ---
+  currentStreak?: number;        
+  longestStreak?: number;        
+  lastCheckInDate?: string;      
+  unlockedAchievements?: string[]; 
+  claimed_rewards?: string[];    
+  completed_modules?: string[];  
 
   gamification?: {
     level: number;
@@ -54,11 +54,11 @@ export interface UserProfile {
 
   // --- Reality Check Progress ---
   reality_check_points?: number; 
-  last_fact_date?: string;       // YYYY-MM-DD
-  daily_fact_count?: number;     // 0-3
-  seen_fact_ids?: number[];      // IDs já respondidos
+  last_fact_date?: string;       
+  daily_fact_count?: number;     
+  seen_fact_ids?: number[];      
 
-  // Permite flexibilidade para campos do Firestore que podem variar
+  // Index signature para permitir flexibilidade com dados do Firestore
   [key: string]: any; 
 }
 
