@@ -5,6 +5,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '../lib/firebase';
 import { Wrapper } from '../components/Wrapper';
 import { COLORS, UserProfile } from '../types';
+import { claimStreakReward } from '../services/gamificationService';
 import { 
   fetchAndCacheProgressData, 
   updateAllProgressCaches,
@@ -13,6 +14,7 @@ import {
   Stats, 
   TriggerInsight 
 } from '../services/progressService';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const RANGES = [7, 15, 30, 90];
 const MILESTONES = [3, 7, 15, 30, 90];
@@ -35,6 +37,8 @@ export const ProgressScreen: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('JOURNEY');
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+  const [showRewardAlert, setShowRewardAlert] = useState(false);
+  const [isClaiming, setIsClaiming] = useState(false);
 
   // Analysis State
   const [selectedRange, setSelectedRange] = useState(7);
@@ -43,12 +47,10 @@ export const ProgressScreen: React.FC = () => {
   const [stats, setStats] = useState<Stats>({ average: 0, perfectDays: 0 });
   const [triggerInsight, setTriggerInsight] = useState<TriggerInsight | null>(null);
   
-  const journeyScrollRef = useRef<HTMLDivElement>(null);
-  const analysisScrollRef = useRef<HTMLDivElement>(null);
+  // Refs
+  const journeyContainerRef = useRef<HTMLDivElement>(null);
   const chartScrollRef = useRef<HTMLDivElement>(null);
   const currentDayNodeRef = useRef<HTMLDivElement>(null);
-  
-  const hasAutoScrolledJourney = useRef(false);
 
   // --- WIDE ZIG-ZAG PATH LOGIC ---
   const journeyPoints = useMemo<PathPoint[]>(() => {
@@ -77,31 +79,58 @@ export const ProgressScreen: React.FC = () => {
   }, [profile, journeyPoints]);
 
   // --- INITIALIZATION & BACKGROUND SYNC ---
+  const loadProfile = async (uid: string) => {
+    try {
+      const docRef = doc(db, "users", uid);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const data = docSnap.data() as UserProfile;
+        setProfile(data);
+        localStorage.setItem('user_profile', JSON.stringify(data));
+      }
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+    } finally {
+      setIsLoadingProfile(false);
+    }
+  };
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        try {
-          const docRef = doc(db, "users", user.uid);
-          const docSnap = await getDoc(docRef);
-          if (docSnap.exists()) {
-            setProfile(docSnap.data() as UserProfile);
-          }
-        } catch (error) {
-          console.error("Error fetching profile:", error);
-        } finally {
-          setIsLoadingProfile(false);
-        }
+        await loadProfile(user.uid);
       }
     });
     return () => unsubscribe();
   }, []);
 
-  // Background Data Fetcher (SWR Strategy)
+  const handleClaimReward = async (day: number) => {
+    if (!profile || !auth.currentUser || isClaiming) return;
+    
+    // Especial: Dia 3
+    if (day === 3 && (profile.currentStreak || 0) >= 3) {
+      const rewardId = 'reward_coolidge_day3';
+      if (profile.claimed_rewards?.includes(rewardId)) return;
+
+      setIsClaiming(true);
+      try {
+        await claimStreakReward(auth.currentUser.uid, rewardId);
+        await loadProfile(auth.currentUser.uid);
+        setShowRewardAlert(true);
+        if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+        setTimeout(() => setShowRewardAlert(false), 5000);
+      } catch (e) {
+        console.error("Error claiming reward", e);
+      } finally {
+        setIsClaiming(false);
+      }
+    }
+  };
+
   const refreshAnalysisData = async (rangeToRefresh: number) => {
     const cacheKey = `@progress_data_${rangeToRefresh}`;
     const cached = localStorage.getItem(cacheKey);
 
-    // 1. Instant state update from cache if available
     if (cached) {
       try {
         const { data } = JSON.parse(cached) as { data: ProgressDataPackage };
@@ -115,12 +144,8 @@ export const ProgressScreen: React.FC = () => {
       setLoadingAnalysis(true);
     }
 
-    // 2. Background Sync
     try {
-      // First, update the global cache package for all ranges
       await updateAllProgressCaches();
-      
-      // Then, pull the freshly saved data for the current selected range
       const freshData = await fetchAndCacheProgressData(rangeToRefresh);
       if (freshData) {
         setChartData(freshData.chartData);
@@ -134,28 +159,43 @@ export const ProgressScreen: React.FC = () => {
     }
   };
 
-  // Run on mount and range change, regardless of active tab
   useEffect(() => {
     refreshAnalysisData(selectedRange);
   }, [selectedRange]);
 
-  // --- AUTO-SCROLL LOGIC ---
   useEffect(() => {
-    // Scroll dinâmico para o dia atual na aba Jornada
-    if (activeTab === 'JOURNEY' && currentDayNodeRef.current && !isLoadingProfile) {
-      // Delay estratégico para garantir a renderização e criar o efeito de "viagem"
+    if (activeTab === 'JOURNEY' && currentDayNodeRef.current && journeyContainerRef.current) {
+      const container = journeyContainerRef.current;
+      const targetElement = currentDayNodeRef.current;
+      
+      const start = container.scrollTop;
+      const target = targetElement.offsetTop - (container.clientHeight / 2) + (targetElement.clientHeight / 2);
+      const distance = target - start;
+      const duration = 2000;
+      let startTime: number | null = null;
+
+      const easeInOutCubic = (t: number) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+      const animation = (currentTime: number) => {
+        if (startTime === null) startTime = currentTime;
+        const timeElapsed = currentTime - startTime;
+        const progress = Math.min(timeElapsed / duration, 1);
+        const ease = easeInOutCubic(progress);
+        container.scrollTop = start + (distance * ease);
+
+        if (timeElapsed < duration) {
+          requestAnimationFrame(animation);
+        }
+      };
+
       const timer = setTimeout(() => {
-        currentDayNodeRef.current?.scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'center' 
-        });
-      }, 600);
+        requestAnimationFrame(animation);
+      }, 500);
 
       return () => clearTimeout(timer);
     }
-  }, [activeTab, isLoadingProfile]);
+  }, [activeTab, journeyPoints, isLoadingProfile]);
 
-  // Scroll Analysis Chart to the end (newest data)
   useEffect(() => {
     if (activeTab === 'ANALYSIS' && chartData.length > 0 && chartScrollRef.current) {
       setTimeout(() => {
@@ -172,6 +212,29 @@ export const ProgressScreen: React.FC = () => {
     <Wrapper noPadding>
       <div className="flex-1 w-full h-full flex flex-col bg-transparent overflow-hidden">
         
+        {/* REWARD TOAST ALERT */}
+        <AnimatePresence>
+          {showRewardAlert && (
+            <motion.div 
+              initial={{ opacity: 0, y: -50 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -50 }}
+              className="fixed top-6 left-6 right-6 z-[100] p-4 bg-yellow-500 rounded-2xl shadow-[0_0_30px_rgba(234,179,8,0.5)] flex items-center gap-4"
+            >
+               <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center shrink-0">
+                  <span className="text-xl">🏆</span>
+               </div>
+               <div className="flex-1">
+                  <h4 className="text-sm font-black text-black uppercase tracking-tight">Recompensa Desbloqueada!</h4>
+                  <p className="text-[10px] font-bold text-black/70">Aula sobre Efeito Coolidge disponível na aba Base.</p>
+               </div>
+               <button onClick={() => setShowRewardAlert(false)} className="text-black/40 hover:text-black">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+               </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* FIXED HEADER & TAB SELECTOR */}
         <div className="px-5 pt-6 pb-4 shrink-0 z-50 bg-void/60 backdrop-blur-xl border-b border-white/5">
           <div className="flex flex-col mb-4">
@@ -199,12 +262,12 @@ export const ProgressScreen: React.FC = () => {
           </div>
         </div>
 
-        {/* PERSISTENT CONTENT AREA (KEEP-ALIVE) */}
+        {/* PERSISTENT CONTENT AREA */}
         <div className="flex-1 relative overflow-hidden">
           
           {/* --- TAB: OFENSIVA (JOURNEY) --- */}
           <div 
-            ref={journeyScrollRef}
+            ref={journeyContainerRef}
             className={`absolute inset-0 overflow-y-auto scrollbar-hide w-full transition-opacity duration-300 ${
               activeTab === 'JOURNEY' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
             }`}
@@ -213,7 +276,6 @@ export const ProgressScreen: React.FC = () => {
               className="w-full relative px-8" 
               style={{ height: `${TOTAL_DAYS * ITEM_HEIGHT.mobile + 250}px` }}
             >
-              {/* SVG LAYER */}
               <svg 
                 className="absolute inset-0 w-full h-full pointer-events-none" 
                 preserveAspectRatio="none"
@@ -240,13 +302,14 @@ export const ProgressScreen: React.FC = () => {
                 />
               </svg>
 
-              {/* DAY NODES */}
               {journeyPoints.map((pt) => {
                 const currentStreak = profile?.currentStreak || 0;
                 const isCompleted = pt.day <= currentStreak;
                 const isCurrent = pt.day === currentStreak + 1;
                 const isLocked = pt.day > currentStreak + 1;
                 const labelSide = pt.x < 50 ? 'right' : 'left';
+                const isRewardClaimed = pt.day === 3 && profile?.claimed_rewards?.includes('reward_coolidge_day3');
+                const canClaimReward = pt.day === 3 && isCompleted && !isRewardClaimed;
 
                 return (
                   <div 
@@ -255,15 +318,25 @@ export const ProgressScreen: React.FC = () => {
                     className="absolute -translate-x-1/2 -translate-y-1/2 z-10"
                     style={{ left: `${pt.x}%`, top: `${pt.y}px` }}
                   >
-                    <div 
+                    <button 
+                      onClick={() => pt.day === 3 && handleClaimReward(pt.day)}
+                      disabled={pt.day !== 3 || !canClaimReward || isClaiming}
                       className={`
                         w-16 h-16 rounded-2xl flex items-center justify-center border-2 transition-all duration-500
                         ${isCompleted ? 'bg-violet-600 border-violet-400 shadow-[0_0_15px_rgba(139,92,246,0.4)]' : ''}
                         ${isCurrent ? 'bg-[#0F0A15] border-violet-500 animate-pulse scale-110 shadow-[0_0_25px_rgba(139,92,246,0.8)]' : ''}
                         ${isLocked ? 'bg-[#111111] border-gray-800 opacity-60' : ''}
+                        ${pt.day === 3 && isCompleted && !isRewardClaimed ? 'border-yellow-500 bg-yellow-600 shadow-[0_0_20px_rgba(234,179,8,0.8)] animate-bounce' : ''}
+                        ${pt.day === 3 && isRewardClaimed ? 'border-yellow-500 bg-yellow-900/40 opacity-100' : ''}
                       `}
                     >
-                      {pt.isMilestone ? (
+                      {pt.day === 3 && isCompleted && !isRewardClaimed ? (
+                        <span className="text-3xl animate-pulse">🎁</span>
+                      ) : pt.day === 3 && isRewardClaimed ? (
+                         <svg className="w-8 h-8 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10 2a1 1 0 011 1v1.323l3.954 1.582 1.599-.8a1 1 0 01.894 1.79l-1.233.616 1.738 2.32a1 1 0 01-.196 1.41l-1.535 1.152.47 1.411a1 1 0 01-.948 1.315H13v3a1 1 0 01-1 1H8a1 1 0 01-1-1v-3H5.452a1 1 0 01-.948-1.315l.47-1.411-1.535-1.152a1 1 0 01-.196-1.41l1.738-2.32-1.233-.616a1 1 0 01.894-1.79l1.599.8L9 4.323V3a1 1 0 011-1z" />
+                         </svg>
+                      ) : pt.isMilestone ? (
                         <div className="flex flex-col items-center">
                           <svg className={`w-8 h-8 ${isLocked ? 'text-gray-600' : 'text-white'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-7.714 2.143L11 21l-2.286-6.857L1 12l7.714-2.143L11 3z" />
@@ -280,7 +353,7 @@ export const ProgressScreen: React.FC = () => {
                       ) : (
                         <span className="text-2xl font-black text-violet-400">{pt.day}</span>
                       )}
-                    </div>
+                    </button>
 
                     <div 
                       className={`absolute top-1/2 -translate-y-1/2 whitespace-nowrap px-6
@@ -293,8 +366,10 @@ export const ProgressScreen: React.FC = () => {
                       </span>
                       {pt.isMilestone && (
                         <div className={`mt-1 flex items-center gap-1 ${labelSide === 'right' ? 'flex-row' : 'flex-row-reverse'}`}>
-                           <div className="w-1 h-1 rounded-full bg-yellow-500 shadow-[0_0_5px_rgba(234,179,8,0.8)]"></div>
-                           <span className="text-[8px] font-black text-yellow-500 tracking-widest uppercase">RECOMPENSA</span>
+                           <div className={`w-1 h-1 rounded-full ${pt.day === 3 && canClaimReward ? 'bg-yellow-400 shadow-[0_0_8px_rgba(234,179,8,1)] animate-pulse' : 'bg-yellow-500 shadow-[0_0_5px_rgba(234,179,8,0.8)]'}`}></div>
+                           <span className={`text-[8px] font-black tracking-widest uppercase ${pt.day === 3 && canClaimReward ? 'text-yellow-400 animate-pulse' : 'text-yellow-500'}`}>
+                             {pt.day === 3 && canClaimReward ? 'RESGATAR AGORA' : 'RECOMPENSA'}
+                           </span>
                         </div>
                       )}
                     </div>
@@ -306,13 +381,11 @@ export const ProgressScreen: React.FC = () => {
 
           {/* --- TAB: ANÁLISE (ANALYSIS) --- */}
           <div 
-            ref={analysisScrollRef}
             className={`absolute inset-0 overflow-y-auto scrollbar-hide w-full px-5 pt-3 pb-32 flex flex-col transition-opacity duration-300 ${
               activeTab === 'ANALYSIS' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
             }`}
           >
             <div className="w-full max-w-full flex flex-col">
-              {/* Range Selector */}
               <div className="w-full flex p-1 rounded-xl mb-6 bg-[#1F2937]/30 border border-[#2E243D]">
                 {RANGES.map((range) => (
                   <button
@@ -329,7 +402,6 @@ export const ProgressScreen: React.FC = () => {
                 ))}
               </div>
 
-              {/* Simple Stats Grid */}
               <div className="grid grid-cols-2 gap-4 mb-8 w-full">
                 <div className="p-4 rounded-xl border border-[#2E243D] bg-[#0F0A15]/80 backdrop-blur-sm flex flex-col items-center justify-center relative overflow-hidden w-full">
                   <span className="text-[10px] uppercase font-bold text-gray-500 mb-1 z-10">Média</span>
@@ -348,7 +420,6 @@ export const ProgressScreen: React.FC = () => {
                 </div>
               </div>
 
-              {/* Chart Section */}
               <div className="w-full flex flex-col mb-10">
                 <h3 className="text-[10px] font-black text-gray-500 mb-4 uppercase tracking-[0.3em]">
                   Gráfico de Disciplina
@@ -401,7 +472,6 @@ export const ProgressScreen: React.FC = () => {
                 )}
               </div>
 
-              {/* Trigger Insight Section */}
               <div className="w-full flex flex-col">
                 <div className="flex items-center gap-2 mb-4">
                   <svg className="w-4 h-4 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">

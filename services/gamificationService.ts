@@ -1,3 +1,4 @@
+
 import { doc, updateDoc, serverTimestamp, arrayUnion } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { UserProfile } from '../types';
@@ -29,9 +30,6 @@ export interface VerifyStreakResult {
 
 /**
  * Verifica se a ofensiva precisa ser resetada ou recuperada.
- * diff === 1: OK (Último check-in ontem)
- * diff === 2: NEEDS_RECOVERY (Pulou ontem, logou hoje)
- * diff > 2: RESET (Ficou mais de 1 dia sem logar)
  */
 export const verifyAndResetStreak = async (uid: string, profile: UserProfile): Promise<UserProfile & { streakStatus?: StreakStatus }> => {
   const today = getTodayString();
@@ -43,10 +41,8 @@ export const verifyAndResetStreak = async (uid: string, profile: UserProfile): P
   const diff = getDaysDiff(lastDate, today);
 
   if (diff === 2) {
-    // Modo Recuperação: Não zera ainda, avisa a UI
     return { ...profile, streakStatus: 'NEEDS_RECOVERY' };
   } else if (diff > 2) {
-    // Reset Total
     const userRef = doc(db, "users", uid);
     const update = { currentStreak: 0, lastCheckInDate: today };
     await updateDoc(userRef, update);
@@ -63,7 +59,6 @@ export const restoreStreak = async (uid: string, profile: UserProfile) => {
   const userRef = doc(db, "users", uid);
   const today = getTodayString();
   
-  // Mantemos o currentStreak que o usuário tinha antes de falhar o dia
   const update = {
     lastCheckInDate: today,
     last_updated: serverTimestamp()
@@ -74,7 +69,7 @@ export const restoreStreak = async (uid: string, profile: UserProfile) => {
 };
 
 /**
- * Força o reset da ofensiva (falha no quiz ou abandono)
+ * Força o reset da ofensiva
  */
 export const forceResetStreak = async (uid: string) => {
   const userRef = doc(db, "users", uid);
@@ -86,6 +81,17 @@ export const forceResetStreak = async (uid: string) => {
   };
   await updateDoc(userRef, update);
   return update;
+};
+
+/**
+ * Resgata uma recompensa de milestone
+ */
+export const claimStreakReward = async (uid: string, rewardId: string) => {
+  const userRef = doc(db, "users", uid);
+  await updateDoc(userRef, {
+    claimed_rewards: arrayUnion(rewardId),
+    last_updated: serverTimestamp()
+  });
 };
 
 export const performDailyCheckIn = async (uid: string, profile: UserProfile) => {

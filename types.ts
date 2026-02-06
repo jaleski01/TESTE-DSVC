@@ -43,6 +43,7 @@ export interface UserProfile {
   longestStreak?: number;        // Recorde
   lastCheckInDate?: string;      // YYYY-MM-DD do último check-in
   unlockedAchievements?: string[]; // IDs: 'streak_3d', 'streak_7d', etc
+  claimed_rewards?: string[];    // IDs das recompensas de milestone resgatadas
 }
 
 export interface HabitDefinition {

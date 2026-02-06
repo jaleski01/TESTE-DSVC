@@ -1,10 +1,39 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect, useMemo } from 'react';
 import { Wrapper } from '../components/Wrapper';
-import { COLORS } from '../types';
+import { COLORS, UserProfile } from '../types';
 import { LEARNING_MODULES, LearningModule, LearningStep } from '../data/learningModules';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth, db } from '../lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
 export const LearningScreen: React.FC = () => {
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [selectedModule, setSelectedModule] = useState<LearningModule | null>(null);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const docRef = doc(db, "users", user.uid);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setProfile(docSnap.data() as UserProfile);
+        }
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const visibleModules = useMemo(() => {
+    // Filtrar módulos normais + Recompensas Especiais resgatadas
+    const claimed = profile?.claimed_rewards || [];
+    
+    const normalModules = LEARNING_MODULES.filter(m => !m.isSpecialReward);
+    const claimedRewards = LEARNING_MODULES.filter(m => m.isSpecialReward && claimed.includes(m.id));
+
+    // Recompensas em primeiro
+    return [...claimedRewards, ...normalModules];
+  }, [profile]);
 
   // --- ICONS ---
   const getIcon = (name: string, color: string) => {
@@ -45,21 +74,9 @@ export const LearningScreen: React.FC = () => {
 
   return (
     <Wrapper noPadding>
-      {/* 
-        CONTAINER DE SCROLL VERTICAL 
-        flex-1, h-full, overflow-y-auto: Estrutura segura de scroll.
-      */}
       <div className="flex-1 w-full h-full overflow-y-auto scrollbar-hide bg-transparent">
-        
-        {/* 
-          CONTAINER DE CONTEÚDO
-          px-5: Padding lateral de 20px
-          w-full: Garante largura total
-          pb-32: Margem para o menu inferior
-        */}
         <div className="w-full max-w-full px-5 pt-6 pb-32 flex flex-col">
           
-          {/* Header */}
           <div className="flex flex-col mb-6">
             <h1 className="text-xl font-bold text-white tracking-wide">
               Base de Conhecimento
@@ -69,45 +86,119 @@ export const LearningScreen: React.FC = () => {
             </p>
           </div>
 
-          {/* Modules Grid - Flex Column with w-full */}
           <div className="flex flex-col gap-4 w-full">
-            {LEARNING_MODULES.map((module) => (
-              <button
-                key={module.id}
-                onClick={() => setSelectedModule(module)}
-                className="flex items-center w-full p-4 rounded-xl border transition-all active:scale-[0.98] group relative overflow-hidden"
-                style={{
-                  background: `linear-gradient(135deg, ${module.gradientStart} 0%, ${module.gradientEnd} 100%)`,
-                  borderColor: '#1F2937', 
-                }}
-              >
-                {/* Icon Container */}
-                <div 
-                  className="w-12 h-12 rounded-lg flex-shrink-0 flex items-center justify-center bg-black/40 border border-white/5 mr-4 shadow-lg backdrop-blur-sm"
+            {visibleModules.map((module) => {
+              const isSpecial = module.isSpecialReward;
+
+              return (
+                <div
+                  key={module.id}
+                  className={`flex flex-col w-full p-4 rounded-xl border transition-all group relative overflow-hidden ${
+                    isSpecial ? 'border-yellow-500 shadow-[0_0_20px_rgba(234,179,8,0.2)]' : 'border-[#1F2937]'
+                  }`}
+                  style={{
+                    background: isSpecial 
+                      ? 'linear-gradient(135deg, #451A03 0%, #000000 100%)' 
+                      : `linear-gradient(135deg, ${module.gradientStart} 0%, ${module.gradientEnd} 100%)`,
+                  }}
                 >
-                  {getIcon(module.icon, module.accentColor)}
-                </div>
+                  <div className="flex items-center w-full">
+                    <div 
+                      className={`w-12 h-12 rounded-lg flex-shrink-0 flex items-center justify-center bg-black/40 border mr-4 shadow-lg backdrop-blur-sm ${
+                        isSpecial ? 'border-yellow-500/30' : 'border-white/5'
+                      }`}
+                    >
+                      {getIcon(module.icon, module.accentColor)}
+                    </div>
 
-                {/* Text Info */}
-                <div className="flex-1 text-left z-10 min-w-0"> {/* min-w-0 prevents flex items from overflowing */}
-                  <span 
-                    className="text-[9px] font-bold uppercase tracking-widest mb-1 block opacity-80"
-                    style={{ color: module.accentColor }}
-                  >
-                    {module.category}
-                  </span>
-                  <h3 className="text-sm font-bold text-white leading-tight mb-1 truncate">
-                    {module.title}
-                  </h3>
-                  <p 
-                    className="text-[11px] font-medium leading-snug truncate"
-                    style={{ color: '#94A3B8' }}
-                  >
-                     {module.subtitle}
-                  </p>
-                </div>
+                    <div className="flex-1 text-left z-10 min-w-0">
+                      <span 
+                        className="text-[9px] font-bold uppercase tracking-widest mb-1 block opacity-80"
+                        style={{ color: module.accentColor }}
+                      >
+                        {module.category} {isSpecial && '🔓'}
+                      </span>
+                      <h3 className="text-sm font-bold text-white leading-tight mb-1 truncate">
+                        {module.title}
+                      </h3>
+                      <p 
+                        className="text-[11px] font-medium leading-snug truncate"
+                        style={{ color: '#94A3B8' }}
+                      >
+                         {module.subtitle}
+                      </p>
+                    </div>
 
-                {/* Chevron */}
-                <div className="opacity-30 group-hover:opacity-100 transition-opacity z-10 ml-2 flex-shrink-0">
-                  <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" stroke
+                    {!isSpecial && (
+                       <button onClick={() => setSelectedModule(module)} className="opacity-30 group-hover:opacity-100 transition-opacity z-10 ml-2 flex-shrink-0">
+                         <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                         </svg>
+                       </button>
+                    )}
+                  </div>
+
+                  {isSpecial && module.videoUrl && (
+                    <div className="mt-4 animate-fadeIn">
+                       <iframe 
+                        className="w-full aspect-video rounded-lg border border-yellow-500/30 shadow-inner"
+                        src={module.videoUrl} 
+                        title="YouTube video player" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                        referrerPolicy="strict-origin-when-cross-origin" 
+                        allowFullScreen
+                      ></iframe>
+                      <div className="mt-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+                        <p className="text-[11px] text-yellow-200/80 leading-relaxed italic">
+                          "O conhecimento é o único escudo que ninguém pode tirar de você. Esta masterclass é seu prêmio por manter a disciplina."
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* MODAL PARA MÓDULOS NORMAIS */}
+      {selectedModule && (
+        <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex flex-col p-6 animate-fadeIn">
+           <div className="flex items-center justify-between mb-8">
+              <span className="text-[10px] font-bold tracking-[0.3em] uppercase text-gray-500">Documentação Técnica</span>
+              <button onClick={() => setSelectedModule(null)} className="p-2 text-gray-400 hover:text-white">
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+           </div>
+           
+           <div className="flex-1 overflow-y-auto scrollbar-hide">
+             <h2 className="text-2xl font-black text-white mb-2 leading-tight">{selectedModule.title}</h2>
+             <p className="text-gray-400 text-sm leading-relaxed mb-8">{selectedModule.intro}</p>
+             
+             {/* Conteúdo condicional (ex: passos do DNS) */}
+             {selectedModule.id === 'dns_shield' && (
+                <div className="space-y-6">
+                   <div className="p-4 rounded-xl bg-violet-600/10 border border-violet-500/30">
+                      <p className="text-xs text-violet-300 font-bold mb-3 uppercase tracking-widest">Procedimento Recomendado</p>
+                      <div className="space-y-4">
+                        {selectedModule.androidSteps?.map((step, idx) => (
+                           <div key={idx} className="flex gap-3">
+                              <span className="text-xs font-mono text-violet-500">0{idx+1}</span>
+                              <p className="text-xs text-gray-300">{step.text}</p>
+                           </div>
+                        ))}
+                      </div>
+                   </div>
+                </div>
+             )}
+           </div>
+           
+           <div className="pt-6">
+              <button onClick={() => setSelectedModule(null)} className="w-full py-4 rounded-xl bg-[#1A1A1A] border border-[#2E243D] text-xs font-bold uppercase tracking-widest text-white">Fechar Protocolo</button>
+           </div>
+        </div>
+      )}
+    </Wrapper>
+  );
+};
