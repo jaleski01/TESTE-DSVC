@@ -107,7 +107,7 @@ export const ProgressScreen: React.FC = () => {
   const handleClaimReward = async (day: number) => {
     if (!profile || !auth.currentUser || isClaiming) return;
     
-    // Especial: Dia 3
+    // Atualmente só temos recompensa implementada para o dia 3
     if (day === 3 && (profile.currentStreak || 0) >= 3) {
       const rewardId = 'reward_coolidge_day3';
       if (profile.claimed_rewards?.includes(rewardId)) return;
@@ -312,50 +312,23 @@ export const ProgressScreen: React.FC = () => {
                 const canClaimReward = pt.day === 3 && isCompleted && !isRewardClaimed;
 
                 const renderIcon = () => {
-                  const iconColor = isLocked ? 'text-gray-600' : 'text-white';
+                  const isMilestone = pt.isMilestone || pt.day === 3;
+                  const milestoneColor = (isCompleted || isCurrent) && (pt.day !== 3 || !isRewardClaimed) ? 'text-yellow-400 animate-pulse' : 'text-yellow-500';
+                  const iconColor = isLocked ? 'text-gray-600' : (isMilestone ? milestoneColor : 'text-white');
                   
                   // Milestone: Dia 3 (Check)
-                  if (pt.day === 3) {
-                    const day3Color = (isCompleted || isCurrent) && !isRewardClaimed ? 'text-yellow-400 animate-pulse' : 'text-yellow-500';
+                  if (isMilestone || pt.day === 3) {
+                    const renderIconForDay = () => {
+                      if (pt.day === 3) return <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />;
+                      if (pt.day === 7) return <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />;
+                      if (pt.day === 15) return <path strokeLinecap="round" strokeLinejoin="round" d="M4 10h16M4 14h16" />;
+                      if (pt.day === 30) return <path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />;
+                      if (pt.day === 90) return <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />;
+                      return null;
+                    };
                     return (
-                      <svg className={`w-8 h-8 ${day3Color}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                    );
-                  }
-
-                  // Milestone: Dia 7 (Chevron)
-                  if (pt.day === 7) {
-                    return (
-                      <svg className={`w-8 h-8 ${iconColor}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                      </svg>
-                    );
-                  }
-
-                  // Milestone: Dia 15 (Bars)
-                  if (pt.day === 15) {
-                    return (
-                      <svg className={`w-8 h-8 ${iconColor}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 10h16M4 14h16" />
-                      </svg>
-                    );
-                  }
-
-                  // Milestone: Dia 30 (Star)
-                  if (pt.day === 30) {
-                    return (
-                      <svg className={`w-8 h-8 ${iconColor}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                      </svg>
-                    );
-                  }
-
-                  // Milestone: Dia 90 (Shield)
-                  if (pt.day === 90) {
-                    return (
-                      <svg className={`w-8 h-8 ${iconColor}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                      <svg className={`w-8 h-8 ${iconColor}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={pt.day >= 30 ? 2 : 3}>
+                        {renderIconForDay()}
                       </svg>
                     );
                   }
@@ -396,7 +369,7 @@ export const ProgressScreen: React.FC = () => {
                         ${isCompleted ? 'bg-violet-600 border-violet-400 shadow-[0_0_15px_rgba(139,92,246,0.4)]' : ''}
                         ${isCurrent ? 'bg-[#0F0A15] border-violet-500 animate-pulse scale-110 shadow-[0_0_25px_rgba(139,92,246,0.8)]' : ''}
                         ${isLocked ? 'bg-[#111111] border-gray-800 opacity-60' : ''}
-                        ${pt.day === 3 && isCompleted && !isRewardClaimed ? 'border-yellow-500 bg-yellow-600 shadow-[0_0_20px_rgba(234,179,8,0.8)] animate-bounce' : ''}
+                        ${(pt.isMilestone || pt.day === 3) && isCompleted && (pt.day !== 3 || !isRewardClaimed) ? 'border-yellow-500 bg-yellow-600 shadow-[0_0_20px_rgba(234,179,8,0.8)] animate-bounce' : ''}
                         ${pt.day === 3 && isRewardClaimed ? 'border-yellow-500 bg-yellow-900/40 opacity-100' : ''}
                       `}
                     >
