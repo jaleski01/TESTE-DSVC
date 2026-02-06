@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
@@ -12,11 +11,14 @@ import { DailyHabits } from '../components/DailyHabits';
 import { TriggerModal } from '../components/TriggerModal';
 import { ShortcutPrompt } from '../components/ShortcutPrompt';
 import { HoldToConfirmButton } from '../components/HoldToConfirmButton';
+import { StreakRecoveryModal } from '../components/StreakRecoveryModal';
 import { COLORS, Routes, UserProfile } from '../types';
 import { 
   getTodayString, 
   performDailyCheckIn, 
   verifyAndResetStreak, 
+  restoreStreak,
+  forceResetStreak,
   ACHIEVEMENTS 
 } from '../services/gamificationService';
 
@@ -27,6 +29,7 @@ export const DashboardScreen: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isTriggerModalOpen, setIsTriggerModalOpen] = useState(false);
+  const [showRecoveryModal, setShowRecoveryModal] = useState(false);
   
   // Gamification States
   const [showConfetti, setShowConfetti] = useState(false);
@@ -42,10 +45,14 @@ export const DashboardScreen: React.FC = () => {
         let data = docSnap.data() as UserProfile;
         
         // Verifica reset de Ofensiva ao carregar
-        data = await verifyAndResetStreak(uid, data);
+        const result = await verifyAndResetStreak(uid, data);
         
-        setProfile(data);
-        localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+        if (result.streakStatus === 'NEEDS_RECOVERY') {
+          setShowRecoveryModal(true);
+        }
+        
+        setProfile(result);
+        localStorage.setItem(CACHE_KEY, JSON.stringify(result));
       } else {
         navigate(Routes.ONBOARDING);
       }
@@ -61,7 +68,6 @@ export const DashboardScreen: React.FC = () => {
       if (user) {
         await loadProfile(user.uid);
         
-        // Listener extra para garantir reset na virada do dia se o app estiver aberto
         const handleFocus = () => {
           if (auth.currentUser) loadProfile(auth.currentUser.uid);
         };
@@ -73,6 +79,31 @@ export const DashboardScreen: React.FC = () => {
     return () => unsubscribe();
   }, [loadProfile, navigate]);
 
+  const handleRecoverySuccess = async () => {
+    if (!profile || !auth.currentUser) return;
+    try {
+      const updatedProfile = await restoreStreak(auth.currentUser.uid, profile);
+      setProfile(updatedProfile);
+      localStorage.setItem(CACHE_KEY, JSON.stringify(updatedProfile));
+      setShowRecoveryModal(false);
+    } catch (e) {
+      console.error("Error restoring streak", e);
+    }
+  };
+
+  const handleRecoveryFail = async () => {
+    if (!profile || !auth.currentUser) return;
+    try {
+      const updateData = await forceResetStreak(auth.currentUser.uid);
+      const newProfile = { ...profile, ...updateData };
+      setProfile(newProfile);
+      localStorage.setItem(CACHE_KEY, JSON.stringify(newProfile));
+      setShowRecoveryModal(false);
+    } catch (e) {
+      console.error("Error forcing reset", e);
+    }
+  };
+
   const handleCheckIn = async () => {
     if (!profile || !auth.currentUser) return;
     
@@ -81,7 +112,6 @@ export const DashboardScreen: React.FC = () => {
       const result = await performDailyCheckIn(auth.currentUser.uid, profile);
       
       if (result.success) {
-        // Update Local State
         const updatedProfile = {
           ...profile,
           currentStreak: result.newStreak,
@@ -94,7 +124,6 @@ export const DashboardScreen: React.FC = () => {
         setProfile(updatedProfile);
         localStorage.setItem(CACHE_KEY, JSON.stringify(updatedProfile));
 
-        // Trigger Animations
         setShowConfetti(true);
         setTimeout(() => setShowConfetti(false), 4000);
 
@@ -133,7 +162,6 @@ export const DashboardScreen: React.FC = () => {
   return (
     <Wrapper noPadding> 
       <div className="flex-1 w-full h-full overflow-y-auto scrollbar-hide bg-transparent">
-        {/* Efeito de Confete CSS Simples */}
         {showConfetti && (
           <div className="fixed inset-0 pointer-events-none z-[100] overflow-hidden">
             {[...Array(20)].map((_, i) => (
@@ -161,7 +189,6 @@ export const DashboardScreen: React.FC = () => {
             <StreakTimer startDate={profile?.current_streak_start} />
           </header>
 
-          {/* JORNADA DE RECONSTRUÇÃO (HERO OFENSIVA) */}
           <section className="w-full mb-6 p-6 rounded-2xl bg-[#0F0A15] border border-[#2E243D] relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-4 opacity-10 transition-transform group-hover:scale-110 duration-500">
               <svg className={`w-24 h-24 ${isCheckedInToday ? 'text-orange-500' : 'text-gray-700'}`} fill="currentColor" viewBox="0 0 24 24">
@@ -244,7 +271,6 @@ export const DashboardScreen: React.FC = () => {
         </div>
       </div>
       
-      {/* CELEBRATION MODAL */}
       {celebrationAchievement && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center px-6 bg-black/90 backdrop-blur-md animate-fadeIn">
           <div className="w-full max-w-sm bg-[#1A1A1A] border border-violet-500/30 rounded-3xl p-8 text-center shadow-[0_0_50px_rgba(139,92,246,0.2)]">
@@ -265,6 +291,14 @@ export const DashboardScreen: React.FC = () => {
             </Button>
           </div>
         </div>
+      )}
+
+      {showRecoveryModal && profile && (
+        <StreakRecoveryModal 
+          streakValue={profile.currentStreak || 0}
+          onSuccess={handleRecoverySuccess}
+          onFail={handleRecoveryFail}
+        />
       )}
 
       {isTriggerModalOpen && <TriggerModal onClose={() => setIsTriggerModalOpen(false)} />}
