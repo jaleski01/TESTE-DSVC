@@ -118,9 +118,9 @@ const App: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="h-[100dvh] w-full bg-black flex flex-col items-center justify-center">
-        <div className="w-10 h-10 rounded-full border-4 border-violet-600 border-t-transparent animate-spin mb-4"></div>
-        <span className="text-[10px] font-bold tracking-[0.3em] text-gray-500 uppercase animate-pulse">
+      <div className="h-[100dvh] w-full bg-void bg-neon-glow flex flex-col items-center justify-center">
+        <div className="w-10 h-10 rounded-full border-4 border-neon-violet border-t-transparent animate-spin mb-4"></div>
+        <span className="text-[10px] font-bold tracking-[0.3em] text-gray-400 uppercase animate-pulse">
           Validando Protocolo
         </span>
       </div>

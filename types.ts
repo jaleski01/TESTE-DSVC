@@ -3,8 +3,8 @@ import React from 'react';
 
 // Design System Constants
 export const COLORS = {
-  Background: '#000000',      
-  Surface: '#0F0A15',         
+  Background: 'transparent',      
+  Surface: 'rgba(15, 10, 21, 0.6)', // Glassmorphism sutil
   Border: '#2E243D',          
   Primary: '#8B5CF6',         
   Danger: '#EF4444',          
@@ -66,7 +66,7 @@ export const MASTER_HABITS: HabitDefinition[] = [
   { id: 'voluntario', label: 'Fazer o Bem', desc: 'Ajude o próximo e sinta gratidão.', icon: 'heart' },
   { id: 'social', label: 'Socialização Real', desc: 'Conexões presenciais importam.', icon: 'chat' },
   { id: 'sol', label: 'Sol Matinal', desc: 'Regule seu ciclo circadiano.', icon: 'sun' },
-  { id: 'respiracao', label: 'Breathwork', desc: 'Controle a ansiedade pela respiração.', icon: 'wind' },
+  { id: 'respiracao', label: 'Breathwork', desc: 'Controle a ansiedade pela resciração.', icon: 'wind' },
   { id: 'criativo', label: 'Hobby Criativo', desc: 'Expressão criativa longe de telas.', icon: 'color-swatch' }
 ];
 
