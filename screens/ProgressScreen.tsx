@@ -12,12 +12,20 @@ import {
   Stats, 
   TriggerInsight 
 } from '../services/progressService';
-import { ACHIEVEMENTS } from '../services/gamificationService';
 
 const RANGES = [7, 15, 30, 90];
 const MILESTONES = [3, 7, 15, 30, 90];
+const ITEM_HEIGHT = 130; // Maior espaçamento vertical para compensar a largura
+const TOTAL_DAYS = 90;
 
 type TabType = 'JOURNEY' | 'ANALYSIS';
+
+interface PathPoint {
+  x: number;
+  y: number;
+  day: number;
+  isMilestone: boolean;
+}
 
 export const ProgressScreen: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('JOURNEY');
@@ -32,10 +40,37 @@ export const ProgressScreen: React.FC = () => {
   const [triggerInsight, setTriggerInsight] = useState<TriggerInsight | null>(null);
   
   const analysisScrollRef = useRef<HTMLDivElement>(null);
-  const journeyScrollRef = useRef<HTMLDivElement>(null);
   const currentDayRef = useRef<HTMLDivElement>(null);
 
-  // Load User Profile
+  // --- LÓGICA DE POSICIONAMENTO WIDE ZIG-ZAG ---
+  const journeyPoints = useMemo<PathPoint[]>(() => {
+    // Ciclo de 4 posições para um zig-zag mais complexo e largo
+    const xPattern = [15, 40, 75, 85, 75, 40]; 
+    
+    return Array.from({ length: TOTAL_DAYS }, (_, i) => {
+      const day = i + 1;
+      const x = xPattern[i % xPattern.length];
+      const y = i * ITEM_HEIGHT + 100; // Começa em 100px
+      return { x, y, day, isMilestone: MILESTONES.includes(day) };
+    });
+  }, []);
+
+  // Gerador de Path SVG (Linhas Retas)
+  const generatePathData = (points: PathPoint[]) => {
+    if (points.length === 0) return "";
+    return points.map((p, i) => (i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`)).join(" ");
+  };
+
+  const fullPathData = useMemo(() => generatePathData(journeyPoints), [journeyPoints]);
+
+  const progressPathData = useMemo(() => {
+    if (!profile) return "";
+    const streak = profile.currentStreak || 0;
+    const progressPoints = journeyPoints.slice(0, streak + 1);
+    return generatePathData(progressPoints);
+  }, [profile, journeyPoints]);
+
+  // --- CARREGAMENTO DE DADOS ---
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
@@ -55,7 +90,6 @@ export const ProgressScreen: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
-  // Load Analysis Data
   const loadAnalysisData = async () => {
     const cacheKey = `@progress_data_${selectedRange}`;
     const cached = localStorage.getItem(cacheKey);
@@ -93,7 +127,7 @@ export const ProgressScreen: React.FC = () => {
     if (activeTab === 'ANALYSIS') loadAnalysisData();
   }, [selectedRange, activeTab]);
 
-  // Auto-scroll logic
+  // --- AUTO SCROLL AO DIA ATUAL ---
   useEffect(() => {
     if (activeTab === 'ANALYSIS' && !loadingAnalysis && chartData.length > 0 && analysisScrollRef.current) {
       setTimeout(() => {
@@ -106,7 +140,7 @@ export const ProgressScreen: React.FC = () => {
     if (activeTab === 'JOURNEY' && !isLoadingProfile && currentDayRef.current) {
       setTimeout(() => {
         currentDayRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 300);
+      }, 500);
     }
   }, [activeTab, loadingAnalysis, isLoadingProfile, chartData]);
 
@@ -116,13 +150,13 @@ export const ProgressScreen: React.FC = () => {
     <Wrapper noPadding>
       <div className="flex-1 w-full h-full flex flex-col bg-transparent overflow-hidden">
         
-        {/* HEADER & TAB SELECTOR */}
-        <div className="px-5 pt-6 pb-4 shrink-0">
+        {/* HEADER & TAB SELECTOR (Z-Index Superior) */}
+        <div className="px-5 pt-6 pb-4 shrink-0 z-50 bg-void/60 backdrop-blur-xl border-b border-white/5">
           <div className="flex flex-col mb-4">
             <h1 className="text-xl font-black text-white tracking-tight uppercase italic">
               Evolução Tática
             </h1>
-            <p className="text-[10px] font-bold tracking-widest text-violet-400 uppercase">
+            <p className="text-[10px] font-bold tracking-[0.2em] text-violet-400 uppercase">
               {activeTab === 'JOURNEY' ? 'Caminho da Maestria' : 'Análise de Performance'}
             </p>
           </div>
@@ -144,73 +178,111 @@ export const ProgressScreen: React.FC = () => {
         </div>
 
         {/* CONTENT AREA */}
-        <div className="flex-1 overflow-y-auto scrollbar-hide">
+        <div className="flex-1 overflow-y-auto scrollbar-hide relative">
           {activeTab === 'JOURNEY' ? (
-            /* --- TAB: OFENSIVA (JOURNEY MAP) --- */
-            <div className="w-full flex flex-col items-center py-10 px-5 pb-32">
-              <div className="relative w-full max-w-[200px] flex flex-col items-center">
+            /* --- TAB: OFENSIVA (WIDE ZIG-ZAG MAP) --- */
+            <div 
+              className="w-full relative px-8" 
+              style={{ height: `${TOTAL_DAYS * ITEM_HEIGHT + 250}px` }}
+            >
+              {/* SVG LAYER (BACKGROUND LINES) */}
+              <svg 
+                className="absolute inset-0 w-full h-full pointer-events-none" 
+                preserveAspectRatio="none"
+                viewBox={`0 0 100 ${TOTAL_DAYS * ITEM_HEIGHT + 250}`}
+              >
+                {/* Linha de Fundo (Total) */}
+                <path 
+                  d={fullPathData} 
+                  fill="none" 
+                  stroke="#374151" 
+                  strokeWidth="0.5" 
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  opacity="0.3"
+                />
+                {/* Linha de Progresso (Até Streak) */}
+                <path 
+                  d={progressPathData} 
+                  fill="none" 
+                  stroke={COLORS.Primary} 
+                  strokeWidth="1.5" 
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="transition-all duration-1000 ease-out"
+                  style={{ filter: 'drop-shadow(0 0 8px rgba(139,92,246,0.6))' }}
+                />
+              </svg>
+
+              {/* DAY NODES */}
+              {journeyPoints.map((pt) => {
+                const currentStreak = profile?.currentStreak || 0;
+                const isCompleted = pt.day <= currentStreak;
+                const isCurrent = pt.day === currentStreak + 1;
+                const isLocked = pt.day > currentStreak + 1;
                 
-                {/* Central Path Line */}
-                <div className="absolute top-0 bottom-0 w-1 bg-gray-800/50 rounded-full" />
+                // Determina o lado do label para não sobrepor a linha expansiva
+                const labelSide = pt.x < 50 ? 'right' : 'left';
 
-                {/* Day Nodes Loop (1 to 90) */}
-                {Array.from({ length: 90 }, (_, i) => {
-                  const day = i + 1;
-                  const currentStreak = profile?.currentStreak || 0;
-                  const isCompleted = day <= currentStreak;
-                  const isCurrent = day === currentStreak + 1;
-                  const isLocked = day > currentStreak + 1;
-                  const isMilestone = MILESTONES.includes(day);
-
-                  return (
+                return (
+                  <div 
+                    key={pt.day}
+                    ref={isCurrent ? currentDayRef : null}
+                    className="absolute -translate-x-1/2 -translate-y-1/2 z-10 transition-transform duration-500"
+                    style={{ left: `${pt.x}%`, top: `${pt.y}px` }}
+                  >
+                    {/* Node (Quadrado Cyberpunk) */}
                     <div 
-                      key={day}
-                      ref={isCurrent ? currentDayRef : null}
-                      className="relative w-full flex justify-center py-4"
+                      className={`
+                        w-14 h-14 rounded-2xl flex items-center justify-center border-2 transition-all duration-500
+                        ${isCompleted ? 'bg-violet-600 border-violet-400 shadow-[0_0_15px_rgba(139,92,246,0.4)]' : ''}
+                        ${isCurrent ? 'bg-[#0F0A15] border-violet-500 animate-pulse scale-110 shadow-[0_0_25px_rgba(139,92,246,0.8)]' : ''}
+                        ${isLocked ? 'bg-[#111111] border-gray-800 opacity-60' : ''}
+                      `}
                     >
-                      {/* Node Circle */}
-                      <div 
-                        className={`
-                          z-10 w-12 h-12 rounded-2xl flex items-center justify-center border-2 transition-all duration-500
-                          ${isCompleted ? 'bg-violet-600 border-violet-400 shadow-[0_0_15px_rgba(139,92,246,0.4)]' : ''}
-                          ${isCurrent ? 'bg-[#0F0A15] border-violet-500 animate-pulse scale-125 shadow-[0_0_25px_rgba(139,92,246,0.6)]' : ''}
-                          ${isLocked ? 'bg-[#1A1A1A] border-gray-800 opacity-50' : ''}
-                        `}
-                      >
-                        {isMilestone ? (
+                      {pt.isMilestone ? (
+                        <div className="flex flex-col items-center">
                           <svg className={`w-6 h-6 ${isLocked ? 'text-gray-600' : 'text-white'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-7.714 2.143L11 21l-2.286-6.857L1 12l7.714-2.143L11 3z" />
                           </svg>
-                        ) : isCompleted ? (
-                          <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                          </svg>
-                        ) : isLocked ? (
-                          <svg className="w-4 h-4 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                          </svg>
-                        ) : (
-                          <span className="text-xs font-black text-violet-400">{day}</span>
-                        )}
-                      </div>
-
-                      {/* Day Label */}
-                      <div className={`absolute left-[70%] top-1/2 -translate-y-1/2 whitespace-nowrap ${isCurrent ? 'opacity-100' : 'opacity-40'}`}>
-                        <span className={`text-[10px] font-black uppercase tracking-tighter ${isCurrent ? 'text-violet-400' : 'text-gray-500'}`}>
-                          Dia {day}
-                        </span>
-                        {isMilestone && (
-                          <span className="block text-[8px] font-bold text-yellow-500/80 tracking-widest leading-tight">MILESTONE</span>
-                        )}
-                      </div>
+                        </div>
+                      ) : isCompleted ? (
+                        <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      ) : isLocked ? (
+                        <svg className="w-5 h-5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                      ) : (
+                        <span className="text-xs font-black text-violet-400">{pt.day}</span>
+                      )}
                     </div>
-                  );
-                })}
-              </div>
+
+                    {/* Day Label & Info */}
+                    <div 
+                      className={`absolute top-1/2 -translate-y-1/2 whitespace-nowrap px-6
+                        ${labelSide === 'right' ? 'left-full text-left' : 'right-full text-right'}
+                        ${isCurrent ? 'opacity-100' : 'opacity-30'}
+                      `}
+                    >
+                      <span className={`text-[10px] font-black uppercase tracking-tighter block leading-none ${isCurrent ? 'text-violet-400' : 'text-gray-500'}`}>
+                        DIA {pt.day}
+                      </span>
+                      {pt.isMilestone && (
+                        <div className={`mt-1 flex items-center gap-1 ${labelSide === 'right' ? 'flex-row' : 'flex-row-reverse'}`}>
+                           <div className="w-1 h-1 rounded-full bg-yellow-500 shadow-[0_0_5px_rgba(234,179,8,0.8)]"></div>
+                           <span className="text-[8px] font-black text-yellow-500 tracking-widest uppercase">RECOMPENSA</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           ) : (
             /* --- TAB: ANÁLISE (EXISTING VIEW) --- */
-            <div className="w-full max-w-full px-5 pb-32 flex flex-col animate-fadeIn">
+            <div className="w-full max-w-full px-5 pt-8 pb-32 flex flex-col animate-fadeIn">
               
               <div className="w-full flex p-1 rounded-xl mb-6 bg-[#1F2937]/30 border border-[#2E243D]">
                 {RANGES.map((range) => (
