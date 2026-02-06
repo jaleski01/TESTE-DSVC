@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getRandomRecoverySet, RecoveryQuestion } from '../data/recoveryQuestions';
 import { Button } from './Button';
@@ -57,15 +58,16 @@ export const StreakRecoveryModal: React.FC<StreakRecoveryModalProps> = ({
     setGameState('FAILED');
   };
 
-  return (
-    <div className="fixed inset-0 z-[2000] bg-black/95 backdrop-blur-xl overflow-y-auto overflow-x-hidden">
-      {/* Container Flex para centralizar conteúdo, mas permitir expansão vertical */}
+  // Renderização via Portal para escapar de Stacking Contexts restritivos
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-xl overflow-y-auto overflow-x-hidden touch-none sm:touch-auto">
+      {/* Container de Scroll e Centralização */}
       <div className="min-h-full w-full flex items-center justify-center p-6 relative">
         
-        {/* Red ambient glow fixo no fundo (Z-index menor que o conteúdo) */}
+        {/* Efeito de Fundo Global (Fixed Background no Portal) */}
         <div className="fixed inset-0 bg-[radial-gradient(circle_at_center,_rgba(220,38,38,0.15)_0%,_transparent_70%)] pointer-events-none" />
         
-        <div className="w-full max-w-sm relative z-10">
+        <div className="w-full max-w-sm relative z-10 py-10">
           <AnimatePresence mode="wait">
             {gameState === 'IDLE' && (
               <motion.div 
@@ -217,6 +219,7 @@ export const StreakRecoveryModal: React.FC<StreakRecoveryModalProps> = ({
           </AnimatePresence>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

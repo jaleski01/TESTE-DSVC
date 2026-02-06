@@ -234,7 +234,7 @@ export const ProgressScreen: React.FC = () => {
                     {/* Node (Quadrado Cyberpunk) */}
                     <div 
                       className={`
-                        w-14 h-14 rounded-2xl flex items-center justify-center border-2 transition-all duration-500
+                        w-16 h-16 rounded-2xl flex items-center justify-center border-2 transition-all duration-500
                         ${isCompleted ? 'bg-violet-600 border-violet-400 shadow-[0_0_15px_rgba(139,92,246,0.4)]' : ''}
                         ${isCurrent ? 'bg-[#0F0A15] border-violet-500 animate-pulse scale-110 shadow-[0_0_25px_rgba(139,92,246,0.8)]' : ''}
                         ${isLocked ? 'bg-[#111111] border-gray-800 opacity-60' : ''}
@@ -242,20 +242,20 @@ export const ProgressScreen: React.FC = () => {
                     >
                       {pt.isMilestone ? (
                         <div className="flex flex-col items-center">
-                          <svg className={`w-6 h-6 ${isLocked ? 'text-gray-600' : 'text-white'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <svg className={`w-8 h-8 ${isLocked ? 'text-gray-600' : 'text-white'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-7.714 2.143L11 21l-2.286-6.857L1 12l7.714-2.143L11 3z" />
                           </svg>
                         </div>
                       ) : isCompleted ? (
-                        <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                         </svg>
                       ) : isLocked ? (
-                        <svg className="w-5 h-5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <svg className="w-6 h-6 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                         </svg>
                       ) : (
-                        <span className="text-xs font-black text-violet-400">{pt.day}</span>
+                        <span className="text-2xl font-black text-violet-400">{pt.day}</span>
                       )}
                     </div>
 
