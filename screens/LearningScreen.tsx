@@ -100,16 +100,18 @@ export const LearningScreen: React.FC = () => {
     const isUnlockedReward = !!module.requiredStreak && currentStreak >= module.requiredStreak;
     const isSpecial = module.isSpecialReward;
     
-    // Configuração de cores baseada no estado
-    const baseGradStart = module.colors?.start || module.gradientStart || '#000000';
-    const baseGradEnd = module.colors?.end || module.gradientEnd || '#1a1a1a';
-    
-    // Se for uma recompensa desbloqueada, assume o fundo dourado
-    const gradStart = isUnlockedReward ? '#B45309' : baseGradStart;
-    const gradEnd = isUnlockedReward ? '#FBBF24' : baseGradEnd;
-    
-    // O sotaque (accent) permanece o original para o ícone
-    const accent = module.colors?.accent || module.accentColor || '#8B5CF6';
+    // Especialista UI: Padronização do estilo "Gold" para recompensas desbloqueadas
+    const cardColors = isUnlockedReward ? {
+        start: '#B45309', // Dourado Escuro (Fundo)
+        end: '#FBBF24',   // Dourado Brilhante (Fundo)
+        text: '#FFFFFF',  // BRANCO (Título)
+        accent: '#FDE047' // AMARELO NEON (Ícone)
+    } : {
+        start: module.colors?.start || module.gradientStart || '#000000',
+        end: module.colors?.end || module.gradientEnd || '#1a1a1a',
+        text: '#FFFFFF',
+        accent: module.colors?.accent || module.accentColor || '#8B5CF6'
+    };
 
     return (
       <motion.div
@@ -125,7 +127,7 @@ export const LearningScreen: React.FC = () => {
         style={{
           background: isLocked 
             ? `linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%)`
-            : `linear-gradient(135deg, ${gradStart} 0%, ${gradEnd} 100%)`,
+            : `linear-gradient(135deg, ${cardColors.start} 0%, ${cardColors.end} 100%)`,
         }}
       >
         <div className={`flex items-center w-full transition-all duration-500 ${isLocked ? 'blur-md opacity-40 select-none pointer-events-none' : ''}`}>
@@ -134,17 +136,20 @@ export const LearningScreen: React.FC = () => {
               isSpecial ? 'border-yellow-500/30' : 'border-white/5'
             }`}
           >
-            {getIcon(isLocked ? 'lock' : module.icon, isLocked ? '#4B5563' : accent)}
+            {getIcon(isLocked ? 'lock' : module.icon, isLocked ? '#4B5563' : cardColors.accent)}
           </div>
 
           <div className="flex-1 text-left z-10 min-w-0">
             <span 
               className="text-[9px] font-black uppercase tracking-[0.2em] mb-1.5 block opacity-80"
-              style={{ color: accent }}
+              style={{ color: cardColors.accent }}
             >
               {module.category}
             </span>
-            <h3 className="text-base font-black text-white leading-none mb-1.5 truncate italic">
+            <h3 
+              className="text-base font-black leading-none mb-1.5 truncate italic"
+              style={{ color: cardColors.text }}
+            >
               {module.title}
             </h3>
             <p className={`text-xs truncate tracking-tight ${isUnlockedReward ? 'text-black font-semibold' : 'text-gray-400 font-bold'}`}>
@@ -170,7 +175,7 @@ export const LearningScreen: React.FC = () => {
              </div>
              <span 
               className="text-[10px] font-black uppercase tracking-[0.2em] py-1 px-4 rounded-full border border-white/10 bg-black/60 text-center"
-              style={{ color: accent }}
+              style={{ color: cardColors.accent }}
              >
                Desbloqueado no {module.requiredStreak}º dia de ofensiva
              </span>
@@ -180,7 +185,7 @@ export const LearningScreen: React.FC = () => {
         {isSpecial && !isLocked && (
           <div 
             className="absolute -right-2 -top-2 w-16 h-16 rounded-full blur-2xl opacity-30 animate-pulse pointer-events-none"
-            style={{ backgroundColor: accent }}
+            style={{ backgroundColor: cardColors.accent }}
           />
         )}
       </motion.div>
