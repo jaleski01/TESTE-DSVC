@@ -22,7 +22,7 @@ export interface LearningModule {
   videoUrl?: string;
   requiredStreak?: number;
 
-  // Content (Optional for now, primarily for the DNS tutorial)
+  // Content
   androidSteps?: LearningStep[];
   iosSteps?: LearningStep[];
 }
@@ -35,9 +35,9 @@ export const LEARNING_MODULES: LearningModule[] = [
     subtitle: 'A ciência da novidade (Vídeo Exclusivo)',
     category: 'RECOMPENSA 3D',
     icon: 'play',
-    gradientStart: '#422006',
-    gradientEnd: '#EAB308',
-    accentColor: '#FACC15',
+    gradientStart: '#B45309', // Dourado escuro (base)
+    gradientEnd: '#FBBF24',   // Dourado claro (brilho)
+    accentColor: '#FDE047',   // Amarelo vibrante para bordas/ícones
     isSpecialReward: true,
     requiredStreak: 3,
     videoUrl: 'https://www.youtube.com/embed/wsj2rAXV0Tg?si=oePk45H__nu0sNlE&playsinline=1&rel=0&modestbranding=1',
@@ -47,7 +47,7 @@ export const LEARNING_MODULES: LearningModule[] = [
     id: 'reward_7d',
     title: 'Protocolo Sargento: Blindagem Mental',
     subtitle: 'Técnicas avançadas de estoicismo aplicadas.',
-    category: 'EM BREVE - 7D',
+    category: 'RECOMPENSA 7D',
     icon: 'lock',
     gradientStart: '#0F172A',
     gradientEnd: '#334155',
@@ -60,7 +60,7 @@ export const LEARNING_MODULES: LearningModule[] = [
     id: 'reward_15d',
     title: 'Arquivos do Tenente: Neuroplasticidade',
     subtitle: 'Como reescrever fisicamente seu cérebro.',
-    category: 'EM BREVE - 15D',
+    category: 'RECOMPENSA 15D',
     icon: 'lock',
     gradientStart: '#1e1b4b',
     gradientEnd: '#4338ca',
@@ -73,7 +73,7 @@ export const LEARNING_MODULES: LearningModule[] = [
     id: 'reward_30d',
     title: 'Dossiê Major: O Estado de Flow',
     subtitle: 'Sublimação da energia sexual em poder.',
-    category: 'EM BREVE - 30D',
+    category: 'RECOMPENSA 30D',
     icon: 'lock',
     gradientStart: '#450a0a',
     gradientEnd: '#991b1b',
@@ -86,7 +86,7 @@ export const LEARNING_MODULES: LearningModule[] = [
     id: 'reward_90d',
     title: 'O Legado do Veterano',
     subtitle: 'O segredo final da liberdade absoluta.',
-    category: 'CLASSIFICADO - 90D',
+    category: 'CLASSIFICADO 90D',
     icon: 'lock',
     gradientStart: '#083344',
     gradientEnd: '#06b6d4',
@@ -96,7 +96,7 @@ export const LEARNING_MODULES: LearningModule[] = [
     intro: 'A graduação final. Onde o vício se torna uma memória e o propósito se torna o único guia.'
   },
 
-  // --- BLOQUEIO TÉCNICO ---
+  // --- CONTEÚDO PADRÃO ---
   {
     id: 'dns_shield',
     title: 'O Escudo Invisível (DNS)',
@@ -125,8 +125,6 @@ export const LEARNING_MODULES: LearningModule[] = [
       { text: 'Toque em "Salvar".' }
     ]
   },
-
-  // --- CATEGORIA: ARTIGOS ---
   {
     id: 'art_dopa',
     title: 'Dessensibilização Dopaminérgica',
@@ -149,8 +147,6 @@ export const LEARNING_MODULES: LearningModule[] = [
     accentColor: '#9CA3AF',
     intro: 'Muitas vezes, o que interpretamos como "alta libido" é na verdade o sistema de recompensa gritando por dopamina.'
   },
-
-  // --- CATEGORIA: PODCASTS ---
   {
     id: 'pod_rescue',
     title: 'Protocolo de Resgate: Dia 1',

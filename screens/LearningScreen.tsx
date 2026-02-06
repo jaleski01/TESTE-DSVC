@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 export const LearningScreen: React.FC = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [selectedModule, setSelectedModule] = useState<LearningModule | null>(null);
+  const [showFutureMilestones, setShowFutureMilestones] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -23,6 +24,9 @@ export const LearningScreen: React.FC = () => {
     });
     return () => unsubscribe();
   }, []);
+
+  const initialModules = LEARNING_MODULES.filter(m => !m.requiredStreak || m.requiredStreak <= 3);
+  const futureMilestones = LEARNING_MODULES.filter(m => m.requiredStreak && m.requiredStreak > 3);
 
   const getIcon = (name: string, color: string) => {
     switch (name) {
@@ -49,6 +53,87 @@ export const LearningScreen: React.FC = () => {
     setSelectedModule(module);
   };
 
+  const renderModuleCard = (module: LearningModule) => {
+    const currentStreak = profile?.currentStreak || 0;
+    const isLocked = !!module.requiredStreak && currentStreak < module.requiredStreak;
+    const isSpecial = module.isSpecialReward;
+
+    return (
+      <motion.div
+        key={module.id}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        onClick={() => handleModuleClick(module, isLocked)}
+        className={`
+          flex flex-col w-full p-4 rounded-2xl border transition-all relative overflow-hidden group cursor-pointer
+          ${isLocked ? 'border-gray-800/50 grayscale' : 'border-[#1F2937] hover:border-white/20'}
+          ${isSpecial && !isLocked ? 'shadow-[0_0_30px_rgba(234,179,8,0.15)]' : ''}
+        `}
+        style={{
+          background: isLocked 
+            ? `linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%)`
+            : `linear-gradient(135deg, ${module.gradientStart} 0%, ${module.gradientEnd} 100%)`,
+        }}
+      >
+        <div className={`flex items-center w-full transition-all duration-500 ${isLocked ? 'blur-md opacity-40 select-none pointer-events-none' : ''}`}>
+          <div 
+            className={`w-14 h-14 rounded-xl flex-shrink-0 flex items-center justify-center bg-black/40 border mr-4 shadow-lg backdrop-blur-sm ${
+              isSpecial ? 'border-yellow-500/30' : 'border-white/5'
+            }`}
+          >
+            {getIcon(isLocked ? 'lock' : module.icon, isLocked ? '#4B5563' : module.accentColor)}
+          </div>
+
+          <div className="flex-1 text-left z-10 min-w-0">
+            <span 
+              className="text-[9px] font-black uppercase tracking-[0.2em] mb-1.5 block opacity-80"
+              style={{ color: module.accentColor }}
+            >
+              {module.category}
+            </span>
+            <h3 className="text-base font-black text-white leading-none mb-1.5 truncate italic">
+              {module.title}
+            </h3>
+            <p className="text-xs font-bold text-gray-400 truncate tracking-tight">
+               {module.subtitle}
+            </p>
+          </div>
+
+          {!isSpecial && !isLocked && (
+             <div className="opacity-30 group-hover:opacity-100 transition-opacity z-10 ml-2 flex-shrink-0">
+               <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" />
+               </svg>
+             </div>
+          )}
+        </div>
+
+        {isLocked && (
+          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/40 backdrop-blur-[1px]">
+             <div className="w-10 h-10 rounded-full bg-black/60 border border-white/10 flex items-center justify-center mb-2 shadow-2xl">
+                <svg className="w-5 h-5 text-white/80" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+             </div>
+             <span 
+              className="text-[10px] font-black uppercase tracking-[0.2em] py-1 px-4 rounded-full border border-white/10 bg-black/60 text-center"
+              style={{ color: module.accentColor }}
+             >
+               Desbloqueado no {module.requiredStreak}º dia de ofensiva
+             </span>
+          </div>
+        )}
+
+        {isSpecial && !isLocked && (
+          <div 
+            className="absolute -right-2 -top-2 w-16 h-16 rounded-full blur-2xl opacity-30 animate-pulse pointer-events-none"
+            style={{ backgroundColor: module.accentColor }}
+          />
+        )}
+      </motion.div>
+    );
+  };
+
   return (
     <Wrapper noPadding>
       <div className="flex-1 w-full h-full overflow-y-auto scrollbar-hide bg-transparent">
@@ -64,92 +149,54 @@ export const LearningScreen: React.FC = () => {
           </div>
 
           <div className="flex flex-col gap-5 w-full">
-            {LEARNING_MODULES.map((module) => {
-              const currentStreak = profile?.currentStreak || 0;
-              const isLocked = !!module.requiredStreak && currentStreak < module.requiredStreak;
-              const isSpecial = module.isSpecialReward;
+            {/* Renderiza Módulos Iniciais */}
+            {initialModules.map(renderModuleCard)}
 
-              return (
-                <div
-                  key={module.id}
-                  onClick={() => handleModuleClick(module, isLocked)}
-                  className={`
-                    flex flex-col w-full p-4 rounded-2xl border transition-all relative overflow-hidden group cursor-pointer
-                    ${isLocked ? 'border-gray-800/50 grayscale' : 'border-[#1F2937] hover:border-white/20'}
-                    ${isSpecial && !isLocked ? 'shadow-[0_0_30px_rgba(234,179,8,0.15)]' : ''}
-                  `}
-                  style={{
-                    background: isLocked 
-                      ? `linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%)`
-                      : `linear-gradient(135deg, ${module.gradientStart} 0%, ${module.gradientEnd} 100%)`,
-                  }}
+            {/* Divisor / Botão de Expansão para Futuros Marcos */}
+            {futureMilestones.length > 0 && (
+              <div className="flex flex-col gap-5 mt-4">
+                <button
+                  onClick={() => setShowFutureMilestones(!showFutureMilestones)}
+                  className="w-full py-4 px-6 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between group active:scale-[0.98] transition-all"
                 >
-                  {/* CONTEÚDO DO CARD (Borrante se bloqueado) */}
-                  <div className={`flex items-center w-full transition-all duration-500 ${isLocked ? 'blur-md opacity-40 select-none pointer-events-none' : ''}`}>
-                    <div 
-                      className={`w-14 h-14 rounded-xl flex-shrink-0 flex items-center justify-center bg-black/40 border mr-4 shadow-lg backdrop-blur-sm ${
-                        isSpecial ? 'border-yellow-500/30' : 'border-white/5'
-                      }`}
-                    >
-                      {getIcon(isLocked ? 'lock' : module.icon, isLocked ? '#4B5563' : module.accentColor)}
-                    </div>
-
-                    <div className="flex-1 text-left z-10 min-w-0">
-                      <span 
-                        className="text-[9px] font-black uppercase tracking-[0.2em] mb-1.5 block opacity-80"
-                        style={{ color: module.accentColor }}
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
+                      <svg 
+                        className={`w-5 h-5 text-gray-400 transition-transform duration-300 ${showFutureMilestones ? 'rotate-180' : ''}`} 
+                        fill="none" viewBox="0 0 24 24" stroke="currentColor"
                       >
-                        {module.category}
-                      </span>
-                      <h3 className="text-base font-black text-white leading-none mb-1.5 truncate italic">
-                        {module.title}
-                      </h3>
-                      <p className="text-xs font-bold text-gray-400 truncate tracking-tight">
-                         {module.subtitle}
-                      </p>
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
                     </div>
-
-                    {!isSpecial && !isLocked && (
-                       <div className="opacity-30 group-hover:opacity-100 transition-opacity z-10 ml-2 flex-shrink-0">
-                         <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" />
-                         </svg>
-                       </div>
-                    )}
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
+                      {showFutureMilestones ? 'Ocultar metas de longo prazo' : 'Ver metas de longo prazo'}
+                    </span>
                   </div>
+                  <div className="flex gap-1">
+                    {!showFutureMilestones && futureMilestones.slice(0, 3).map((m, i) => (
+                      <div key={i} className="w-1.5 h-1.5 rounded-full bg-gray-700" />
+                    ))}
+                  </div>
+                </button>
 
-                  {/* OVERLAY DE BLOQUEIO */}
-                  {isLocked && (
-                    <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/40 backdrop-blur-[1px]">
-                       <div className="w-10 h-10 rounded-full bg-black/60 border border-white/10 flex items-center justify-center mb-2 shadow-2xl">
-                          <svg className="w-5 h-5 text-white/80" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                          </svg>
-                       </div>
-                       <span 
-                        className="text-[10px] font-black uppercase tracking-[0.25em] py-1 px-3 rounded-full border border-white/5 bg-black/40"
-                        style={{ color: module.accentColor }}
-                       >
-                         DIA {module.requiredStreak}
-                       </span>
-                    </div>
+                <AnimatePresence>
+                  {showFutureMilestones && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="flex flex-col gap-5 overflow-hidden"
+                    >
+                      {futureMilestones.map(renderModuleCard)}
+                    </motion.div>
                   )}
-
-                  {/* EFEITO DE PULSO SE DESBLOQUEADO MAS ESPECIAL */}
-                  {isSpecial && !isLocked && (
-                    <div 
-                      className="absolute -right-2 -top-2 w-16 h-16 rounded-full blur-2xl opacity-30 animate-pulse pointer-events-none"
-                      style={{ backgroundColor: module.accentColor }}
-                    />
-                  )}
-                </div>
-              );
-            })}
+                </AnimatePresence>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* MODAL PARA CONTEÚDO (VÍDEO OU TEXTO) */}
       <AnimatePresence>
         {selectedModule && (
           <motion.div 
@@ -185,7 +232,6 @@ export const LearningScreen: React.FC = () => {
                   </div>
                ) : null}
 
-               {/* CONTEÚDO TÉCNICO (DNS) */}
                {selectedModule.id === 'dns_shield' && (
                   <div className="space-y-8">
                      <div className="p-6 rounded-3xl bg-white/5 border border-white/10">
