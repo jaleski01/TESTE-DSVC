@@ -5,21 +5,11 @@ import { fetchAndCacheProgressData } from '../services/progressService';
 import { auth } from '../lib/firebase';
 import { COLORS } from '../types';
 import { Button } from './Button';
+import { EMOTIONS, CONTEXTS } from '../data/triggerConstants';
 
 interface TriggerModalProps {
   onClose: () => void;
 }
-
-const EMOTIONS = [
-  "Estresse", "Tédio", "Solidão", "Ansiedade", 
-  "Excitação", "Tristeza", "Cansaço", "Raiva"
-];
-
-const CONTEXTS = [
-  "Redes Sociais", "Sozinho em casa", "Insônia", 
-  "Banho/Cama", "Trabalho/Estudo", "Conflito Pessoal", 
-  "Filmes/Séries", "Nada específico"
-];
 
 export const TriggerModal: React.FC<TriggerModalProps> = ({ onClose }) => {
   const [step, setStep] = useState(1);
@@ -31,37 +21,20 @@ export const TriggerModal: React.FC<TriggerModalProps> = ({ onClose }) => {
     if (step < 3) setStep(step + 1);
   };
 
-  /**
-   * HANDLER OPTIMISTIC (LATÊNCIA ZERO)
-   * Fecha o modal imediatamente e processa a persistência em background.
-   */
   const handleSubmit = () => {
     const user = auth.currentUser;
     if (!user || !emotion || !context) return;
     
-    // 1. Snapshot dos dados para o background process
-    const triggerData = {
-      uid: user.uid,
-      emotion: emotion,
-      context: context,
-      intensity: intensity
-    };
-
-    // 2. UI Otimista: Fecha o modal na cara do usuário para feedback instantâneo
     onClose();
 
-    // 3. Processamento em Background (Fire-and-Forget)
-    // Graças à persistência do Firebase, isso funciona mesmo offline.
-    logTrigger(triggerData.uid, triggerData.emotion, triggerData.context, triggerData.intensity)
+    logTrigger(user.uid, emotion, context, intensity, 'urgency')
       .then(() => {
-        // Atualiza os caches de progresso para que a aba Evolução esteja pronta
         return Promise.all([
           fetchAndCacheProgressData(7),
           fetchAndCacheProgressData(30)
         ]);
       })
       .catch((error) => {
-        // Log silencioso: O Firebase tentará sincronizar novamente se for erro de rede.
         console.error("Background trigger sync failed:", error);
       });
   };
@@ -138,60 +111,25 @@ export const TriggerModal: React.FC<TriggerModalProps> = ({ onClose }) => {
                  style={{ width: `${(intensity / 5) * 100}%` }}
                />
             </div>
-            <p className="mt-4 text-sm font-bold" style={{ color: intensity > 3 ? COLORS.Danger : COLORS.Primary }}>
-              {intensity === 5 ? "CRÍTICO" : intensity >= 3 ? "ALTO" : "MODERADO"}
-            </p>
           </div>
         );
+      default: return null;
     }
   };
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-      <div 
-        className="absolute inset-0 bg-black/90 backdrop-blur-sm"
-        onClick={onClose}
-      />
-
-      <div 
-        className="w-full max-w-sm bg-[#0F0A15] border border-[#2E243D] rounded-2xl shadow-2xl relative overflow-hidden flex flex-col"
-        style={{ maxHeight: '85vh' }}
-      >
+      <div className="absolute inset-0 bg-black/90 backdrop-blur-sm" onClick={onClose} />
+      <div className="w-full max-w-sm bg-[#0F0A15] border border-[#2E243D] rounded-2xl shadow-2xl relative overflow-hidden flex flex-col">
         <div className="w-full h-1 bg-[#2E243D]">
-          <div 
-            className="h-full bg-violet-500 transition-all duration-300"
-            style={{ width: `${(step / 3) * 100}%` }}
-          />
+          <div className="h-full bg-violet-500 transition-all duration-300" style={{ width: `${(step / 3) * 100}%` }} />
         </div>
-
-        <button 
-          onClick={onClose}
-          className="absolute top-3 right-3 text-gray-500 hover:text-white z-10"
-        >
-          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-
-        <div className="p-6 flex-1 overflow-y-auto scrollbar-hide">
-          {renderStepContent()}
-        </div>
-
+        <div className="p-6 flex-1 overflow-y-auto">{renderStepContent()}</div>
         <div className="p-4 border-t border-[#2E243D]">
           {step < 3 ? (
-            <Button 
-              onClick={handleNext}
-              disabled={(step === 1 && !emotion) || (step === 2 && !context)}
-            >
-              Próximo
-            </Button>
+            <Button onClick={handleNext} disabled={(step === 1 && !emotion) || (step === 2 && !context)}>Próximo</Button>
           ) : (
-            <Button 
-              onClick={handleSubmit} 
-              className="bg-red-600 hover:bg-red-700 border-none"
-            >
-              Registrar e Seguir Forte
-            </Button>
+            <Button onClick={handleSubmit} className="bg-red-600 border-none">Registrar Gatilho</Button>
           )}
         </div>
       </div>

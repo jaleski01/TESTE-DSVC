@@ -1,4 +1,3 @@
-
 export interface LearningStep {
   text: string;
   isCopyable?: boolean;
@@ -29,6 +28,74 @@ export interface LearningModule {
 }
 
 export const LEARNING_MODULES: LearningModule[] = [
+  // --- RECOMPENSAS DE MARCO (BLOQUEADAS POR STREAK) ---
+  {
+    id: 'reward_3d',
+    title: 'O Efeito Coolidge',
+    subtitle: 'A ciência da novidade (Vídeo Exclusivo)',
+    category: 'RECOMPENSA 3D',
+    icon: 'play',
+    gradientStart: '#422006',
+    gradientEnd: '#EAB308',
+    accentColor: '#FACC15',
+    isSpecialReward: true,
+    requiredStreak: 3,
+    videoUrl: 'https://www.youtube.com/embed/wsj2rAXV0Tg?si=oePk45H__nu0sNlE&playsinline=1&rel=0&modestbranding=1',
+    intro: 'O efeito Coolidge é um fenômeno biológico visto em quase todas as espécies de mamíferos, onde os machos exibem um desejo sexual renovado sempre que uma nova fêmea é introduzida.'
+  },
+  {
+    id: 'reward_7d',
+    title: 'Protocolo Sargento: Blindagem Mental',
+    subtitle: 'Técnicas avançadas de estoicismo aplicadas.',
+    category: 'EM BREVE - 7D',
+    icon: 'lock',
+    gradientStart: '#0F172A',
+    gradientEnd: '#334155',
+    accentColor: '#94A3B8',
+    isSpecialReward: true,
+    requiredStreak: 7,
+    intro: 'Conteúdo tático de nível Sargento focado em resistência psicológica sob alta pressão.'
+  },
+  {
+    id: 'reward_15d',
+    title: 'Arquivos do Tenente: Neuroplasticidade',
+    subtitle: 'Como reescrever fisicamente seu cérebro.',
+    category: 'EM BREVE - 15D',
+    icon: 'lock',
+    gradientStart: '#1e1b4b',
+    gradientEnd: '#4338ca',
+    accentColor: '#818cf8',
+    isSpecialReward: true,
+    requiredStreak: 15,
+    intro: 'Um mergulho técnico na capacidade do cérebro de se regenerar após anos de abuso químico.'
+  },
+  {
+    id: 'reward_30d',
+    title: 'Dossiê Major: O Estado de Flow',
+    subtitle: 'Sublimação da energia sexual em poder.',
+    category: 'EM BREVE - 30D',
+    icon: 'lock',
+    gradientStart: '#450a0a',
+    gradientEnd: '#991b1b',
+    accentColor: '#f87171',
+    isSpecialReward: true,
+    requiredStreak: 30,
+    intro: 'Instruções avançadas sobre como canalizar a energia de abstinência para hiper-foco profissional.'
+  },
+  {
+    id: 'reward_90d',
+    title: 'O Legado do Veterano',
+    subtitle: 'O segredo final da liberdade absoluta.',
+    category: 'CLASSIFICADO - 90D',
+    icon: 'lock',
+    gradientStart: '#083344',
+    gradientEnd: '#06b6d4',
+    accentColor: '#22d3ee',
+    isSpecialReward: true,
+    requiredStreak: 90,
+    intro: 'A graduação final. Onde o vício se torna uma memória e o propósito se torna o único guia.'
+  },
+
   // --- BLOQUEIO TÉCNICO ---
   {
     id: 'dns_shield',
@@ -39,42 +106,27 @@ export const LEARNING_MODULES: LearningModule[] = [
     gradientStart: '#0B101A',
     gradientEnd: '#112240',
     accentColor: '#A78BFA',
-    intro: 'O DNS Family da Cloudflare bloqueia requisições a sites adultos na raiz da rede. É uma camada de segurança invisível, gratuita e que não exige a instalação de aplicativos pesados.',
+    intro: 'O DNS Family da Cloudflare bloqueia requisições a sites adultos na raiz da rede.',
     androidSteps: [
       { text: 'Abra as Configurações do seu Android.' },
       { text: 'Vá em "Rede e Internet" ou "Conexões".' },
-      { text: 'Toque em "DNS Privado" (ou pesquise por "DNS" na lupa de configurações).' },
+      { text: 'Toque em "DNS Privado".' },
       { text: 'Selecione a opção "Nome do host do provedor de DNS privado".' },
-      { text: 'Digite exatamente o endereço abaixo:', isCopyable: false },
       { text: 'family.cloudflare-dns.com', isCopyable: true, copyValue: 'family.cloudflare-dns.com' },
-      { text: 'Toque em Salvar. Se a internet desconectar, verifique se digitou corretamente.' }
+      { text: 'Toque em Salvar.' }
     ],
     iosSteps: [
       { text: 'Abra os Ajustes e toque em "Wi-Fi".' },
-      { text: 'Toque no ícone (i) azul ao lado da rede conectada.' },
+      { text: 'Toque no ícone (i) azul.' },
       { text: 'Role até o final e toque em "Configurar DNS".' },
       { text: 'Mude de "Automático" para "Manual".' },
-      { text: 'Apague os servidores existentes (botão vermelho).' },
-      { text: 'Toque em (+) Adicionar Servidor e digite:', isCopyable: false },
       { text: '1.1.1.3', isCopyable: true, copyValue: '1.1.1.3' },
-      { text: 'Toque em (+) novamente e adicione o secundário:', isCopyable: false },
       { text: '1.0.0.3', isCopyable: true, copyValue: '1.0.0.3' },
-      { text: 'Toque em "Salvar" no canto superior direito.' }
+      { text: 'Toque em "Salvar".' }
     ]
   },
 
   // --- CATEGORIA: ARTIGOS ---
-  {
-    id: 'art_coolidge',
-    title: 'O Efeito Coolidge',
-    subtitle: 'Por que seu cérebro exige novidade constante.',
-    category: 'ARTIGOS',
-    icon: 'document',
-    gradientStart: '#000000',
-    gradientEnd: '#1F2937',
-    accentColor: '#9CA3AF',
-    intro: 'O efeito Coolidge é um fenômeno biológico visto em quase todas as espécies de mamíferos, onde os machos exibem um desejo sexual renovado sempre que uma nova fêmea é introduzida, mesmo após a exaustão sexual com parceiros anteriores.'
-  },
   {
     id: 'art_dopa',
     title: 'Dessensibilização Dopaminérgica',
@@ -84,7 +136,7 @@ export const LEARNING_MODULES: LearningModule[] = [
     gradientStart: '#000000',
     gradientEnd: '#1F2937',
     accentColor: '#9CA3AF',
-    intro: 'O excesso de estímulos supranormais causa uma regulação negativa (downregulation) nos receptores D2. O resultado é a anedonia: a incapacidade de sentir prazer nas atividades cotidianas sutis.'
+    intro: 'O excesso de estímulos supranormais causa uma regulação negativa nos receptores D2.'
   },
   {
     id: 'art_libido',
@@ -95,7 +147,7 @@ export const LEARNING_MODULES: LearningModule[] = [
     gradientStart: '#000000',
     gradientEnd: '#1F2937',
     accentColor: '#9CA3AF',
-    intro: 'Muitas vezes, o que interpretamos como "alta libido" é na verdade o sistema de recompensa do cérebro gritando por uma dose de dopamina para aliviar o estresse ou o tédio, não uma necessidade sexual biológica genuína.'
+    intro: 'Muitas vezes, o que interpretamos como "alta libido" é na verdade o sistema de recompensa gritando por dopamina.'
   },
 
   // --- CATEGORIA: PODCASTS ---
@@ -108,56 +160,6 @@ export const LEARNING_MODULES: LearningModule[] = [
     gradientStart: '#0F0A15',
     gradientEnd: '#2E1065',
     accentColor: '#8B5CF6',
-    intro: 'Um guia de áudio passo a passo para sobreviver às primeiras e mais difíceis 24 horas. Foco em hidratação, exercício intenso e remoção de gatilhos ambientais.'
-  },
-  {
-    id: 'pod_interview',
-    title: 'Entrevista: Cérebro vs. Pornografia',
-    subtitle: 'Neurocientistas explicam o encolhimento do córtex.',
-    category: 'PODCASTS',
-    icon: 'mic',
-    gradientStart: '#0F0A15',
-    gradientEnd: '#2E1065',
-    accentColor: '#8B5CF6',
-    intro: 'Uma discussão profunda sobre os estudos que mostram a redução de massa cinzenta no córtex pré-frontal em usuários crônicos e como a neuroplasticidade permite a reversão desse quadro.'
-  },
-
-  // --- CATEGORIA: VÍDEOS ---
-  {
-    id: 'vid_huberman',
-    title: 'Huberman: Controle de Impulso',
-    subtitle: 'Ferramentas visuais para parar a recaída.',
-    category: 'VÍDEOS',
-    icon: 'play',
-    gradientStart: '#0B101A',
-    gradientEnd: '#112240',
-    accentColor: '#A78BFA',
-    intro: 'Dr. Andrew Huberman explica mecanismos visuais, como o foco panorâmico vs. foco focal, para desativar o sistema de alerta do cérebro e reduzir a impulsividade no momento do gatilho.'
-  },
-  {
-    id: 'vid_habit',
-    title: 'Anatomia do Hábito',
-    subtitle: 'Como quebrar o loop Gatilho-Ação-Recompensa.',
-    category: 'VÍDEOS',
-    icon: 'play',
-    gradientStart: '#0B101A',
-    gradientEnd: '#112240',
-    accentColor: '#A78BFA',
-    intro: 'Uma análise visual do Loop do Hábito de Charles Duhigg. Aprenda que você não elimina um hábito, você o substitui mantendo o gatilho e a recompensa, mas alterando a rotina.'
-  },
-
-  // --- RECOMPENSA ESPECIAL (Unlockable) ---
-  {
-    id: 'reward_coolidge_day3',
-    title: 'Masterclass: Efeito Coolidge',
-    subtitle: 'A ciência por trás da novidade e como ela sequestra sua dopamina.',
-    category: 'RECOMPENSA DE MESTRE',
-    icon: 'play',
-    gradientStart: '#451A03',
-    gradientEnd: '#000000',
-    accentColor: '#F59E0B',
-    isSpecialReward: true,
-    videoUrl: 'https://www.youtube.com/embed/wsj2rAXV0Tg?si=oePk45H__nu0sNlE',
-    requiredStreak: 3
+    intro: 'Um guia de áudio passo a passo para sobreviver às primeiras e mais difíceis 24 horas.'
   }
 ];

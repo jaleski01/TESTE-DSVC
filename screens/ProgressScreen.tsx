@@ -311,6 +311,76 @@ export const ProgressScreen: React.FC = () => {
                 const isRewardClaimed = pt.day === 3 && profile?.claimed_rewards?.includes('reward_coolidge_day3');
                 const canClaimReward = pt.day === 3 && isCompleted && !isRewardClaimed;
 
+                const renderIcon = () => {
+                  const iconColor = isLocked ? 'text-gray-600' : 'text-white';
+                  
+                  // Milestone: Dia 3 (Check)
+                  if (pt.day === 3) {
+                    const day3Color = (isCompleted || isCurrent) && !isRewardClaimed ? 'text-yellow-400 animate-pulse' : 'text-yellow-500';
+                    return (
+                      <svg className={`w-8 h-8 ${day3Color}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    );
+                  }
+
+                  // Milestone: Dia 7 (Chevron)
+                  if (pt.day === 7) {
+                    return (
+                      <svg className={`w-8 h-8 ${iconColor}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    );
+                  }
+
+                  // Milestone: Dia 15 (Bars)
+                  if (pt.day === 15) {
+                    return (
+                      <svg className={`w-8 h-8 ${iconColor}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 10h16M4 14h16" />
+                      </svg>
+                    );
+                  }
+
+                  // Milestone: Dia 30 (Star)
+                  if (pt.day === 30) {
+                    return (
+                      <svg className={`w-8 h-8 ${iconColor}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                      </svg>
+                    );
+                  }
+
+                  // Milestone: Dia 90 (Shield)
+                  if (pt.day === 90) {
+                    return (
+                      <svg className={`w-8 h-8 ${iconColor}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                      </svg>
+                    );
+                  }
+
+                  // Casos padrão para outros dias
+                  if (isCompleted) {
+                    return (
+                      <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    );
+                  }
+
+                  if (isLocked) {
+                    return (
+                      <svg className="w-6 h-6 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      </svg>
+                    );
+                  }
+
+                  // Dia atual (Não milestone)
+                  return <span className="text-2xl font-black text-white">{pt.day}</span>;
+                };
+
                 return (
                   <div 
                     key={pt.day}
@@ -330,29 +400,7 @@ export const ProgressScreen: React.FC = () => {
                         ${pt.day === 3 && isRewardClaimed ? 'border-yellow-500 bg-yellow-900/40 opacity-100' : ''}
                       `}
                     >
-                      {pt.day === 3 && isCompleted && !isRewardClaimed ? (
-                        <span className="text-3xl animate-pulse">🎁</span>
-                      ) : pt.day === 3 && isRewardClaimed ? (
-                         <svg className="w-8 h-8 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M10 2a1 1 0 011 1v1.323l3.954 1.582 1.599-.8a1 1 0 01.894 1.79l-1.233.616 1.738 2.32a1 1 0 01-.196 1.41l-1.535 1.152.47 1.411a1 1 0 01-.948 1.315H13v3a1 1 0 01-1 1H8a1 1 0 01-1-1v-3H5.452a1 1 0 01-.948-1.315l.47-1.411-1.535-1.152a1 1 0 01-.196-1.41l1.738-2.32-1.233-.616a1 1 0 01.894-1.79l1.599.8L9 4.323V3a1 1 0 011-1z" />
-                         </svg>
-                      ) : pt.isMilestone ? (
-                        <div className="flex flex-col items-center">
-                          <svg className={`w-8 h-8 ${isLocked ? 'text-gray-600' : 'text-white'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-7.714 2.143L11 21l-2.286-6.857L1 12l7.714-2.143L11 3z" />
-                          </svg>
-                        </div>
-                      ) : isCompleted ? (
-                        <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                      ) : isLocked ? (
-                        <svg className="w-6 h-6 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                        </svg>
-                      ) : (
-                        <span className="text-2xl font-black text-violet-400">{pt.day}</span>
-                      )}
+                      {renderIcon()}
                     </button>
 
                     <div 

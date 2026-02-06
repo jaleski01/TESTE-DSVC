@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
@@ -12,10 +13,10 @@ import { TriggerModal } from '../components/TriggerModal';
 import { ShortcutPrompt } from '../components/ShortcutPrompt';
 import { HoldToConfirmButton } from '../components/HoldToConfirmButton';
 import { StreakRecoveryModal } from '../components/StreakRecoveryModal';
+import { DailyCheckInModal } from '../components/DailyCheckInModal';
 import { COLORS, Routes, UserProfile } from '../types';
 import { 
   getTodayString, 
-  performDailyCheckIn, 
   verifyAndResetStreak, 
   restoreStreak,
   forceResetStreak,
@@ -29,11 +30,10 @@ export const DashboardScreen: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isTriggerModalOpen, setIsTriggerModalOpen] = useState(false);
+  const [isCheckInModalOpen, setIsCheckInModalOpen] = useState(false);
   const [showRecoveryModal, setShowRecoveryModal] = useState(false);
   
-  // Gamification States
   const [showConfetti, setShowConfetti] = useState(false);
-  const [isCheckingIn, setIsCheckingIn] = useState(false);
   const [celebrationAchievement, setCelebrationAchievement] = useState<any>(null);
 
   const loadProfile = useCallback(async (uid: string) => {
@@ -43,14 +43,8 @@ export const DashboardScreen: React.FC = () => {
 
       if (docSnap.exists()) {
         let data = docSnap.data() as UserProfile;
-        
-        // Verifica reset de Ofensiva ao carregar
         const result = await verifyAndResetStreak(uid, data);
-        
-        if (result.streakStatus === 'NEEDS_RECOVERY') {
-          setShowRecoveryModal(true);
-        }
-        
+        if (result.streakStatus === 'NEEDS_RECOVERY') setShowRecoveryModal(true);
         setProfile(result);
         localStorage.setItem(CACHE_KEY, JSON.stringify(result));
       } else {
@@ -67,10 +61,7 @@ export const DashboardScreen: React.FC = () => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         await loadProfile(user.uid);
-        
-        const handleFocus = () => {
-          if (auth.currentUser) loadProfile(auth.currentUser.uid);
-        };
+        const handleFocus = () => auth.currentUser && loadProfile(auth.currentUser.uid);
         window.addEventListener('focus', handleFocus);
         return () => window.removeEventListener('focus', handleFocus);
       }
@@ -81,61 +72,29 @@ export const DashboardScreen: React.FC = () => {
 
   const handleRecoverySuccess = async () => {
     if (!profile || !auth.currentUser) return;
-    try {
-      const updatedProfile = await restoreStreak(auth.currentUser.uid, profile);
-      setProfile(updatedProfile);
-      localStorage.setItem(CACHE_KEY, JSON.stringify(updatedProfile));
-      setShowRecoveryModal(false);
-    } catch (e) {
-      console.error("Error restoring streak", e);
-    }
+    const updatedProfile = await restoreStreak(auth.currentUser.uid, profile);
+    setProfile(updatedProfile);
+    localStorage.setItem(CACHE_KEY, JSON.stringify(updatedProfile));
+    setShowRecoveryModal(false);
   };
 
   const handleRecoveryFail = async () => {
     if (!profile || !auth.currentUser) return;
-    try {
-      const updateData = await forceResetStreak(auth.currentUser.uid);
-      const newProfile = { ...profile, ...updateData };
-      setProfile(newProfile);
-      localStorage.setItem(CACHE_KEY, JSON.stringify(newProfile));
-      setShowRecoveryModal(false);
-    } catch (e) {
-      console.error("Error forcing reset", e);
-    }
+    const updateData = await forceResetStreak(auth.currentUser.uid);
+    const newProfile = { ...profile, ...updateData };
+    setProfile(newProfile);
+    localStorage.setItem(CACHE_KEY, JSON.stringify(newProfile));
+    setShowRecoveryModal(false);
   };
 
-  const handleCheckIn = async () => {
-    if (!profile || !auth.currentUser) return;
-    
-    setIsCheckingIn(true);
-    try {
-      const result = await performDailyCheckIn(auth.currentUser.uid, profile);
-      
-      if (result.success) {
-        const updatedProfile = {
-          ...profile,
-          currentStreak: result.newStreak,
-          lastCheckInDate: getTodayString(),
-          unlockedAchievements: [
-            ...(profile.unlockedAchievements || []), 
-            ...result.newAchievements.map(a => a.id)
-          ]
-        };
-        setProfile(updatedProfile);
-        localStorage.setItem(CACHE_KEY, JSON.stringify(updatedProfile));
-
-        setShowConfetti(true);
-        setTimeout(() => setShowConfetti(false), 4000);
-
-        if (result.newAchievements.length > 0) {
-          setCelebrationAchievement(result.newAchievements[0]);
-        }
-      }
-    } catch (e) {
-      console.error("Check-in error", e);
-    } finally {
-      setIsCheckingIn(false);
+  const handleCheckInSuccess = (updatedProfile: UserProfile) => {
+    // Só mostramos confetes se o streak atual for maior que o anterior e não for reset
+    if (updatedProfile.currentStreak && updatedProfile.currentStreak > (profile?.currentStreak || 0)) {
+      setShowConfetti(true);
+      setTimeout(() => setShowConfetti(false), 4000);
     }
+    setProfile(updatedProfile);
+    localStorage.setItem(CACHE_KEY, JSON.stringify(updatedProfile));
   };
 
   const nextMilestone = useMemo(() => {
@@ -143,9 +102,7 @@ export const DashboardScreen: React.FC = () => {
     const current = profile.currentStreak || 0;
     const next = ACHIEVEMENTS.find(ach => ach.days > current);
     if (!next) return null;
-    
-    const progress = (current / next.days) * 100;
-    return { ...next, progress };
+    return { ...next, progress: (current / next.days) * 100 };
   }, [profile]);
 
   const isCheckedInToday = profile?.lastCheckInDate === getTodayString();
@@ -180,7 +137,6 @@ export const DashboardScreen: React.FC = () => {
         )}
 
         <div className="w-full max-w-full px-5 pt-8 pb-32 flex flex-col items-center">
-          
           <header className="flex flex-col w-full mb-6">
             <div className="flex items-center gap-2 mb-2 w-fit">
                <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-pulse"></div>
@@ -213,7 +169,6 @@ export const DashboardScreen: React.FC = () => {
                     </svg>
                     <span className="text-xs font-bold text-green-500 uppercase">Vitória Registrada</span>
                   </div>
-                  
                   {nextMilestone && (
                     <div className="w-full">
                       <div className="flex justify-between items-end mb-1.5">
@@ -221,20 +176,13 @@ export const DashboardScreen: React.FC = () => {
                         <span className="text-[10px] font-mono text-violet-400">{Math.round(nextMilestone.progress)}%</span>
                       </div>
                       <div className="w-full h-1 bg-gray-900 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-violet-500 transition-all duration-1000"
-                          style={{ width: `${nextMilestone.progress}%` }}
-                        />
+                        <div className="h-full bg-violet-500 transition-all duration-1000" style={{ width: `${nextMilestone.progress}%` }} />
                       </div>
                     </div>
                   )}
                 </div>
               ) : (
-                <HoldToConfirmButton 
-                  label="Reivindicar Vitória de Hoje"
-                  isLoading={isCheckingIn}
-                  onComplete={handleCheckIn}
-                />
+                <HoldToConfirmButton label="Reivindicar Vitória de Hoje" onComplete={() => setIsCheckInModalOpen(true)} />
               )}
             </div>
           </section>
@@ -253,10 +201,7 @@ export const DashboardScreen: React.FC = () => {
             </Button>
           </div>
 
-          <div className="mt-2 mb-4 w-full">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-white/80">Rituais de Poder</h3>
-          </div>
-
+          <div className="mt-2 mb-4 w-full"><h3 className="text-xs font-bold uppercase tracking-widest text-white/80">Rituais de Poder</h3></div>
           <DailyHabits profile={profile} />
 
           <div className="mt-10 w-full">
@@ -270,49 +215,17 @@ export const DashboardScreen: React.FC = () => {
           </div>
         </div>
       </div>
-      
-      {celebrationAchievement && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center px-6 bg-black/90 backdrop-blur-md animate-fadeIn">
-          <div className="w-full max-w-sm bg-[#1A1A1A] border border-violet-500/30 rounded-3xl p-8 text-center shadow-[0_0_50px_rgba(139,92,246,0.2)]">
-            <div className="w-20 h-20 bg-violet-500/20 rounded-full flex items-center justify-center mx-auto mb-6 text-violet-400">
-               <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-7.714 2.143L11 21l-2.286-6.857L1 12l7.714-2.143L11 3z" />
-               </svg>
-            </div>
-            <h2 className="text-2xl font-black text-white mb-2">{celebrationAchievement.title}</h2>
-            <div className="bg-violet-500/10 px-3 py-1 rounded-full w-fit mx-auto mb-6">
-               <span className="text-[10px] font-bold text-violet-400 uppercase tracking-widest">{celebrationAchievement.days} Dias de Ofensiva</span>
-            </div>
-            <p className="text-gray-400 text-sm leading-relaxed mb-8 italic">
-              "{celebrationAchievement.message}"
-            </p>
-            <Button onClick={() => setCelebrationAchievement(null)}>
-              Continuar Dominando
-            </Button>
-          </div>
-        </div>
-      )}
 
       {showRecoveryModal && profile && (
-        <StreakRecoveryModal 
-          streakValue={profile.currentStreak || 0}
-          onSuccess={handleRecoverySuccess}
-          onFail={handleRecoveryFail}
-        />
+        <StreakRecoveryModal streakValue={profile.currentStreak || 0} onSuccess={handleRecoverySuccess} onFail={handleRecoveryFail} />
+      )}
+
+      {isCheckInModalOpen && profile && (
+        <DailyCheckInModal profile={profile} onClose={() => setIsCheckInModalOpen(false)} onSuccess={handleCheckInSuccess} />
       )}
 
       {isTriggerModalOpen && <TriggerModal onClose={() => setIsTriggerModalOpen(false)} />}
       <ShortcutPrompt />
-
-      <style>{`
-        @keyframes confetti-fall {
-          0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-          100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
-        }
-        .animate-confetti {
-          animation: confetti-fall linear infinite;
-        }
-      `}</style>
     </Wrapper>
   );
 };
