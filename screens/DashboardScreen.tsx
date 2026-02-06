@@ -50,7 +50,8 @@ export const DashboardScreen: React.FC = () => {
         const data = docSnap.data() as any;
         const result = await verifyAndResetStreak(uid, data);
         if (result.streakStatus === 'NEEDS_RECOVERY') setShowRecoveryModal(true);
-        setProfile(data);
+        // CORREÇÃO: Cast forçado para evitar erros de tipagem
+        setProfile(data as any);
         localStorage.setItem(CACHE_KEY, JSON.stringify(data));
 
         // Selecionar fato do dia se não completou 3

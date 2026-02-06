@@ -35,33 +35,14 @@ export interface UserProfile {
   daily_addiction_minutes?: number;
   created_at?: string;
   email?: string | null;
-  // CORREÇÃO: Aceitar any para evitar erro com FieldValue/Timestamp do Firestore
+  // Alterado para 'any' para aceitar string ISO ou Firestore FieldValue sem erro
   last_updated?: any; 
-  // CORREÇÃO: Adicionar campos faltantes acusados no log
-  lastCheckInDate?: any;
+  // Campos novos detectados no log de erro
+  lastCheckInDate?: string;
   seen_fact_ids?: number[];
   selected_habits?: string[];
-  
-  // --- Gamification Fields (Fix TS2345) ---
-  currentStreak?: number;        
-  longestStreak?: number;        
-  unlockedAchievements?: string[]; 
-  claimed_rewards?: string[];    
-  completed_modules?: string[];  
-
-  gamification?: {
-    level: number;
-    xp: number;
-    achievements: string[];
-  };
-
-  // --- Reality Check Progress ---
-  reality_check_points?: number; 
-  last_fact_date?: string;       
-  daily_fact_count?: number;     
-
-  // Index signature para permitir flexibilidade com dados do Firestore
-  [key: string]: any; 
+  // Index signature para permitir propriedades extras do Firestore sem quebrar o build
+  [key: string]: any;
 }
 
 export interface HabitDefinition {
