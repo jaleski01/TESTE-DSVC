@@ -155,7 +155,7 @@ export const LoginScreen: React.FC = () => {
 
   return (
     <Wrapper noPadding>
-      <div className="flex flex-col h-[100dvh] w-full bg-black overflow-hidden">
+      <div className="flex flex-col h-[100dvh] w-full bg-transparent overflow-hidden">
         <div className="flex-1 overflow-y-auto w-full px-6 scrollbar-hide">
           <div className="flex flex-col items-center pt-24 pb-40">
             

@@ -129,7 +129,7 @@ export const OnboardingScreen: React.FC = () => {
 
   return (
     <Wrapper noPadding>
-      <div className="flex flex-col h-[100dvh] w-full bg-black overflow-hidden">
+      <div className="flex flex-col h-[100dvh] w-full bg-transparent overflow-hidden">
         
         {/* Header Fixo: Barra de Progresso */}
         <div className="shrink-0 px-6 pt-6 mb-4">

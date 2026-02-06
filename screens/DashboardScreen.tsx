@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
@@ -113,7 +112,7 @@ export const DashboardScreen: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex-1 h-[100dvh] w-full flex flex-col items-center justify-center bg-black">
+      <div className="flex-1 h-[100dvh] w-full flex flex-col items-center justify-center bg-transparent">
         <div className="w-10 h-10 rounded-full border-2 border-t-transparent animate-spin mb-4" style={{ borderColor: COLORS.Primary, borderTopColor: 'transparent' }} />
         <span className="text-[10px] font-bold tracking-[0.3em] opacity-30 uppercase" style={{ color: COLORS.TextSecondary }}>Protocolo</span>
       </div>
@@ -122,7 +121,7 @@ export const DashboardScreen: React.FC = () => {
 
   return (
     <Wrapper noPadding> 
-      <div className="flex-1 w-full h-full overflow-y-auto scrollbar-hide bg-black">
+      <div className="flex-1 w-full h-full overflow-y-auto scrollbar-hide bg-transparent">
         {/* Efeito de Confete CSS Simples */}
         {showConfetti && (
           <div className="fixed inset-0 pointer-events-none z-[100] overflow-hidden">
