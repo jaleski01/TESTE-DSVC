@@ -99,6 +99,11 @@ export const LearningScreen: React.FC = () => {
     const isLocked = !!module.requiredStreak && currentStreak < module.requiredStreak;
     const isUnlockedReward = !!module.requiredStreak && currentStreak >= module.requiredStreak;
     const isSpecial = module.isSpecialReward;
+
+    // Encontra o módulo de referência (3D) para copiar o ícone dele para as demais recompensas
+    const reward3DModule = LEARNING_MODULES.find(m => m.id === 'reward_3d');
+    const RewardIcon = reward3DModule ? reward3DModule.icon : module.icon;
+    const DisplayIcon = isUnlockedReward ? RewardIcon : module.icon;
     
     // Especialista UI: Padronização do estilo "Gold" para recompensas desbloqueadas
     const cardColors = isUnlockedReward ? {
@@ -136,7 +141,7 @@ export const LearningScreen: React.FC = () => {
               isSpecial ? 'border-yellow-500/30' : 'border-white/5'
             }`}
           >
-            {getIcon(isLocked ? 'lock' : module.icon, isLocked ? '#4B5563' : cardColors.accent)}
+            {getIcon(isLocked ? 'lock' : DisplayIcon, isLocked ? '#4B5563' : cardColors.accent)}
           </div>
 
           <div className="flex-1 text-left z-10 min-w-0">
