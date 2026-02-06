@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
@@ -118,7 +117,7 @@ const App: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="h-[100dvh] w-full bg-void bg-neon-glow flex flex-col items-center justify-center">
+      <div className="h-[100dvh] w-full bg-void bg-top-neon-glow flex flex-col items-center justify-center">
         <div className="w-10 h-10 rounded-full border-4 border-neon-violet border-t-transparent animate-spin mb-4"></div>
         <span className="text-[10px] font-bold tracking-[0.3em] text-gray-400 uppercase animate-pulse">
           Validando Protocolo

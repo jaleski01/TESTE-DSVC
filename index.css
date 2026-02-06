@@ -1,15 +1,13 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   body {
-    @apply bg-void bg-neon-glow text-white min-h-screen selection:bg-neon-purple selection:text-black;
-    /* Ensure the gradient stays fixed during scroll */
+    @apply bg-void bg-top-neon-glow text-white min-h-screen selection:bg-neon-purple selection:text-black;
+    /* Configurações críticas para iluminação ambiente estática */
     background-attachment: fixed;
-    /* Standard background for browsers that don't support gradients well */
-    background-color: #000000;
+    background-repeat: no-repeat;
   }
 
   /* Custom scrollbar to match the cyberpunk aesthetic */

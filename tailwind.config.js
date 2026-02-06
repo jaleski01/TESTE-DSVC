@@ -1,4 +1,3 @@
-
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
@@ -15,8 +14,7 @@ export default {
         }
       },
       backgroundImage: {
-        // Subtle radial gradient emerging from the bottom
-        'neon-glow': 'radial-gradient(circle at 50% 100%, rgba(124, 58, 237, 0.2) 0%, rgba(0, 0, 0, 1) 70%)',
+        'top-neon-glow': 'radial-gradient(circle at 50% 0%, rgba(176, 38, 255, 0.25) 0%, rgba(0, 0, 0, 1) 75%)',
       }
     },
   },

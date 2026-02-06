@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { COLORS, Routes } from '../types';
@@ -23,7 +24,8 @@ export const TabLayout: React.FC = () => {
     // CONTAINER PRINCIPAL:
     // h-[100dvh] garante que o app ocupe exatos 100% da altura da viewport dinâmica (mobile)
     // relative e overflow-hidden impedem o scroll na janela principal
-    <div className="relative w-full h-[100dvh] bg-black overflow-hidden flex flex-col">
+    // Alterado de bg-black para bg-transparent para permitir a visibilidade do gradiente global.
+    <div className="relative w-full h-[100dvh] bg-transparent overflow-hidden flex flex-col">
       
       {/* 
         ÁREA DE CONTEÚDO (Outlet):
