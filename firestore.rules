@@ -1,0 +1,84 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * FUNÇÕES DE SEGURANÇA (SEGURANÇA SÊNIOR)
+     */
+     
+    // Verifica se o usuário autenticado é o dono do documento
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    // Verifica se o campo 'subscription_status' foi alterado na requisição
+    function isStatusUnchanged() {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['subscription_status']);
+    }
+
+    // Lista de campos que NUNCA podem ser editados pelo cliente (Imutáveis via SDK)
+    function notModifyingSensitiveFields() {
+      let sensitiveFields = [
+        'subscription_status', 
+        'stripe_customer_id', 
+        'stripeCustomerId',
+        'email', 
+        'created_at', 
+        'onboarding_completed_at',
+        'role'
+      ];
+      // Verifica se nenhum desses campos consta no diff da atualização
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(sensitiveFields);
+    }
+
+    // Regras para a coleção principal de usuários
+    match /users/{userId} {
+      
+      // LEITURA: Apenas o dono pode ler seu próprio perfil
+      allow get: if isOwner(userId);
+      
+      // SEGURANÇA: Proíbe listagem de usuários (Prevenção de scraping)
+      allow list: if false;
+
+      /**
+       * CRIAÇÃO (PROVISONAMENTO):
+       * O usuário pode criar seu documento inicial, mas o status de assinatura
+       * deve ser omitido ou obrigatoriamente definido como 'inactive'.
+       * (O status 'active' é injetado exclusivamente via Webhook/Admin SDK).
+       */
+      allow create: if isOwner(userId) 
+        && (
+          !('subscription_status' in request.resource.data) || 
+          request.resource.data.subscription_status == 'inactive'
+        );
+
+      /**
+       * ATUALIZAÇÃO (PROTEÇÃO DE PAYWALL):
+       * O usuário pode atualizar hábitos e preferências, mas qualquer tentativa
+       * de alterar o 'subscription_status' ou campos financeiros causa negação (403).
+       */
+      allow update: if isOwner(userId) 
+        && notModifyingSensitiveFields();
+
+      // DELEÇÃO: Bloqueada para evitar perda acidental de dados de auditoria
+      allow delete: if false;
+
+      /**
+       * SUB-COLEÇÕES
+       */
+       
+      match /daily_history/{date} {
+        allow read, write: if isOwner(userId);
+      }
+
+      match /trigger_logs/{logId} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+
+    // Bloqueio padrão para qualquer outro caminho não especificado
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}
