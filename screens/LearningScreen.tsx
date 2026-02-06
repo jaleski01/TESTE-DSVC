@@ -6,7 +6,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '../lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Copy } from 'lucide-react';
+import { Copy, Activity } from 'lucide-react';
 
 export const LearningScreen: React.FC = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -14,6 +14,7 @@ export const LearningScreen: React.FC = () => {
   const [showFutureMilestones, setShowFutureMilestones] = useState(false);
   const [selectedDNS, setSelectedDNS] = useState<'ANDROID' | 'iOS'>('ANDROID');
   const [showCopyFeedback, setShowCopyFeedback] = useState(false);
+  const [activeNeuroTab, setActiveNeuroTab] = useState(0);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -91,6 +92,7 @@ export const LearningScreen: React.FC = () => {
       if (navigator.vibrate) navigator.vibrate(100);
       return;
     }
+    setActiveNeuroTab(0);
     setSelectedModule(module);
   };
 
@@ -282,6 +284,49 @@ export const LearningScreen: React.FC = () => {
                <h2 className="text-3xl font-black text-white mb-4 leading-none italic uppercase tracking-tighter">{selectedModule.title}</h2>
                <p className="text-gray-400 text-sm leading-relaxed mb-10 font-medium">{selectedModule.intro}</p>
                
+               {/* RENDERIZAÇÃO DO NEURODEBUG (ABAS) */}
+               {selectedModule.id === 'tool_neurodebug' && selectedModule.neuroTabs && (
+                 <div className="mt-6">
+                   {/* Menu de Abas */}
+                   <div className="flex flex-wrap gap-2 mb-6 bg-black/20 p-2 rounded-xl">
+                     {selectedModule.neuroTabs.map((tab, index) => (
+                       <button
+                         key={index}
+                         onClick={() => setActiveNeuroTab(index)}
+                         className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
+                           activeNeuroTab === index
+                             ? 'bg-white text-black shadow-lg scale-105'
+                             : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                         }`}
+                       >
+                         {tab.title}
+                       </button>
+                     ))}
+                   </div>
+
+                   {/* Conteúdo da Aba Ativa */}
+                   <div className="bg-white/5 border border-white/10 rounded-2xl p-6 relative overflow-hidden">
+                     {/* Efeito de Fundo */}
+                     <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl -mr-10 -mt-10" />
+                     
+                     <h4 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                       <Activity size={20} className="text-blue-400" />
+                       {selectedModule.neuroTabs[activeNeuroTab].title}
+                     </h4>
+                     
+                     <p className="text-gray-300 leading-relaxed text-base">
+                       {selectedModule.neuroTabs[activeNeuroTab].description}
+                     </p>
+
+                     <div className="mt-4 pt-4 border-t border-white/5">
+                       <span className="text-xs text-blue-400 font-mono uppercase">
+                         Status: Processando Regeneração Neural...
+                       </span>
+                     </div>
+                   </div>
+                 </div>
+               )}
+
                {/* RESTAURAÇÃO DO COMPONENTE DE ABAS DE DNS */}
                {selectedModule.dnsProvider && (
                  <div className="mt-6 mb-10">

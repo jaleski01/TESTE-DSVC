@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
@@ -7,7 +6,6 @@ import { auth, db } from '../lib/firebase';
 import { Wrapper } from '../components/Wrapper';
 import { Button } from '../components/Button';
 import { StreakTimer } from '../components/StreakTimer';
-import { NeuroDebugCard } from '../components/NeuroDebugCard';
 import { DailyHabits } from '../components/DailyHabits';
 import { TriggerModal } from '../components/TriggerModal';
 import { ShortcutPrompt } from '../components/ShortcutPrompt';
@@ -186,8 +184,6 @@ export const DashboardScreen: React.FC = () => {
               )}
             </div>
           </section>
-
-          <NeuroDebugCard />
 
           <div className="w-full mb-8">
             <Button 

@@ -1,5 +1,4 @@
-
-import { Shield, FileText, Mic, Play } from 'lucide-react';
+import { Shield, FileText, Mic, Play, Activity } from 'lucide-react';
 
 export interface LearningStep {
   text: string;
@@ -44,6 +43,12 @@ export interface LearningModule {
   dnsProvider?: string;
   androidSteps?: string[];
   iosSteps?: string[];
+
+  // NeuroTabs Field for interactive content
+  neuroTabs?: {
+    title: string;
+    description: string;
+  }[];
 
   // Content (Hybrid Support)
   content?: ContentItem[];
@@ -148,17 +153,6 @@ export const LEARNING_MODULES: LearningModule[] = [
 
   // 2. ARTIGOS
   {
-    id: 'art_coolidge',
-    title: 'O Efeito Coolidge',
-    subtitle: 'Por que seu cérebro exige novidade constante.',
-    category: 'ARTIGO',
-    duration: '7 min',
-    icon: FileText,
-    colors: { start: '#000000', end: '#1F2937', text: '#F3F4F6', accent: '#9CA3AF' },
-    locked: false,
-    intro: 'O fenômeno biológico onde machos exibem desejo renovado sempre que uma nova fêmea é introduzida.'
-  },
-  {
     id: 'art_dopa',
     title: 'Dessensibilização',
     subtitle: 'A perda de prazer nas coisas reais.',
@@ -227,5 +221,36 @@ export const LEARNING_MODULES: LearningModule[] = [
     colors: { start: '#0B101A', end: '#112240', text: '#E0E7FF', accent: '#A78BFA' },
     locked: false,
     intro: 'Você não elimina um hábito, você o substitui mantendo o gatilho mas alterando a rotina.'
+  },
+
+  // 5. FERRAMENTAS
+  {
+    id: 'tool_neurodebug',
+    title: 'NeuroDebug',
+    subtitle: 'Decodifique o que seu cérebro está sentindo.',
+    category: 'FERRAMENTA',
+    duration: 'Guia',
+    icon: Activity,
+    colors: { start: '#0ea5e9', end: '#3b82f6', text: '#eff6ff', accent: '#60a5fa' },
+    locked: false,
+    intro: 'Durante a recuperação, seu cérebro passará por fases químicas distintas. Use esta ferramenta para identificar e entender cada sintoma.',
+    neuroTabs: [
+      {
+        title: 'Névoa Mental',
+        description: 'A sensação de "nuvem" no pensamento é causada pela "downregulation" (diminuição) dos receptores de dopamina D2. Seu cérebro está se recalibrando. É temporário e sinaliza que a cura começou. Evite açúcar e durma mais para acelerar a clareza.'
+      },
+      {
+        title: 'Ansiedade',
+        description: 'Sem a dopamina artificial do vício, seu sistema nervoso fica hiperativo, aumentando o cortisol. Isso não é você, é a abstinência. A respiração diafragmática (4-7-8) e banhos frios são as ferramentas mais rápidas para "resetar" esse estado químico.'
+      },
+      {
+        title: 'Fissura (Urge)',
+        description: 'O sistema límbico está gritando por falta de estímulo. A fissura dura em média 15 a 20 minutos. Se você usar a técnica de "Urge Surfing" e não lutar contra ela, apenas observá-la, ela perderá a força. A fissura é um sinal de que as vias neurais do vício estão enfraquecendo.'
+      },
+      {
+        title: 'Flatline',
+        description: 'O momento mais perigoso. Sua libido some, a energia cai e você sente uma "morte emocional". Isso ocorre porque o cérebro cortou a sensibilidade para se proteger. NÃO TESTE SUA LIBIDO AQUI. A Flatline precede a maior fase de recuperação natural. Aguente firme.'
+      }
+    ]
   }
 ];
