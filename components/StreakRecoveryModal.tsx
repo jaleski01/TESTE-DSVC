@@ -18,35 +18,44 @@ export const StreakRecoveryModal: React.FC<StreakRecoveryModalProps> = ({
   const [questions] = useState<RecoveryQuestion[]>(() => getRandomRecoverySet(3));
   const [currentIndex, setCurrentIndex] = useState(0);
   const [gameState, setGameState] = useState<'IDLE' | 'PLAYING' | 'SUCCESS' | 'FAILED'>('IDLE');
+  
+  // Estados de controle de resposta
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
-  const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
+  const [isAnswered, setIsAnswered] = useState(false);
+  const [wasCorrect, setWasCorrect] = useState<boolean | null>(null);
 
   const currentQuestion = questions[currentIndex];
 
   const handleOptionSelect = (index: number) => {
-    if (isCorrect !== null) return;
+    if (isAnswered) return;
     
     setSelectedOption(index);
+    setIsAnswered(true);
     const correct = index === currentQuestion.correctIndex;
-    setIsCorrect(correct);
+    setWasCorrect(correct);
 
     if (navigator.vibrate) {
       navigator.vibrate(correct ? 50 : [100, 50, 100]);
     }
 
-    setTimeout(() => {
-      if (correct) {
+    // Se acertou, avança automaticamente após 1.5s
+    if (correct) {
+      setTimeout(() => {
         if (currentIndex < questions.length - 1) {
           setCurrentIndex(prev => prev + 1);
           setSelectedOption(null);
-          setIsCorrect(null);
+          setIsAnswered(false);
+          setWasCorrect(null);
         } else {
           setGameState('SUCCESS');
         }
-      } else {
-        setGameState('FAILED');
-      }
-    }, 1500);
+      }, 1500);
+    }
+    // Se errou, o estado fica travado no feedback até o usuário clicar em "Entendi"
+  };
+
+  const handleConfirmFailure = () => {
+    setGameState('FAILED');
   };
 
   return (
@@ -73,7 +82,7 @@ export const StreakRecoveryModal: React.FC<StreakRecoveryModalProps> = ({
             </p>
             <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-xl mb-8">
               <p className="text-[10px] font-bold text-red-400 uppercase tracking-widest">Protocolo de Emergência</p>
-              <p className="text-xs text-gray-300 mt-1">Acerte 3 perguntas sobre neurociência para restaurar o sistema. Um erro causará o reset total.</p>
+              <p className="text-xs text-gray-300 mt-1">Prove seu conhecimento para restaurar o sistema. Um erro custará tudo.</p>
             </div>
             <Button variant="danger" onClick={() => setGameState('PLAYING')}>Iniciar Ressuscitação</Button>
           </motion.div>
@@ -96,18 +105,24 @@ export const StreakRecoveryModal: React.FC<StreakRecoveryModalProps> = ({
             <div className="space-y-3">
               {currentQuestion.options.map((option, idx) => {
                 const isSelected = selectedOption === idx;
+                const isCorrect = idx === currentQuestion.correctIndex;
+                
                 let borderColor = COLORS.Border;
                 let bgColor = '#0F0A15';
-                
-                if (isSelected) {
-                  if (isCorrect === true) {
+                let opacity = '1';
+
+                if (isAnswered) {
+                  if (isCorrect) {
+                    // Opção correta sempre fica verde após responder
                     borderColor = '#10B981';
-                    bgColor = 'rgba(16, 185, 129, 0.1)';
-                  } else if (isCorrect === false) {
+                    bgColor = 'rgba(16, 185, 129, 0.15)';
+                  } else if (isSelected && !isCorrect) {
+                    // Se o usuário selecionou a errada, fica vermelho
                     borderColor = '#EF4444';
-                    bgColor = 'rgba(239, 68, 68, 0.1)';
+                    bgColor = 'rgba(239, 68, 68, 0.15)';
                   } else {
-                    borderColor = COLORS.Primary;
+                    // Outras opções erradas ficam apagadas
+                    opacity = '0.4';
                   }
                 }
 
@@ -115,14 +130,14 @@ export const StreakRecoveryModal: React.FC<StreakRecoveryModalProps> = ({
                   <button
                     key={idx}
                     onClick={() => handleOptionSelect(idx)}
-                    disabled={isCorrect !== null}
-                    className="w-full text-left p-4 rounded-xl border transition-all duration-200 active:scale-[0.98] group flex items-start gap-4"
-                    style={{ borderColor, backgroundColor: bgColor }}
+                    disabled={isAnswered}
+                    className="w-full text-left p-4 rounded-xl border transition-all duration-300 active:scale-[0.98] group flex items-start gap-4"
+                    style={{ borderColor, backgroundColor: bgColor, opacity }}
                   >
                     <div className="w-6 h-6 rounded-full border border-gray-700 flex items-center justify-center shrink-0 mt-0.5 group-hover:border-white/30 transition-colors">
                       <span className="text-[10px] font-bold text-gray-500">{String.fromCharCode(65 + idx)}</span>
                     </div>
-                    <span className={`text-sm font-medium ${isSelected ? 'text-white' : 'text-gray-400'}`}>
+                    <span className={`text-sm font-medium ${isSelected || (isAnswered && isCorrect) ? 'text-white' : 'text-gray-400'}`}>
                       {option}
                     </span>
                   </button>
@@ -130,15 +145,33 @@ export const StreakRecoveryModal: React.FC<StreakRecoveryModalProps> = ({
               })}
             </div>
 
-            {isCorrect === true && (
-               <motion.p 
-                 initial={{ opacity: 0, y: 10 }}
-                 animate={{ opacity: 1, y: 0 }}
-                 className="text-center text-green-500 text-xs font-bold mt-8 uppercase tracking-widest"
-               >
-                 Acesso Garantido. Carregando...
-               </motion.p>
-            )}
+            <AnimatePresence>
+              {isAnswered && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-8 space-y-6"
+                >
+                  {wasCorrect === false ? (
+                    <>
+                      <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-xl">
+                        <p className="text-[10px] font-bold text-red-400 uppercase tracking-widest mb-1">Feedback Educativo</p>
+                        <p className="text-xs text-gray-300 leading-relaxed italic">
+                          {currentQuestion.explanation}
+                        </p>
+                      </div>
+                      <Button variant="danger" onClick={handleConfirmFailure}>
+                        Entendi e Aceito o Reset
+                      </Button>
+                    </>
+                  ) : (
+                    <p className="text-center text-green-500 text-xs font-bold uppercase tracking-widest animate-pulse">
+                      Acesso Garantido. Carregando...
+                    </p>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         )}
 
@@ -156,7 +189,7 @@ export const StreakRecoveryModal: React.FC<StreakRecoveryModalProps> = ({
             </div>
             <h1 className="text-3xl font-black text-white mb-2 uppercase italic">Sistema Restaurado</h1>
             <p className="text-gray-400 text-sm mb-8">
-              A sua consciência biológica salvou sua ofensiva. Não deixe o sistema falhar novamente amanhã.
+              Sua consciência biológica salvou sua ofensiva. Não falhe novamente amanhã.
             </p>
             <Button onClick={onSuccess}>Retomar Comando</Button>
           </motion.div>
@@ -175,14 +208,9 @@ export const StreakRecoveryModal: React.FC<StreakRecoveryModalProps> = ({
               </svg>
             </div>
             <h1 className="text-3xl font-black text-white mb-2 uppercase italic">Acesso Negado</h1>
-            <p className="text-red-500 text-xs font-bold tracking-widest mb-4 uppercase">Erro de Protocolo</p>
-            <div className="bg-red-950/30 border border-red-900/50 p-5 rounded-2xl mb-10">
-              <p className="text-gray-300 text-sm leading-relaxed italic">
-                "{currentQuestion.explanation}"
-              </p>
-            </div>
+            <p className="text-red-500 text-xs font-bold tracking-widest mb-4 uppercase">Reset Protocolado</p>
             <p className="text-gray-500 text-xs mb-8">Ofensiva de {streakValue} dias perdida.</p>
-            <Button onClick={onFail} variant="danger">Aceitar Derrota e Recomeçar</Button>
+            <Button onClick={onFail} variant="danger">Recomeçar do Zero</Button>
           </motion.div>
         )}
       </AnimatePresence>
