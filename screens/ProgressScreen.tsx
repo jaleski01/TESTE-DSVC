@@ -114,7 +114,7 @@ export const ProgressScreen: React.FC = () => {
           <div className="grid grid-cols-2 gap-4 mb-8 w-full">
             <div className="p-4 rounded-xl border border-[#2E243D] bg-[#0F0A15]/80 backdrop-blur-sm flex flex-col items-center justify-center relative overflow-hidden w-full">
               <span className="text-[10px] uppercase font-bold text-gray-500 mb-1 z-10">Média</span>
-              <span className={`text-3xl font-bold z-10 transition-colors duration-500 ${stats.average >= 80 ? 'text-[#10B981]' : 'text-white'}`}>
+              <span className="text-3xl font-bold text-white z-10 transition-colors duration-500">
                 {stats.average}%
               </span>
               <div className="absolute -bottom-4 -right-4 w-16 h-16 bg-[#8B5CF6]/10 rounded-full blur-xl"></div>

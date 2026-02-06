@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Wrapper } from '../components/Wrapper';
 import { Button } from '../components/Button';
@@ -233,12 +234,25 @@ export const ProfileScreen: React.FC = () => {
             {RANKS.map((rank) => {
               const isUnlocked = streakDays >= rank.days;
               return (
-                <div key={rank.id} className={`relative p-4 rounded-xl border flex flex-col items-center justify-center gap-2 transition-all duration-300 ${isUnlocked ? 'bg-[#8B5CF6]/10 border-[#8B5CF6]/50 shadow-[0_0_10px_rgba(139,92,246,0.1)]' : 'bg-[#1A1A1A] border-[#2E243D] opacity-40 grayscale'}`}>
-                  <div className={`p-2 rounded-full ${isUnlocked ? 'bg-[#8B5CF6]/20' : 'bg-[#2a2a2a]'}`}>
-                    <svg className={`w-6 h-6 ${isUnlocked ? 'text-[#8B5CF6]' : 'text-gray-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">{getRankIcon(rank.icon)}</svg>
+                <div 
+                  key={rank.id} 
+                  className={`relative p-4 rounded-xl border flex flex-col items-center justify-center gap-2 transition-all duration-500 
+                  ${isUnlocked 
+                    ? 'bg-yellow-400/10 border-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.3)]' 
+                    : 'bg-[#1A1A1A] border-[#2E243D] opacity-40 grayscale'}`}
+                >
+                  <div className={`p-2 rounded-full transition-colors duration-500 ${isUnlocked ? 'bg-yellow-400/20' : 'bg-[#2a2a2a]'}`}>
+                    <svg 
+                      className={`w-6 h-6 transition-colors duration-500 ${isUnlocked ? 'text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.8)]' : 'text-gray-500'}`} 
+                      fill="none" 
+                      viewBox="0 0 24 24" 
+                      stroke="currentColor"
+                    >
+                      {getRankIcon(rank.icon)}
+                    </svg>
                   </div>
                   <div className="text-center">
-                    <span className={`text-xs font-bold block ${isUnlocked ? 'text-white' : 'text-gray-500'}`}>{rank.label}</span>
+                    <span className={`text-xs font-bold block transition-colors duration-500 ${isUnlocked ? 'text-white' : 'text-gray-500'}`}>{rank.label}</span>
                     <span className="text-[10px] font-mono text-gray-500 mt-0.5 block">{rank.days} DIAS</span>
                   </div>
                 </div>
