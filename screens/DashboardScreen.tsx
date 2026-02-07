@@ -289,6 +289,6 @@ export const DashboardScreen: React.FC = () => {
       )}
 
       <ShortcutPrompt />
-    </Wrapper>
+    </div>
   );
 };

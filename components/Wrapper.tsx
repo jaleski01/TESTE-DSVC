@@ -7,6 +7,8 @@ interface WrapperProps {
   noPadding?: boolean;
   hideNavigation?: boolean;
   centerContent?: boolean;
+  // Added optional className prop to allow custom background and container styles
+  className?: string;
 }
 
 /**
@@ -18,11 +20,13 @@ export const Wrapper: React.FC<WrapperProps> = ({
   children, 
   noPadding = false, 
   hideNavigation = false,
-  centerContent = false 
+  centerContent = false,
+  className = ''
 }) => {
   return (
     <div 
-      className="flex flex-col h-[100dvh] w-full text-white overflow-hidden relative bg-transparent"
+      // Merged custom className with default container styles
+      className={`flex flex-col h-[100dvh] w-full text-white overflow-hidden relative bg-transparent ${className}`}
     >
       {/* Área de conteúdo principal */}
       <main 
