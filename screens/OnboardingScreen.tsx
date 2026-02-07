@@ -128,7 +128,7 @@ export const OnboardingScreen: React.FC = () => {
   const currentAnswer = answers[currentQuestion.id];
 
   return (
-    <Wrapper noPadding>
+    <Wrapper noPadding hideNavigation>
       <div className="flex flex-col h-[100dvh] w-full bg-transparent overflow-hidden">
         
         {/* Header Fixo: Barra de Progresso */}
