@@ -1,47 +1,42 @@
-import React from 'react';
-import { TabLayout } from './TabLayout';
-import { COLORS } from '../types';
 
-interface WrapperProps {
-  children: React.ReactNode;
-  noPadding?: boolean;
-  hideNavigation?: boolean;
+import React from 'react';
+import { BaseProps, COLORS } from '../types';
+
+interface WrapperProps extends BaseProps {
   centerContent?: boolean;
-  // Added optional className prop to allow custom background and container styles
-  className?: string;
+  noPadding?: boolean;
 }
 
 /**
  * Wrapper Component
  * Identidade Cyberpunk Introspectivo: Fundo transparente para herdar o gradiente global.
- * Gerencia a renderização do Hub de navegação e a área de conteúdo principal.
  */
 export const Wrapper: React.FC<WrapperProps> = ({ 
   children, 
-  noPadding = false, 
-  hideNavigation = false,
+  className = '', 
   centerContent = false,
-  className = ''
+  noPadding = false
 }) => {
   return (
     <div 
-      // Merged custom className with default container styles
-      className={`flex flex-col h-[100dvh] w-full text-white overflow-hidden relative bg-transparent ${className}`}
+      className={`
+        h-[100dvh] w-full flex flex-col relative overflow-hidden bg-transparent
+        ${centerContent ? 'justify-center items-center' : ''}
+        ${className}
+      `}
+      style={{ 
+        color: COLORS.TextPrimary 
+      }}
     >
-      {/* Área de conteúdo principal */}
-      <main 
+      <div 
         className={`
-          flex-1 w-full relative overflow-hidden flex flex-col 
-          ${!noPadding ? 'px-6' : ''} 
-          ${centerContent ? 'justify-center items-center' : ''}
+          flex-1 w-full max-w-md mx-auto flex flex-col h-full overflow-hidden
+          ${!noPadding ? 'px-6 py-4' : ''} 
           backdrop-blur-[2px]
         `}
       >
         {children}
-      </main>
-
-      {/* Renderização condicional do Hub de Navegação */}
-      {!hideNavigation && <TabLayout />}
+      </div>
     </div>
   );
 };

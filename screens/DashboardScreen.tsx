@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
@@ -12,8 +13,6 @@ import { HoldToConfirmButton } from '../components/HoldToConfirmButton';
 import { StreakRecoveryModal } from '../components/StreakRecoveryModal';
 import { DailyCheckInModal } from '../components/DailyCheckInModal';
 import { FactSwipeCard } from '../components/FactSwipeCard';
-import { NeuroDebugCard } from '../components/NeuroDebugCard';
-import { OnboardingTour } from '../components/OnboardingTour';
 import { COLORS, Routes, UserProfile } from '../types';
 import { REALITY_CHECK_DATA, RealityFact } from '../data/realityCheckData';
 import { 
@@ -24,6 +23,7 @@ import {
   saveRealityCheckResult,
   ACHIEVEMENTS 
 } from '../services/gamificationService';
+// Added Check to the imported icons from lucide-react
 import { Brain, AlertCircle, Sparkles, BookOpen, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -35,7 +35,6 @@ export const DashboardScreen: React.FC = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isCheckInModalOpen, setIsCheckInModalOpen] = useState(false);
   const [showRecoveryModal, setShowRecoveryModal] = useState(false);
-  const [isTourActive, setIsTourActive] = useState(false);
   
   // Reality Check State
   const [currentFact, setCurrentFact] = useState<RealityFact | null>(null);
@@ -51,6 +50,7 @@ export const DashboardScreen: React.FC = () => {
         const data = docSnap.data() as any;
         const result = await verifyAndResetStreak(uid, data);
         if (result.streakStatus === 'NEEDS_RECOVERY') setShowRecoveryModal(true);
+        // CORREÇÃO: Cast forçado para evitar erros de tipagem
         setProfile(data as any);
         localStorage.setItem(CACHE_KEY, JSON.stringify(data));
 
@@ -138,6 +138,14 @@ export const DashboardScreen: React.FC = () => {
     localStorage.setItem(CACHE_KEY, JSON.stringify(updatedProfile));
   };
 
+  const nextMilestone = useMemo(() => {
+    if (!profile) return null;
+    const current = profile.currentStreak || 0;
+    const next = ACHIEVEMENTS.find(ach => ach.days > current);
+    if (!next) return null;
+    return { ...next, progress: (current / next.days) * 100 };
+  }, [profile]);
+
   const isCheckedInToday = profile?.lastCheckInDate === getTodayString();
 
   if (isLoading) {
@@ -150,11 +158,11 @@ export const DashboardScreen: React.FC = () => {
   }
 
   return (
-    <Wrapper noPadding hideNavigation={isTourActive}> 
+    <Wrapper noPadding> 
       <div className="flex-1 w-full h-full overflow-y-auto scrollbar-hide bg-transparent">
         <div className="w-full max-w-full px-5 pt-8 pb-32 flex flex-col items-center">
           
-          <header id="tour-timer" className="flex flex-col w-full mb-6">
+          <header className="flex flex-col w-full mb-6">
             <div className="flex items-center gap-2 mb-2 w-fit">
                <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-pulse"></div>
                <span className="text-[10px] font-bold tracking-wider uppercase" style={{ color: COLORS.TextSecondary }}>Status: Operante</span>
@@ -186,7 +194,7 @@ export const DashboardScreen: React.FC = () => {
           </section>
 
           {/* REALITY CHECK SECTION */}
-          <section id="tour-reality" className="w-full mb-8">
+          <section className="w-full mb-8">
             <div className="flex items-center justify-between mb-4 px-1">
               <h3 className="text-xs font-bold uppercase tracking-widest text-white/80 flex items-center gap-2">
                 <Brain size={14} className="text-violet-500" />
@@ -248,23 +256,26 @@ export const DashboardScreen: React.FC = () => {
                     className="h-full bg-gradient-to-r from-violet-600 to-cyan-500 shadow-[0_0_10px_rgba(139,92,246,0.5)]"
                   />
                 </div>
+                {(profile?.reality_check_points || 0) >= 30 && (
+                  <Button 
+                    variant="primary" 
+                    className="mt-4 animate-pulse shadow-[0_0_20px_rgba(139,92,246,0.5)]"
+                    onClick={() => alert("Recompensa de Consciência: Você desbloqueou o acesso antecipado ao módulo 'Neuro-Hack'!")}
+                  >
+                    Resgatar Recompensa de Consciência
+                  </Button>
+                )}
               </div>
-            </div>
-            
-            <div className="mt-8 w-full">
-               <NeuroDebugCard />
             </div>
           </section>
 
-          <div id="tour-streak" className="w-full">
-            <div className="mt-2 mb-4 w-full">
-              <h3 className="text-xs font-bold uppercase tracking-widest text-white/80 flex items-center gap-2">
-                <Sparkles size={14} className="text-violet-500" />
-                Rituais de Poder
-              </h3>
-            </div>
-            <DailyHabits profile={profile} />
+          <div className="mt-2 mb-4 w-full">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-white/80 flex items-center gap-2">
+              <Sparkles size={14} className="text-violet-500" />
+              Rituais de Poder
+            </h3>
           </div>
+          <DailyHabits profile={profile} />
 
           <div className="mt-10 w-full">
             <Button 
@@ -278,8 +289,6 @@ export const DashboardScreen: React.FC = () => {
         </div>
       </div>
 
-      <OnboardingTour isReady={!isLoading} onTourStateChange={setIsTourActive} />
-
       {showRecoveryModal && profile && (
         <StreakRecoveryModal streakValue={profile.currentStreak || 0} onSuccess={handleRecoverySuccess} onFail={handleRecoveryFail} />
       )}
@@ -289,6 +298,6 @@ export const DashboardScreen: React.FC = () => {
       )}
 
       <ShortcutPrompt />
-    </div>
+    </Wrapper>
   );
 };
