@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate, useLocation, Outlet } from 'react-router-dom';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from './lib/firebase';
@@ -15,7 +15,6 @@ import { SosScreen } from './screens/SosScreen';
 import { SupportScreen } from './screens/SupportScreen';
 
 // Componentes
-import { TabLayout } from './components/TabLayout';
 import { Routes as AppRoutes } from './types';
 import { NotificationManager } from './components/NotificationManager';
 import { DataSyncManager } from './components/DataSyncManager';
@@ -25,7 +24,6 @@ const AppContent: React.FC<{ user: any }> = ({ user }) => {
 
   return (
     <div key={location.pathname} className="animate-page-transition w-full flex-1 flex flex-col overflow-hidden bg-transparent">
-      {/* O DataSyncManager só roda para usuários logados */}
       {user && <DataSyncManager />}
       
       <Routes location={location}>
@@ -41,7 +39,7 @@ const AppContent: React.FC<{ user: any }> = ({ user }) => {
           path={AppRoutes.ONBOARDING} 
           element={user ? <OnboardingScreen /> : <Navigate to={AppRoutes.LOGIN} replace />} 
         />
-        <Route element={user ? <TabLayout /> : <Navigate to={AppRoutes.LOGIN} replace />}>
+        <Route element={user ? <Outlet /> : <Navigate to={AppRoutes.LOGIN} replace />}>
           <Route path={AppRoutes.DASHBOARD} element={<DashboardScreen />} />
           <Route path={AppRoutes.PROGRESS} element={<ProgressScreen />} />
           <Route path={AppRoutes.LEARNING} element={<LearningScreen />} />

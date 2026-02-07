@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useLayoutEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, ChevronRight } from 'lucide-react';
@@ -13,40 +12,52 @@ const TOUR_STEPS: Step[] = [
   {
     targetId: 'tour-timer',
     title: '⏱️ Tempo de Liberdade',
-    content: 'Este é o seu cronômetro sagrado. Ele marca o tempo exato que você está livre. Se recair, ele zera. Proteja este tempo com sua vida.'
+    content: 'Este cronômetro é seu troféu. Ele marca seu tempo limpo. Proteja-o.'
   },
   {
     targetId: 'tour-reality',
-    title: '🧠 Reality Check & Pontos',
-    content: 'Desafios diários para reprogramar seu cérebro. Complete-os para ganhar pontos e prêmios especiais. A consistência aqui é a chave da cura.'
+    title: '🧠 NeuroDebug',
+    content: 'Seus desafios diários para reprogramação mental. Pontue aqui todos os dias.'
   },
   {
     targetId: 'tour-streak',
-    title: '🔥 Sua Ofensiva Diária',
-    content: 'Aqui é seu campo de batalha. Ao final de cada dia, marque sua vitória e registre gatilhos. Manter a ofensiva alta libera prêmios exclusivos.'
+    title: '🔥 Ofensiva & Hábitos',
+    content: 'Registre suas vitórias e gatilhos aqui. Mantenha a chama acesa para evoluir.'
   }
 ];
 
 interface OnboardingTourProps {
   isReady: boolean;
+  onTourStateChange?: (isActive: boolean) => void;
 }
 
-export const OnboardingTour: React.FC<OnboardingTourProps> = ({ isReady }) => {
+export const OnboardingTour: React.FC<OnboardingTourProps> = ({ isReady, onTourStateChange }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
 
   useEffect(() => {
-    // Só inicia se a tela estiver pronta (loading terminou)
     if (!isReady) return;
-
     const hasSeenTour = localStorage.getItem('has_seen_onboarding_tour');
     if (!hasSeenTour) {
-      // Pequeno delay para garantir renderização final do DOM
-      const timer = setTimeout(() => setIsVisible(true), 1000);
-      return () => clearTimeout(timer);
+      setTimeout(() => setIsVisible(true), 1000);
     }
   }, [isReady]);
+
+  // Efeito para travar o Scroll e avisar o pai
+  useEffect(() => {
+    if (isVisible) {
+      if (onTourStateChange) onTourStateChange(true);
+      document.body.style.overflow = 'hidden';
+    } else {
+      if (onTourStateChange) onTourStateChange(false);
+      document.body.style.overflow = '';
+    }
+
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isVisible, onTourStateChange]);
 
   useLayoutEffect(() => {
     if (!isVisible) return;
@@ -57,25 +68,22 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({ isReady }) => {
       
       if (element) {
         const rect = element.getBoundingClientRect();
-        // Se o elemento estiver zerado (invisível), não atualiza para evitar bugs
         if (rect.width > 0 && rect.height > 0) {
           setTargetRect(rect);
-          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // Scroll suave para garantir que o elemento destacado esteja visível (centralizado)
+          setTimeout(() => {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }, 100);
         }
       }
     };
 
-    // Tenta atualizar imediatamente e em intervalos curtos caso o layout mude
     updatePosition();
-    const interval = setInterval(updatePosition, 500); 
-    
+    const interval = setInterval(updatePosition, 200); 
     window.addEventListener('resize', updatePosition);
-    window.addEventListener('scroll', updatePosition);
-    
     return () => {
       clearInterval(interval);
       window.removeEventListener('resize', updatePosition);
-      window.removeEventListener('scroll', updatePosition);
     };
   }, [currentStep, isVisible]);
 
@@ -83,11 +91,11 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({ isReady }) => {
     if (currentStep < TOUR_STEPS.length - 1) {
       setCurrentStep(prev => prev + 1);
     } else {
-      handleComplete();
+      finishTour();
     }
   };
 
-  const handleComplete = () => {
+  const finishTour = () => {
     setIsVisible(false);
     localStorage.setItem('has_seen_onboarding_tour', 'true');
   };
@@ -96,12 +104,6 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({ isReady }) => {
 
   const step = TOUR_STEPS[currentStep];
   const isLastStep = currentStep === TOUR_STEPS.length - 1;
-  
-  // Posicionamento inteligente do balão (se o elemento estiver muito embaixo, joga o balão pra cima)
-  const isTopPosition = targetRect.top > window.innerHeight / 2;
-  const popoverStyle: React.CSSProperties = isTopPosition 
-    ? { bottom: window.innerHeight - targetRect.top + 20, left: 20, right: 20 }
-    : { top: targetRect.bottom + 20, left: 20, right: 20 };
 
   return (
     <AnimatePresence>
@@ -109,57 +111,59 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({ isReady }) => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[9999] pointer-events-none" // pointer-events-none para não bloquear scroll se algo der errado
+        className="fixed inset-0 z-[10000] pointer-events-none"
       >
-        {/* Destaque + Overlay usando Box Shadow Gigante (Infalível) */}
+        {/* Overlay Escuro Total - Impede cliques fora */}
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] pointer-events-auto" onClick={finishTour} />
+
+        {/* Sombra de Fundo com Recorte no Elemento */}
         <motion.div
-          layoutId="highlight-box"
-          className="absolute rounded-xl border-2 border-violet-500 shadow-[0_0_20px_rgba(139,92,246,0.5)]"
+          className="absolute rounded-xl border-2 border-violet-500 shadow-[0_0_50px_rgba(139,92,246,0.4)]"
           style={{
             top: targetRect.top - 4,
             left: targetRect.left - 4,
             width: targetRect.width + 8,
             height: targetRect.height + 8,
-            // O segredo: uma sombra sólida gigante que escurece o resto da tela
-            boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.85)' 
+            boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.9)'
           }}
-          transition={{ type: "spring", stiffness: 250, damping: 30 }}
+          layoutId="highlight-box"
+          transition={{ type: "spring", stiffness: 200, damping: 25 }}
         />
 
-        {/* Balão de Texto (pointer-events-auto para permitir cliques nos botões) */}
+        {/* Card de Texto FIXO no Rodapé (Bottom Sheet) */}
         <motion.div
-          initial={{ opacity: 0, y: isTopPosition ? 10 : -10 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ y: 100, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
           key={currentStep}
-          className="absolute mx-auto max-w-sm bg-[#151515] border border-violet-500/30 p-5 rounded-xl shadow-2xl flex flex-col gap-3 pointer-events-auto"
-          style={popoverStyle}
+          className="fixed bottom-0 left-0 right-0 bg-[#0A0A0A] border-t border-violet-500/30 p-6 rounded-t-3xl shadow-2xl flex flex-col gap-4 pointer-events-auto z-[10001]"
         >
-          <div className="flex justify-between items-center mb-1">
-            <h3 className="font-bold text-base text-white">{step.title}</h3>
-            <span className="text-[10px] font-bold text-gray-500 bg-white/5 px-2 py-1 rounded">
-              {currentStep + 1} / {TOUR_STEPS.length}
-            </span>
+          <div className="flex justify-between items-center">
+            <h3 className="font-bold text-xl text-white">{step.title}</h3>
+            <div className="text-xs font-bold text-violet-300 bg-violet-500/10 px-3 py-1 rounded-full border border-violet-500/20">
+              Passo {currentStep + 1} de {TOUR_STEPS.length}
+            </div>
           </div>
           
-          <p className="text-sm text-gray-400 leading-relaxed font-medium">
+          <p className="text-sm text-gray-300 font-medium leading-relaxed">
             {step.content}
           </p>
 
-          <div className="flex gap-3 mt-3 pt-3 border-t border-white/5">
+          <div className="flex gap-4 mt-2">
             <button 
-              onClick={handleComplete}
-              className="flex-1 py-2 text-xs font-bold text-gray-500 hover:text-white transition-colors"
+              onClick={finishTour}
+              className="flex-1 py-3.5 text-xs font-bold text-gray-500 hover:text-white transition-colors"
             >
-              Pular
+              PULAR
             </button>
             <button 
               onClick={handleNext}
-              className="flex-[2] py-2 bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold rounded-lg flex items-center justify-center gap-2 transition-all active:scale-95"
+              className="flex-[2] py-3.5 bg-violet-600 hover:bg-violet-700 text-white text-sm font-bold rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-violet-900/20 active:scale-95 transition-all"
             >
-              {isLastStep ? 'Concluir' : 'Próximo'}
-              {isLastStep ? <Check size={14} /> : <ChevronRight size={14} />}
+              {isLastStep ? 'CONCLUIR' : 'CONTINUAR'}
+              {isLastStep ? <Check size={18} /> : <ChevronRight size={18} />}
             </button>
           </div>
+          <div className="h-4 w-full" />
         </motion.div>
       </motion.div>
     </AnimatePresence>

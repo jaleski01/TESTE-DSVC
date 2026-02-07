@@ -80,7 +80,7 @@ export const SosScreen: React.FC = () => {
 
   return (
     // Alterado de bg-black para a cor de Surface (#0F0A15) para ser mais calmante
-    <Wrapper centerContent className="bg-[#0F0A15]">
+    <Wrapper centerContent hideNavigation className="bg-[#0F0A15]">
       {/* Background Ambience - Ajustado gradiente para fundir com o roxo escuro */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-[#A78BFA10] via-[#0F0A15] to-[#0F0A15] pointer-events-none" />
 

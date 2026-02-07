@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
@@ -36,6 +35,7 @@ export const DashboardScreen: React.FC = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isCheckInModalOpen, setIsCheckInModalOpen] = useState(false);
   const [showRecoveryModal, setShowRecoveryModal] = useState(false);
+  const [isTourActive, setIsTourActive] = useState(false);
   
   // Reality Check State
   const [currentFact, setCurrentFact] = useState<RealityFact | null>(null);
@@ -150,7 +150,7 @@ export const DashboardScreen: React.FC = () => {
   }
 
   return (
-    <Wrapper noPadding> 
+    <Wrapper noPadding hideNavigation={isTourActive}> 
       <div className="flex-1 w-full h-full overflow-y-auto scrollbar-hide bg-transparent">
         <div className="w-full max-w-full px-5 pt-8 pb-32 flex flex-col items-center">
           
@@ -278,7 +278,7 @@ export const DashboardScreen: React.FC = () => {
         </div>
       </div>
 
-      <OnboardingTour isReady={!isLoading} />
+      <OnboardingTour isReady={!isLoading} onTourStateChange={setIsTourActive} />
 
       {showRecoveryModal && profile && (
         <StreakRecoveryModal streakValue={profile.currentStreak || 0} onSuccess={handleRecoverySuccess} onFail={handleRecoveryFail} />
