@@ -28,7 +28,7 @@ const TOUR_STEPS: Step[] = [
 
 interface OnboardingTourProps {
   isReady: boolean;
-  onTourStateChange?: (isActive: boolean) => void;
+  onTourStateChange?: (isActive: boolean) => void; // Callback para esconder o Hub
 }
 
 export const OnboardingTour: React.FC<OnboardingTourProps> = ({ isReady, onTourStateChange }) => {
@@ -44,7 +44,7 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({ isReady, onTourS
     }
   }, [isReady]);
 
-  // Efeito para travar o Scroll e avisar o pai
+  // Efeito para travar o Scroll e avisar o pai (Dashboard)
   useEffect(() => {
     if (isVisible) {
       if (onTourStateChange) onTourStateChange(true);
@@ -70,15 +70,16 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({ isReady, onTourS
         const rect = element.getBoundingClientRect();
         if (rect.width > 0 && rect.height > 0) {
           setTargetRect(rect);
-          // Scroll suave para garantir que o elemento destacado esteja visível (centralizado)
+          // Scroll suave para centralizar o elemento na tela
           setTimeout(() => {
-            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            element.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
           }, 100);
         }
       }
     };
 
     updatePosition();
+    // Atualiza periodicamente para garantir alinhamento caso o layout mude
     const interval = setInterval(updatePosition, 200); 
     window.addEventListener('resize', updatePosition);
     return () => {
@@ -113,10 +114,14 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({ isReady, onTourS
         exit={{ opacity: 0 }}
         className="fixed inset-0 z-[10000] pointer-events-none"
       >
-        {/* Overlay Escuro Total - Impede cliques fora */}
-        <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] pointer-events-auto" onClick={finishTour} />
+        {/* Camada Transparente para capturar cliques fora (sem Blur, sem Cor) */}
+        <div 
+          className="absolute inset-0 pointer-events-auto cursor-pointer" 
+          onClick={finishTour} 
+          style={{ zIndex: -1 }}
+        />
 
-        {/* Sombra de Fundo com Recorte no Elemento */}
+        {/* Destaque (Spotlight) com Sombra Gigante para escurecer o fundo */}
         <motion.div
           className="absolute rounded-xl border-2 border-violet-500 shadow-[0_0_50px_rgba(139,92,246,0.4)]"
           style={{
@@ -124,7 +129,8 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({ isReady, onTourS
             left: targetRect.left - 4,
             width: targetRect.width + 8,
             height: targetRect.height + 8,
-            boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.9)'
+            // Sombra sólida gigante que cria o efeito de overlay escuro
+            boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.85)'
           }}
           layoutId="highlight-box"
           transition={{ type: "spring", stiffness: 200, damping: 25 }}
@@ -163,7 +169,8 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({ isReady, onTourS
               {isLastStep ? <Check size={18} /> : <ChevronRight size={18} />}
             </button>
           </div>
-          <div className="h-4 w-full" />
+          {/* Espaço seguro para barra de navegação do iPhone */}
+          <div className="h-6 w-full" />
         </motion.div>
       </motion.div>
     </AnimatePresence>
