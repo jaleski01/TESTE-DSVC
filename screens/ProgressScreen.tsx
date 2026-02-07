@@ -1,5 +1,4 @@
-
-import React, { useEffect, useState, useRef, useMemo } from 'react';
+import React, { useEffect, useState, useRef, useMemo, useLayoutEffect } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '../lib/firebase';
@@ -163,38 +162,20 @@ export const ProgressScreen: React.FC = () => {
     refreshAnalysisData(selectedRange);
   }, [selectedRange]);
 
-  useEffect(() => {
-    if (activeTab === 'JOURNEY' && currentDayNodeRef.current && journeyContainerRef.current) {
+  // OPTIMIZED INITIAL SCROLL: Using useLayoutEffect to position the scroll 
+  // before the browser repaints, avoiding visible jump or descent animation.
+  useLayoutEffect(() => {
+    if (activeTab === 'JOURNEY' && currentDayNodeRef.current && journeyContainerRef.current && !isLoadingProfile) {
       const container = journeyContainerRef.current;
       const targetElement = currentDayNodeRef.current;
       
-      const start = container.scrollTop;
+      // Calculate target scroll position to center the current day node
       const target = targetElement.offsetTop - (container.clientHeight / 2) + (targetElement.clientHeight / 2);
-      const distance = target - start;
-      const duration = 2000;
-      let startTime: number | null = null;
-
-      const easeInOutCubic = (t: number) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-
-      const animation = (currentTime: number) => {
-        if (startTime === null) startTime = currentTime;
-        const timeElapsed = currentTime - startTime;
-        const progress = Math.min(timeElapsed / duration, 1);
-        const ease = easeInOutCubic(progress);
-        container.scrollTop = start + (distance * ease);
-
-        if (timeElapsed < duration) {
-          requestAnimationFrame(animation);
-        }
-      };
-
-      const timer = setTimeout(() => {
-        requestAnimationFrame(animation);
-      }, 500);
-
-      return () => clearTimeout(timer);
+      
+      // Immediate scroll with no animation
+      container.scrollTop = target;
     }
-  }, [activeTab, journeyPoints, isLoadingProfile]);
+  }, [activeTab, isLoadingProfile, journeyPoints]);
 
   useEffect(() => {
     if (activeTab === 'ANALYSIS' && chartData.length > 0 && chartScrollRef.current) {
