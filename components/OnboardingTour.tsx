@@ -70,9 +70,10 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({ isReady, onTourS
         const rect = element.getBoundingClientRect();
         if (rect.width > 0 && rect.height > 0) {
           setTargetRect(rect);
-          // Scroll suave para centralizar o elemento na tela
+          // Ajuste fino: Alinha ao topo com margem de 20px para remover vácuo excessivo
+          element.style.scrollMarginTop = '20px';
           setTimeout(() => {
-            element.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+            element.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' });
           }, 100);
         }
       }
