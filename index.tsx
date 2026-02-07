@@ -1,4 +1,3 @@
-
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
@@ -17,3 +16,5 @@ root.render(
     <App />
   </React.StrictMode>
 );
+
+// Protocolo de Sincronização Forçada: Trigger para reconstrução limpa no Vercel.
