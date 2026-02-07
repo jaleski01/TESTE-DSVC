@@ -278,7 +278,7 @@ export const DashboardScreen: React.FC = () => {
         </div>
       </div>
 
-      <OnboardingTour />
+      <OnboardingTour isReady={!isLoading} />
 
       {showRecoveryModal && profile && (
         <StreakRecoveryModal streakValue={profile.currentStreak || 0} onSuccess={handleRecoverySuccess} onFail={handleRecoveryFail} />
