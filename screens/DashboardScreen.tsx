@@ -12,7 +12,6 @@ import { HoldToConfirmButton } from '../components/HoldToConfirmButton';
 import { StreakRecoveryModal } from '../components/StreakRecoveryModal';
 import { DailyCheckInModal } from '../components/DailyCheckInModal';
 import { FactSwipeCard } from '../components/FactSwipeCard';
-import { NeuroDebugCard } from '../components/NeuroDebugCard';
 import { OnboardingTour } from '../components/OnboardingTour';
 import { COLORS, Routes, UserProfile } from '../types';
 import { REALITY_CHECK_DATA, RealityFact } from '../data/realityCheckData';
@@ -249,10 +248,6 @@ export const DashboardScreen: React.FC = () => {
                   />
                 </div>
               </div>
-            </div>
-            
-            <div className="mt-8 w-full">
-               <NeuroDebugCard />
             </div>
           </section>
 
