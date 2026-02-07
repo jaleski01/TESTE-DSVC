@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { HashRouter, Routes, Route, Navigate, useLocation, Outlet } from 'react-router-dom';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
@@ -18,6 +19,7 @@ import { SupportScreen } from './screens/SupportScreen';
 import { Routes as AppRoutes } from './types';
 import { NotificationManager } from './components/NotificationManager';
 import { DataSyncManager } from './components/DataSyncManager';
+import { DataProvider } from './contexts/DataContext';
 
 const AppContent: React.FC<{ user: any }> = ({ user }) => {
   const location = useLocation();
@@ -126,8 +128,10 @@ const App: React.FC = () => {
 
   return (
     <HashRouter>
-      <NotificationManager />
-      <AppContent user={user} />
+      <DataProvider>
+        <NotificationManager />
+        <AppContent user={user} />
+      </DataProvider>
     </HashRouter>
   );
 };

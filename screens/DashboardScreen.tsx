@@ -1,8 +1,7 @@
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+
+import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { doc, getDoc } from 'firebase/firestore';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth, db } from '../lib/firebase';
+import { auth } from '../lib/firebase';
 import { Wrapper } from '../components/Wrapper';
 import { Button } from '../components/Button';
 import { StreakTimer } from '../components/StreakTimer';
@@ -15,23 +14,21 @@ import { FactSwipeCard } from '../components/FactSwipeCard';
 import { OnboardingTour } from '../components/OnboardingTour';
 import { COLORS, Routes, UserProfile } from '../types';
 import { REALITY_CHECK_DATA, RealityFact } from '../data/realityCheckData';
+import { useData } from '../contexts/DataContext';
 import { 
   getTodayString, 
   verifyAndResetStreak, 
   restoreStreak,
   forceResetStreak,
   saveRealityCheckResult,
-  ACHIEVEMENTS 
 } from '../services/gamificationService';
 import { Brain, AlertCircle, Sparkles, BookOpen, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const CACHE_KEY = 'user_profile';
-
 export const DashboardScreen: React.FC = () => {
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(true);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const { userProfile: profile, loading: isLoading, updateLocalProfile, refreshData } = useData();
+  
   const [isCheckInModalOpen, setIsCheckInModalOpen] = useState(false);
   const [showRecoveryModal, setShowRecoveryModal] = useState(false);
   const [isTourActive, setIsTourActive] = useState(false);
@@ -41,43 +38,28 @@ export const DashboardScreen: React.FC = () => {
   const [feedback, setFeedback] = useState<{ isCorrect: boolean; fact: RealityFact } | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
 
-  const loadProfile = useCallback(async (uid: string) => {
-    try {
-      const docRef = doc(db, "users", uid);
-      const docSnap = await getDoc(docRef);
-
-      if (docSnap.exists()) {
-        const data = docSnap.data() as any;
-        const result = await verifyAndResetStreak(uid, data);
-        if (result.streakStatus === 'NEEDS_RECOVERY') setShowRecoveryModal(true);
-        setProfile(data as any);
-        localStorage.setItem(CACHE_KEY, JSON.stringify(data));
-
-        // Selecionar fato do dia se não completou 3
-        if ((data.daily_fact_count || 0) < 3) {
-          const available = REALITY_CHECK_DATA.filter(f => !data.seen_fact_ids?.includes(f.id));
-          const list = available.length > 0 ? available : REALITY_CHECK_DATA;
-          setCurrentFact(list[Math.floor(Math.random() * list.length)]);
-        }
-      } else {
-        navigate(Routes.ONBOARDING);
-      }
-    } catch (error) {
-      console.error("Dashboard profile load error:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [navigate]);
-
+  // Initialize facts of the day when profile is available
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        await loadProfile(user.uid);
+    if (profile && (profile.daily_fact_count || 0) < 3) {
+      const available = REALITY_CHECK_DATA.filter(f => !profile.seen_fact_ids?.includes(f.id));
+      const list = available.length > 0 ? available : REALITY_CHECK_DATA;
+      setCurrentFact(list[Math.floor(Math.random() * list.length)]);
+    }
+
+    // Check streak status only once when profile loaded
+    const checkStreak = async () => {
+      if (profile && auth.currentUser) {
+        const result = await verifyAndResetStreak(auth.currentUser.uid, profile);
+        if (result.streakStatus === 'NEEDS_RECOVERY') {
+          setShowRecoveryModal(true);
+        } else if (result.streakStatus === 'RESET') {
+          updateLocalProfile({ currentStreak: 0, lastCheckInDate: getTodayString() });
+        }
       }
-      else navigate(Routes.LOGIN);
-    });
-    return () => unsubscribe();
-  }, [loadProfile, navigate]);
+    };
+    
+    if (profile) checkStreak();
+  }, [profile?.uid, profile?.last_fact_date]); // Use stable IDs or markers
 
   const handleSwipe = async (direction: 'left' | 'right') => {
     if (!currentFact || !auth.currentUser || !profile) return;
@@ -87,16 +69,19 @@ export const DashboardScreen: React.FC = () => {
 
     setFeedback({ isCorrect, fact: currentFact });
 
-    // Salvar no Firebase
+    // Save result to Firebase
     await saveRealityCheckResult(auth.currentUser.uid, currentFact.id, isCorrect);
     
-    // Atualizar estado local para UI imediata
+    // Update local state immediately for UX
     const newCount = (profile.daily_fact_count || 0) + 1;
     const newPoints = (profile.reality_check_points || 0) + (isCorrect ? 1 : 0);
-    setProfile({
-      ...profile,
+    const newSeenIds = [...(profile.seen_fact_ids || []), currentFact.id];
+    
+    updateLocalProfile({
       daily_fact_count: newCount,
-      reality_check_points: newPoints
+      reality_check_points: newPoints,
+      seen_fact_ids: newSeenIds,
+      last_fact_date: getTodayString()
     });
   };
 
@@ -114,17 +99,14 @@ export const DashboardScreen: React.FC = () => {
   const handleRecoverySuccess = async () => {
     if (!profile || !auth.currentUser) return;
     const updatedProfile = await restoreStreak(auth.currentUser.uid, profile);
-    setProfile(updatedProfile);
-    localStorage.setItem(CACHE_KEY, JSON.stringify(updatedProfile));
+    updateLocalProfile(updatedProfile);
     setShowRecoveryModal(false);
   };
 
   const handleRecoveryFail = async () => {
     if (!profile || !auth.currentUser) return;
     const updateData = await forceResetStreak(auth.currentUser.uid);
-    const newProfile = { ...profile, ...updateData };
-    setProfile(newProfile);
-    localStorage.setItem(CACHE_KEY, JSON.stringify(newProfile));
+    updateLocalProfile(updateData);
     setShowRecoveryModal(false);
   };
 
@@ -133,13 +115,12 @@ export const DashboardScreen: React.FC = () => {
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 4000);
     }
-    setProfile(updatedProfile);
-    localStorage.setItem(CACHE_KEY, JSON.stringify(updatedProfile));
+    updateLocalProfile(updatedProfile);
   };
 
   const isCheckedInToday = profile?.lastCheckInDate === getTodayString();
 
-  if (isLoading) {
+  if (isLoading && !profile) {
     return (
       <div className="flex-1 h-[100dvh] w-full flex flex-col items-center justify-center bg-transparent">
         <div className="w-10 h-10 rounded-full border-2 border-t-transparent animate-spin mb-4" style={{ borderColor: COLORS.Primary, borderTopColor: 'transparent' }} />
