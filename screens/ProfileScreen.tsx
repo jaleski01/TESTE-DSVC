@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Wrapper } from '../components/Wrapper';
 import { Button } from '../components/Button';
@@ -287,49 +288,25 @@ export const ProfileScreen: React.FC = () => {
           </div>
         </div>
 
-        <div className="w-full bg-[#1A1A1A] border border-gray-800 rounded-2xl p-5 mb-6">
-          {isStandalone ? (
-            <div className="flex flex-col gap-4">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-green-500/10 rounded-xl shrink-0 border border-green-500/20">
-                  <svg className="w-6 h-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-white font-bold text-sm">App Instalado e Seguro</h3>
-                  <p className="text-gray-400 text-xs">Versão Standalone Ativa</p>
-                </div>
-              </div>
-              <div className="pl-[60px]">
-                <button
-                  onClick={handleCheckUpdate}
-                  disabled={isCheckingUpdate}
-                  className="flex items-center gap-2 text-[10px] text-gray-500 hover:text-white transition-colors disabled:opacity-50"
-                >
-                  {isCheckingUpdate ? "Verificando..." : "Verificar atualizações"}
-                </button>
+        {/* Seção de Instalação: Exibida APENAS se o app NÃO estiver instalado (isStandalone false) */}
+        {!isStandalone && (
+          <div className="w-full bg-[#1A1A1A] border border-gray-800 rounded-2xl p-5 mb-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-white font-bold text-base flex items-center gap-2">Instalar Aplicativo</h3>
+              <div className="flex bg-gray-900 rounded-lg p-1 border border-gray-800">
+                <button onClick={() => setInstallTab('android')} className={`px-3 py-1 rounded-md text-[10px] font-bold ${installTab === 'android' ? 'bg-gray-800 text-white' : 'text-gray-500'}`}>Android</button>
+                <button onClick={() => setInstallTab('ios')} className={`px-3 py-1 rounded-md text-[10px] font-bold ${installTab === 'ios' ? 'bg-gray-800 text-white' : 'text-gray-500'}`}>iPhone</button>
               </div>
             </div>
-          ) : (
-            <>
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-white font-bold text-base flex items-center gap-2">Instalar Aplicativo</h3>
-                <div className="flex bg-gray-900 rounded-lg p-1 border border-gray-800">
-                  <button onClick={() => setInstallTab('android')} className={`px-3 py-1 rounded-md text-[10px] font-bold ${installTab === 'android' ? 'bg-gray-800 text-white' : 'text-gray-500'}`}>Android</button>
-                  <button onClick={() => setInstallTab('ios')} className={`px-3 py-1 rounded-md text-[10px] font-bold ${installTab === 'ios' ? 'bg-gray-800 text-white' : 'text-gray-500'}`}>iPhone</button>
-                </div>
-              </div>
-              <div className="bg-gray-900/50 rounded-xl p-4 border border-gray-800/50">
-                {installTab === 'android' ? (
-                   <p className="text-gray-300 text-xs">Toque em ⋮ e Adicionar à tela inicial.</p>
-                ) : (
-                   <p className="text-gray-300 text-xs">Toque em Compartilhar e Adicionar à Tela de Início.</p>
-                )}
-              </div>
-            </>
-          )}
-        </div>
+            <div className="bg-gray-900/50 rounded-xl p-4 border border-gray-800/50">
+              {installTab === 'android' ? (
+                  <p className="text-gray-300 text-xs">Toque em ⋮ e Adicionar à tela inicial.</p>
+              ) : (
+                  <p className="text-gray-300 text-xs">Toque em Compartilhar e Adicionar à Tela de Início.</p>
+              )}
+            </div>
+          </div>
+        )}
 
         <div className={`w-full bg-[#1A1A1A] border border-gray-800 rounded-2xl p-5 mb-6 ${permissionStatus === 'granted' ? 'opacity-40 grayscale' : ''}`}>
           <div className="flex items-start gap-4">
