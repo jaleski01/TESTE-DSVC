@@ -35,16 +35,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const isProduction = process.env.ENABLE_REAL_NOTIFICATIONS === 'true';
   
   // 1. Definição de Timestamps de Corte
-  // Inatividade: Usuários que não atualizam o perfil há mais de 24h
+  // Inatividade: Usuários que não atualizam o perfil há mais de 24h.
+  // IMPORTANTE: O campo last_updated é usado como referência principal de atividade.
   const inactivityThreshold = new Date(now.getTime() - (24 * 60 * 60 * 1000));
   
-  // Cooldown: Não enviar se já enviou nas últimas 20h (evita spam diário excessivo)
+  // Cooldown: Não enviar se já enviou nas últimas 20h (evita spam diário excessivo se o cron rodar múltiplas vezes)
   const notificationCooldown = new Date(now.getTime() - (20 * 60 * 60 * 1000));
 
   try {
     // 2. Busca no Firestore
-    // Buscamos usuários cujo 'last_updated' é antigo (anterior ao threshold de 24h)
-    // Nota: 'last_updated' é atualizado sempre que o usuário faz check-in ou salva dados.
+    // Buscamos usuários cujo 'last_updated' é antigo (anterior ao threshold de 24h).
+    // O Firestore lida bem com a comparação de Timestamps. Se o campo for string ISO, 
+    // a comparação léxica também funciona na maioria dos casos, mas o ideal é consistência.
     const snapshot = await db.collection('users')
       .where('last_updated', '<', inactivityThreshold)
       .get();
@@ -71,7 +73,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       // Validação 2: Cooldown (Já enviou hoje?)
       if (userData.last_notification_sent_at) {
-        const lastSent = userData.last_notification_sent_at.toDate();
+        // Suporte híbrido: Se for Timestamp do Firestore converte para Date, se não assume Date/String
+        const lastSentRaw = userData.last_notification_sent_at;
+        const lastSent = lastSentRaw.toDate ? lastSentRaw.toDate() : new Date(lastSentRaw);
+        
         if (lastSent > notificationCooldown) {
           results.skipped_cooldown++;
           return; 
@@ -86,7 +91,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               token: userData.fcm_token,
               notification: { 
                 title: "Lembrete de Hábito", 
-                body: "Sua sequência está em risco. Um pequeno passo hoje mantém sua constância." 
+                body: "Mantenha sua ofensiva. Um pequeno passo hoje garante sua vitória." 
               },
               data: { 
                 route: '/dashboard',
@@ -116,7 +121,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             results.sent++;
           } else {
             // Modo Simulação
-            console.log(`[SIMULAÇÃO] Enviaria para ${userId}: "Sua sequência está em risco..."`);
+            console.log(`[SIMULAÇÃO] Enviaria para ${userId}: "Mantenha sua ofensiva..."`);
             results.sent++;
           }
 
