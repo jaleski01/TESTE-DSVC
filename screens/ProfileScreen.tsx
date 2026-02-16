@@ -44,7 +44,8 @@ export const ProfileScreen: React.FC = () => {
       const cached = localStorage.getItem('user_profile_cache_v1');
       if (cached) {
         const data = JSON.parse(cached);
-        calculateStreak(data.current_streak_start);
+        // MODIFICAÇÃO: Uso direto de currentStreak em vez de cálculo de data
+        setStreakDays(data.currentStreak || 0);
       }
       
       if (auth.currentUser) {
@@ -53,7 +54,8 @@ export const ProfileScreen: React.FC = () => {
           const snap = await getDoc(docRef);
           if (snap.exists()) {
              const data = snap.data();
-             calculateStreak(data.current_streak_start);
+             // MODIFICAÇÃO: Uso direto de currentStreak em vez de cálculo de data
+             setStreakDays(data.currentStreak || 0);
           }
         } catch (e) {
           console.error("Erro ao sincronizar perfil", e);
@@ -86,17 +88,6 @@ export const ProfileScreen: React.FC = () => {
       clearInterval(interval);
     };
   }, [permissionStatus]);
-
-  const calculateStreak = (startDateISO: string | undefined) => {
-    if (!startDateISO) {
-      setStreakDays(0);
-      return;
-    }
-    const start = new Date(startDateISO).getTime();
-    const now = new Date().getTime();
-    const diff = Math.max(0, Math.floor((now - start) / (1000 * 60 * 60 * 24)));
-    setStreakDays(diff);
-  };
 
   /**
    * handleLogout - Protocolo Deep Clean
@@ -204,6 +195,7 @@ export const ProfileScreen: React.FC = () => {
       const nowISO = new Date().toISOString();
       await updateDoc(userRef, {
         current_streak_start: nowISO,
+        currentStreak: 0, // Garante zerar o contador inteiro também
         relapse_count: increment(1),
         last_relapse_date: nowISO
       });

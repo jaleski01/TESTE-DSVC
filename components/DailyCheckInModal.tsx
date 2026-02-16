@@ -212,13 +212,6 @@ export const DailyCheckInModal: React.FC<DailyCheckInModalProps> = ({ profile, o
     <div className="fixed inset-0 z-[10000] flex items-center justify-center p-6">
       <div className="absolute inset-0 bg-black/95 backdrop-blur-md" />
       <div className="w-full max-w-sm bg-[#0F0A15] border border-[#2E243D] rounded-3xl p-8 relative overflow-hidden shadow-2xl min-h-[420px] flex flex-col justify-center">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gray-900">
-           <motion.div 
-             className="h-full bg-violet-600" 
-             initial={{ width: 0 }} 
-             animate={{ width: isRelapse ? '100%' : '50%' }} 
-           />
-        </div>
         <AnimatePresence mode="wait">
           {renderContent()}
         </AnimatePresence>

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
@@ -193,12 +194,10 @@ export const OnboardingScreen: React.FC = () => {
 
       await setDoc(doc(db, "users", auth.currentUser.uid), userProfile, { merge: true });
       
-      // Navegação definitiva para o Dashboard limpando a pilha de histórico
-      navigate(Routes.DASHBOARD, { replace: true });
-      
-      // Em alguns casos, pode ser necessário um reload para reavaliar a árvore de rotas no App.tsx
-      // Mas o replace: true já garante a UX correta no histórico.
-      // window.location.reload(); 
+      // FIX CRÍTICO: Hard Navigation para forçar reavaliação do AuthState no App.tsx
+      // Substitui navigate() para evitar loop de redirecionamento em SPA onde o estado local não atualiza a tempo.
+      // Ao recarregar na raiz, o App.tsx buscará o userProfile atualizado e redirecionará para o Dashboard corretamente.
+      window.location.href = '/'; 
 
     } catch (error: any) {
       console.error("Error saving profile:", error);

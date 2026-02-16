@@ -139,7 +139,11 @@ export const DashboardScreen: React.FC = () => {
                <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-pulse"></div>
                <span className="text-[10px] font-bold tracking-wider uppercase" style={{ color: COLORS.TextSecondary }}>Status: Operante</span>
             </div>
-            <StreakTimer startDate={profile?.current_streak_start} />
+            {/* 
+              MODIFICAÇÃO: Fallback para new Date() caso current_streak_start seja nulo.
+              Isso garante que o timer inicie zerado (00:00:00:00) ao invés de quebrar ou mostrar loading eterno.
+            */}
+            <StreakTimer startDate={profile?.current_streak_start || new Date().toISOString()} />
           </header>
 
           <section className="w-full mb-8 p-6 rounded-2xl bg-[#0F0A15] border border-[#2E243D] relative overflow-hidden group">
