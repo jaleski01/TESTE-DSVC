@@ -370,9 +370,17 @@ export const ProgressScreen: React.FC = () => {
                         DIA {pt.day}
                       </span>
                       {pt.isMilestone && (
-                        <div className={`mt-1 flex items-center gap-1 ${labelSide === 'right' ? 'flex-row' : 'flex-row-reverse'}`}>
-                           <div className={`w-1 h-1 rounded-full ${pt.day === 3 && canClaimReward ? 'bg-yellow-400 shadow-[0_0_8px_rgba(234,179,8,1)] animate-pulse' : 'bg-yellow-500 shadow-[0_0_5px_rgba(234,179,8,0.8)]'}`}></div>
-                           <span className={`text-[8px] font-black tracking-widest uppercase ${pt.day === 3 && canClaimReward ? 'text-yellow-400 animate-pulse' : 'text-yellow-500'}`}>
+                        <div className={`mt-1 flex items-center gap-1 ${labelSide === 'right' ? 'flex-row' : 'flex-row-reverse'} ${isLocked ? 'opacity-40 grayscale' : ''}`}>
+                           <div className={`w-1 h-1 rounded-full ${
+                             pt.day === 3 && canClaimReward 
+                               ? 'bg-yellow-400 shadow-[0_0_8px_rgba(234,179,8,1)] animate-pulse' 
+                               : (isLocked ? 'bg-gray-600' : 'bg-yellow-500 shadow-[0_0_5px_rgba(234,179,8,0.8)]')
+                           }`}></div>
+                           <span className={`text-[8px] font-black tracking-widest uppercase ${
+                             pt.day === 3 && canClaimReward 
+                               ? 'text-yellow-400 animate-pulse' 
+                               : (isLocked ? 'text-gray-500' : 'text-yellow-500')
+                           }`}>
                              {pt.day === 3 && canClaimReward ? 'RESGATAR AGORA' : 'RECOMPENSA'}
                            </span>
                         </div>
