@@ -7,6 +7,15 @@ export const getTodayString = () => {
   return new Date().toLocaleDateString('en-CA');
 };
 
+/**
+ * Retorna a string da data de ontem no formato YYYY-MM-DD
+ */
+export const getYesterdayString = () => {
+  const date = new Date();
+  date.setDate(date.getDate() - 1);
+  return date.toLocaleDateString('en-CA');
+};
+
 export const getDaysDiff = (date1: string, date2: string) => {
   const d1 = new Date(date1 + 'T00:00:00');
   const d2 = new Date(date2 + 'T00:00:00');
@@ -80,12 +89,16 @@ export const verifyAndResetStreak = async (uid: string, profile: UserProfile): P
   return { ...profile, streakStatus: 'OK' };
 };
 
+/**
+ * BUG FIX: Ao restaurar a ofensiva, definimos a última data como ONTEM.
+ * Isso garante que a ofensiva não seja resetada, mas mantém os rituais de HOJE pendentes.
+ */
 export const restoreStreak = async (uid: string, profile: UserProfile) => {
   const userRef = doc(db, "users", uid);
-  const today = getTodayString();
+  const yesterday = getYesterdayString();
   
   const update = {
-    lastCheckInDate: today,
+    lastCheckInDate: yesterday, // Define como concluído o dia anterior que foi pulado
     last_updated: serverTimestamp()
   };
 
