@@ -2,12 +2,13 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { doc, updateDoc } from 'firebase/firestore';
 import { COLORS, UserProfile } from '../types';
 import { Button } from './Button';
 import { EMOTIONS, CONTEXTS } from '../data/triggerConstants';
 import { logTrigger } from '../services/triggerService';
 import { forceResetStreak, performDailyCheckIn } from '../services/gamificationService';
-import { auth } from '../lib/firebase';
+import { auth, db } from '../lib/firebase';
 
 interface DailyCheckInModalProps {
   profile: UserProfile;
@@ -34,10 +35,26 @@ export const DailyCheckInModal: React.FC<DailyCheckInModalProps> = ({ profile, o
       if (isRelapse) {
         // Fluxo de Recaída
         await logTrigger(user.uid, emotion!, context!, intensity, 'relapse');
+        
+        // 1. Define o novo marco zero temporal
+        const nowISO = new Date().toISOString();
+
+        // 2. Reseta a contagem de dias (Lógica existente)
         const updateData = await forceResetStreak(user.uid);
+
+        // 3. Atualiza explicitamente o timestamp de início no Firestore para reiniciar o cronômetro
+        await updateDoc(doc(db, "users", user.uid), {
+          current_streak_start: nowISO
+        });
+
         setStep('FAILURE_MSG');
         setTimeout(() => {
-          onSuccess({ ...profile, ...updateData });
+          // 4. Passa os dados atualizados para o contexto local (Dashboard)
+          onSuccess({ 
+            ...profile, 
+            ...updateData,
+            current_streak_start: nowISO 
+          });
           onClose();
         }, 3000);
       } else {
