@@ -29,33 +29,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const db = admin.firestore();
   const messaging = admin.messaging();
-  const now = new Date();
   
   // Feature Flag: Segurança para não enviar em massa durante testes se não desejar
   const isProduction = process.env.ENABLE_REAL_NOTIFICATIONS === 'true';
+
+  // 1. Definição de Contexto Temporal (Brasil UTC-3)
+  const now = new Date();
   
-  // 1. Definição de Timestamps de Corte
-  // Inatividade: Usuários que não atualizam o perfil há mais de 24h.
-  // IMPORTANTE: O campo last_updated é usado como referência principal de atividade.
-  const inactivityThreshold = new Date(now.getTime() - (24 * 60 * 60 * 1000));
+  // Ajusta o horário do servidor (UTC) para o horário de Brasília (UTC-3)
+  // Subtrai 3 horas em milissegundos
+  const brazilTime = new Date(now.getTime() - 3 * 60 * 60 * 1000);
   
-  // Cooldown: Não enviar se já enviou nas últimas 20h (evita spam diário excessivo se o cron rodar múltiplas vezes)
+  // Formata para YYYY-MM-DD para comparar com lastCheckInDate
+  const todayStr = brazilTime.toISOString().split('T')[0];
+
+  // Cooldown: Não enviar se já enviou nas últimas 20h (evita spam no mesmo dia)
   const notificationCooldown = new Date(now.getTime() - (20 * 60 * 60 * 1000));
 
+  console.log(`[Cron Job] Iniciando rotina. Data Brasil: ${todayStr}. Hora Server: ${now.toISOString()}`);
+
   try {
-    // 2. Busca no Firestore
-    // Buscamos usuários cujo 'last_updated' é antigo (anterior ao threshold de 24h).
-    // O Firestore lida bem com a comparação de Timestamps. Se o campo for string ISO, 
-    // a comparação léxica também funciona na maioria dos casos, mas o ideal é consistência.
+    // 2. Busca no Firestore (Reengajamento Diário)
+    // LÓGICA: Se lastCheckInDate < todayStr, significa que o usuário 
+    // fez check-in ontem ou antes, mas NÃO HOJE.
+    // O operador '<' exclui automaticamente documentos onde o campo não existe ou é null.
     const snapshot = await db.collection('users')
-      .where('last_updated', '<', inactivityThreshold)
+      .where('lastCheckInDate', '<', todayStr)
       .get();
     
     if (snapshot.empty) {
-      return res.status(200).json({ status: 'No inactive users found', mode: isProduction ? 'PRODUCTION' : 'SIMULATION' });
+      return res.status(200).json({ status: 'Todos os usuários já fizeram check-in hoje ou base vazia.', mode: isProduction ? 'PRODUCTION' : 'SIMULATION' });
     }
 
     const results = {
+      candidates: snapshot.size,
       sent: 0,
       skipped_cooldown: 0,
       errors: 0,
@@ -90,12 +97,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             await messaging.send({
               token: userData.fcm_token,
               notification: { 
-                title: "Lembrete de Hábito", 
-                body: "Mantenha sua ofensiva. Um pequeno passo hoje garante sua vitória." 
+                title: "Comece o dia vencendo ☀️", 
+                body: "Mantenha sua ofensiva em dia. Um check-in agora garante sua vitória." 
               },
               data: { 
                 route: '/dashboard',
-                click_action: 'FLUTTER_NOTIFICATION_CLICK' // Padrão para compatibilidade
+                click_action: 'FLUTTER_NOTIFICATION_CLICK'
               },
               android: {
                 priority: 'high',
@@ -121,13 +128,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             results.sent++;
           } else {
             // Modo Simulação
-            console.log(`[SIMULAÇÃO] Enviaria para ${userId}: "Mantenha sua ofensiva..."`);
+            console.log(`[SIMULAÇÃO] Enviaria para ${userId} (Último check-in: ${userData.lastCheckInDate})`);
             results.sent++;
           }
 
         } catch (error: any) {
           results.errors++;
-          console.error(`Erro ao enviar para ${userId}:`, error.code);
+          // console.error(`Erro ao enviar para ${userId}:`, error.code);
 
           // 5. Tratamento de Erro (Limpeza de Base)
           if (
@@ -149,6 +156,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.json({ 
       status: 'Success', 
       mode: isProduction ? 'PRODUCTION' : 'SIMULATION',
+      target_date: todayStr,
       stats: results
     });
 
