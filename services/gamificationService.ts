@@ -1,4 +1,3 @@
-
 import { doc, updateDoc, serverTimestamp, arrayUnion, increment } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { UserProfile } from '../types';
@@ -90,15 +89,22 @@ export const verifyAndResetStreak = async (uid: string, profile: UserProfile): P
 };
 
 /**
- * BUG FIX: Ao restaurar a ofensiva, definimos a última data como ONTEM.
- * Isso garante que a ofensiva não seja resetada, mas mantém os rituais de HOJE pendentes.
+ * BUG FIX CRÍTICO: Ao restaurar a ofensiva, definimos explicitamente a data de ONTEM.
+ * Isso salva a ofensiva anterior mas DEIXA O DIA DE HOJE ABERTO para o usuário completar rituais.
  */
 export const restoreStreak = async (uid: string, profile: UserProfile) => {
   const userRef = doc(db, "users", uid);
-  const yesterday = getYesterdayString();
+  
+  // Cria um objeto de data apontando para o final do dia de ontem
+  const yesterdayDate = new Date();
+  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+  yesterdayDate.setHours(23, 59, 59, 999);
+  
+  // Converte para o formato de string usado pelo app (YYYY-MM-DD)
+  const yesterdayString = yesterdayDate.toLocaleDateString('en-CA');
   
   const update = {
-    lastCheckInDate: yesterday, // Define como concluído o dia anterior que foi pulado
+    lastCheckInDate: yesterdayString, // Define o "check-in" como feito ontem
     last_updated: serverTimestamp()
   };
 

@@ -46,6 +46,12 @@ export const TriggerModal: React.FC<TriggerModalProps> = ({ onClose }) => {
       });
   };
 
+  const getProgressWidth = () => {
+    if (step === 1) return '33%';
+    if (step === 2) return '66%';
+    return '100%';
+  };
+
   const renderStepContent = () => {
     switch (step) {
       case 1:
@@ -140,7 +146,7 @@ export const TriggerModal: React.FC<TriggerModalProps> = ({ onClose }) => {
         <div className="w-full h-1.5 bg-[#1C2533] relative">
           <div 
             className="h-full bg-violet-600 transition-all duration-500 ease-out shadow-[0_0_10px_rgba(139,92,246,0.5)]" 
-            style={{ width: `${(step / 3) * 100}%` }} 
+            style={{ width: getProgressWidth() }} 
           />
         </div>
 
