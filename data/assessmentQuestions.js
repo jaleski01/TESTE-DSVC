@@ -103,7 +103,7 @@ export const QUESTIONS = [
     options: [
       { id: 'A', label: "Nada, seria um dia normal.", score: 0 },
       { id: 'B', label: "Sentiria falta, mas conseguiria controlar.", score: 1 },
-      { id: 'C', label: "Fificaria irritado, ansioso e pensando nisso o tempo todo.", score: 3 },
+      { id: 'C', label: "Ficaria irritado, ansioso e pensando nisso o tempo todo.", score: 3 },
       { id: 'D', label: "Teria sintomas físicos (tremedeira, suor, insônia) ou pânico.", score: 5 }
     ]
   },
