@@ -20,7 +20,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   /**
    * SECURITY GUARD (PROTEÇÃO VERCEL CRON)
    * Verifica se a requisição possui o token de autorização secreto.
-   * A Vercel envia automaticamente "Bearer <CRON_SECRET>" em jobs agendados.
    */
   const authHeader = req.headers.authorization;
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -32,25 +31,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const messaging = admin.messaging();
   const now = new Date();
   
-  // Configuração de Segurança (Feature Flag)
+  // Feature Flag: Segurança para não enviar em massa durante testes se não desejar
   const isProduction = process.env.ENABLE_REAL_NOTIFICATIONS === 'true';
   
-  // Timestamps para lógica de inatividade
-  const hours48Ago = new Date(now.getTime() - (48 * 60 * 60 * 1000));
-  const hours20Ago = new Date(now.getTime() - (20 * 60 * 60 * 1000));
+  // 1. Definição de Timestamps de Corte
+  // Inatividade: Usuários que não atualizam o perfil há mais de 24h
+  const inactivityThreshold = new Date(now.getTime() - (24 * 60 * 60 * 1000));
+  
+  // Cooldown: Não enviar se já enviou nas últimas 20h (evita spam diário excessivo)
+  const notificationCooldown = new Date(now.getTime() - (20 * 60 * 60 * 1000));
 
   try {
-    // Busca usuários inativos há mais de 48 horas
-    const snapshot = await db.collection('users').where('last_active_at', '<', hours48Ago).get();
+    // 2. Busca no Firestore
+    // Buscamos usuários cujo 'last_updated' é antigo (anterior ao threshold de 24h)
+    // Nota: 'last_updated' é atualizado sempre que o usuário faz check-in ou salva dados.
+    const snapshot = await db.collection('users')
+      .where('last_updated', '<', inactivityThreshold)
+      .get();
     
     if (snapshot.empty) {
-      return res.status(200).json({ status: 'No inactive users', mode: isProduction ? 'PRODUCTION' : 'SIMULATION' });
+      return res.status(200).json({ status: 'No inactive users found', mode: isProduction ? 'PRODUCTION' : 'SIMULATION' });
     }
 
     const results = {
       sent: 0,
-      simulated: 0,
-      errors: 0
+      skipped_cooldown: 0,
+      errors: 0,
+      tokens_removed: 0
     };
 
     const promises: Promise<any>[] = [];
@@ -59,55 +66,89 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const userData = doc.data();
       const userId = doc.id;
       
-      // 1. Verifica Cooldown (Não notificar mais de uma vez a cada 20h)
+      // Validação 1: Usuário tem token?
+      if (!userData.fcm_token) return;
+
+      // Validação 2: Cooldown (Já enviou hoje?)
       if (userData.last_notification_sent_at) {
         const lastSent = userData.last_notification_sent_at.toDate();
-        if (lastSent > hours20Ago) return; 
-      }
-      
-      // 2. Verifica se possui Token FCM
-      if (userData.fcm_token) {
-        
-        if (isProduction) {
-          // --- ENVIO REAL (PRODUÇÃO) ---
-          const p = messaging.send({
-            notification: { 
-              title: "⚠️ Alerta de Disciplina", 
-              body: "Faz 2 dias que você não registra seu progresso. Volte ao comando." 
-            },
-            token: userData.fcm_token,
-            webpush: { fcmOptions: { link: "/#/dashboard" } }
-          }).then(() => {
-            console.log(`[PRODUÇÃO] Notificação enviada para: ${userId}`);
-            results.sent++;
-            return doc.ref.update({ 
-              last_notification_sent_at: admin.firestore.FieldValue.serverTimestamp() 
-            });
-          }).catch((e) => { 
-            results.errors++;
-            if(e.code === 'messaging/registration-token-not-registered') {
-              return doc.ref.update({ fcm_token: admin.firestore.FieldValue.delete() });
-            }
-          });
-          promises.push(p);
-        } else {
-          // --- MODO SIMULAÇÃO (SEGURANÇA) ---
-          console.log(`[SIMULAÇÃO] Notificação seria enviada para: ${userId} - Envio bloqueado por segurança.`);
-          results.simulated++;
+        if (lastSent > notificationCooldown) {
+          results.skipped_cooldown++;
+          return; 
         }
       }
+      
+      const processNotification = async () => {
+        try {
+          if (isProduction) {
+            // 3. Envio Real
+            await messaging.send({
+              token: userData.fcm_token,
+              notification: { 
+                title: "Lembrete de Hábito", 
+                body: "Sua sequência está em risco. Um pequeno passo hoje mantém sua constância." 
+              },
+              data: { 
+                route: '/dashboard',
+                click_action: 'FLUTTER_NOTIFICATION_CLICK' // Padrão para compatibilidade
+              },
+              android: {
+                priority: 'high',
+                notification: {
+                  clickAction: 'FLUTTER_NOTIFICATION_CLICK'
+                }
+              },
+              apns: {
+                payload: {
+                  aps: {
+                    contentAvailable: true,
+                  },
+                },
+              },
+            });
+
+            // 4. Atualização de Controle
+            await doc.ref.update({ 
+              last_notification_sent_at: admin.firestore.FieldValue.serverTimestamp() 
+            });
+            
+            console.log(`[PRODUÇÃO] Notificação enviada para: ${userId}`);
+            results.sent++;
+          } else {
+            // Modo Simulação
+            console.log(`[SIMULAÇÃO] Enviaria para ${userId}: "Sua sequência está em risco..."`);
+            results.sent++;
+          }
+
+        } catch (error: any) {
+          results.errors++;
+          console.error(`Erro ao enviar para ${userId}:`, error.code);
+
+          // 5. Tratamento de Erro (Limpeza de Base)
+          if (
+            error.code === 'messaging/registration-token-not-registered' || 
+            error.code === 'messaging/invalid-argument'
+          ) {
+            await doc.ref.update({ fcm_token: admin.firestore.FieldValue.delete() });
+            results.tokens_removed++;
+            console.log(`[CLEANUP] Token removido para usuário ${userId}`);
+          }
+        }
+      };
+
+      promises.push(processNotification());
     });
 
     await Promise.all(promises);
     
     return res.json({ 
-      status: 'Done', 
+      status: 'Success', 
       mode: isProduction ? 'PRODUCTION' : 'SIMULATION',
       stats: results
     });
 
   } catch (error: any) { 
-    console.error("Erro no processamento do Cron:", error);
-    return res.status(500).json({ error: 'Runtime processing error' }); 
+    console.error("Erro Crítico no Cron:", error);
+    return res.status(500).json({ error: 'Runtime processing error', details: error.message }); 
   }
 }
