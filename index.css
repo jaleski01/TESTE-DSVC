@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -8,19 +9,21 @@
     width: 100%;
     margin: 0;
     padding: 0;
+    overflow: hidden;
     @apply bg-void;
   }
 
   body {
     @apply text-white selection:bg-neon-purple selection:text-black;
-    /* Aplicamos o gradiente diretamente via CSS com !important para garantir visibilidade total e override de camadas */
+    /* Imersão total: o gradiente deve começar no topo absoluto do hardware */
     background-image: radial-gradient(circle at 50% 0%, rgba(176, 38, 255, 0.6) 0%, rgba(176, 38, 255, 0.15) 50%, #000000 100%) !important;
     background-attachment: fixed;
     background-repeat: no-repeat;
     background-size: cover;
+    overscroll-behavior-y: none;
   }
 
-  /* Custom scrollbar to match the cyberpunk aesthetic */
+  /* Scrollbars customizadas */
   ::-webkit-scrollbar {
     width: 4px;
   }

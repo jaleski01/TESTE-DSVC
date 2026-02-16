@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { TabLayout } from './TabLayout';
 import { COLORS } from '../types';
@@ -7,14 +8,13 @@ interface WrapperProps {
   noPadding?: boolean;
   hideNavigation?: boolean;
   centerContent?: boolean;
-  // Added optional className prop to allow custom background and container styles
   className?: string;
 }
 
 /**
- * Wrapper Component
- * Identidade Cyberpunk Introspectivo: Fundo transparente para herdar o gradiente global.
- * Gerencia a renderização do Hub de navegação e a área de conteúdo principal.
+ * Wrapper Component - Mobile Edge-to-Edge Optimized
+ * O fundo (background) herda o gradiente global que ocupa 100% da tela física.
+ * O conteúdo interno respeita as Safe Areas (Notch e Gestures bar).
  */
 export const Wrapper: React.FC<WrapperProps> = ({ 
   children, 
@@ -25,13 +25,18 @@ export const Wrapper: React.FC<WrapperProps> = ({
 }) => {
   return (
     <div 
-      // Merged custom className with default container styles
       className={`flex flex-col h-[100dvh] w-full text-white overflow-hidden relative bg-transparent ${className}`}
     >
-      {/* Área de conteúdo principal */}
+      {/* 
+        Main Area com Safe Area Padding.
+        pt-[max(1rem,env(safe-area-inset-top))]: Garante que o conteúdo não fique sob o notch.
+        pb-[env(safe-area-inset-bottom)]: Protege contra a barra de gestos do iOS/Android.
+      */}
       <main 
         className={`
           flex-1 w-full relative overflow-hidden flex flex-col 
+          pt-[max(1rem,env(safe-area-inset-top))]
+          pb-[env(safe-area-inset-bottom)]
           ${!noPadding ? 'px-6' : ''} 
           ${centerContent ? 'justify-center items-center' : ''}
           backdrop-blur-[2px]
@@ -40,7 +45,7 @@ export const Wrapper: React.FC<WrapperProps> = ({
         {children}
       </main>
 
-      {/* Renderização condicional do Hub de Navegação */}
+      {/* Navegação Inferior */}
       {!hideNavigation && <TabLayout />}
     </div>
   );
