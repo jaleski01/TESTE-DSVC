@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { logTrigger } from '../services/triggerService';
@@ -14,8 +15,7 @@ interface TriggerModalProps {
 /**
  * TriggerModal - Versão Otimizada (Senior Frontend)
  * 1. Usa React Portal para escapar de restrições de overflow/z-index do iOS.
- * 2. Barra de progresso com transição CSS fluida.
- * 3. Suporte nativo a Safe Areas para dispositivos móveis modernos.
+ * 2. Suporte nativo a Safe Areas para dispositivos móveis modernos.
  */
 export const TriggerModal: React.FC<TriggerModalProps> = ({ onClose }) => {
   const [step, setStep] = useState(1);
@@ -44,12 +44,6 @@ export const TriggerModal: React.FC<TriggerModalProps> = ({ onClose }) => {
       .catch((error) => {
         console.error("Background trigger sync failed:", error);
       });
-  };
-
-  const getProgressWidth = () => {
-    if (step === 1) return '33%';
-    if (step === 2) return '66%';
-    return '100%';
   };
 
   const renderStepContent = () => {
@@ -142,14 +136,6 @@ export const TriggerModal: React.FC<TriggerModalProps> = ({ onClose }) => {
       {/* Modal Card */}
       <div className="w-full max-w-sm bg-[#0F0A15] border border-[#2E243D] rounded-3xl shadow-[0_30px_60px_-12px_rgba(0,0,0,0.8)] relative overflow-hidden flex flex-col animate-page-transition">
         
-        {/* Barra de Progresso Fluida (Step Indicators) */}
-        <div className="w-full h-1.5 bg-[#1C2533] relative">
-          <div 
-            className="h-full bg-violet-600 transition-all duration-500 ease-out shadow-[0_0_10px_rgba(139,92,246,0.5)]" 
-            style={{ width: getProgressWidth() }} 
-          />
-        </div>
-
         {/* Header Decoração */}
         <div className="absolute top-4 right-4 opacity-10 pointer-events-none">
           <svg className="w-12 h-12 text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
