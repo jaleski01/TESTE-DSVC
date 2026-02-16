@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
@@ -6,6 +7,7 @@ import { Wrapper } from '../components/Wrapper';
 import { Button } from '../components/Button';
 import { COLORS, Routes, MASTER_HABITS } from '../types';
 import { QUESTIONS } from '../data/assessmentQuestions';
+import { ChevronLeft } from 'lucide-react';
 
 interface Answer {
   score?: number;
@@ -30,6 +32,46 @@ export const OnboardingScreen: React.FC = () => {
   const currentQuestion = QUESTIONS[currentIndex];
   const totalQuestions = QUESTIONS.length;
   const progress = showHabitSelection ? 100 : ((currentIndex + 1) / totalQuestions) * 100;
+
+  /**
+   * LÓGICA DE VOLTAR (UX Mobile Optimization)
+   */
+  const handleBack = () => {
+    if (showHabitSelection) {
+      setShowHabitSelection(false);
+    } else if (currentIndex > 0) {
+      setCurrentIndex(prev => prev - 1);
+      // Reset scroll position when going back
+      const scrollContainer = document.getElementById('onboarding-scroll-container');
+      if (scrollContainer) scrollContainer.scrollTo(0, 0);
+    } else {
+      // Se estiver na primeira pergunta, volta para a tela de login/anterior
+      navigate(-1);
+    }
+  };
+
+  /**
+   * INTERCEPTAÇÃO DO BOTÃO VOLTAR (History API)
+   * Garante que o botão físico/gesto de voltar do celular navegue entre as perguntas
+   */
+  useEffect(() => {
+    // Adiciona uma entrada no histórico sempre que avançar (exceto na primeira pergunta)
+    if (currentIndex > 0 || showHabitSelection) {
+      window.history.pushState(null, '', window.location.href);
+    }
+
+    const handlePopState = (event: PopStateEvent) => {
+      // Se o usuário tentar voltar e não estivermos no início, interceptamos
+      if (currentIndex > 0 || showHabitSelection) {
+        // "Cancela" a saída do histórico empurrando de volta (mantém a rota)
+        window.history.pushState(null, '', window.location.href);
+        handleBack();
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [currentIndex, showHabitSelection]);
 
   const handleSelectOption = (option: any) => {
     setAnswers((prev) => ({
@@ -77,7 +119,6 @@ export const OnboardingScreen: React.FC = () => {
 
       const nowISO = new Date().toISOString();
       
-      // Montagem do payload de atualização
       const userProfile = {
         onboarding_completed: true,
         current_streak_start: nowISO,
@@ -86,22 +127,15 @@ export const OnboardingScreen: React.FC = () => {
         addiction_score: totalScore,
         selected_habits: selectedHabits, 
         email: auth.currentUser.email,
-        // Auditoria e Integridade
         onboarding_completed_at: serverTimestamp(),
         last_updated: serverTimestamp()
       };
 
-      /**
-       * CORREÇÃO CRÍTICA: 
-       * Adicionado { merge: true } para evitar que o setDoc sobrescreva 
-       * o campo 'subscription_status' criado pelo Webhook de pagamento.
-       */
       await setDoc(doc(db, "users", auth.currentUser.uid), userProfile, { merge: true });
       
-      // Atualiza cache local para persistência imediata na Dashboard
       localStorage.setItem('user_profile', JSON.stringify({
         ...userProfile,
-        current_streak_start: nowISO // Localmente mantemos string para o Timer
+        current_streak_start: nowISO
       }));
       
       navigate(Routes.DASHBOARD);
@@ -120,7 +154,6 @@ export const OnboardingScreen: React.FC = () => {
       const scrollContainer = document.getElementById('onboarding-scroll-container');
       if (scrollContainer) scrollContainer.scrollTo(0, 0);
     } else {
-      // Após a última pergunta, move para seleção de hábitos
       setShowHabitSelection(true);
     }
   };
@@ -131,16 +164,26 @@ export const OnboardingScreen: React.FC = () => {
     <Wrapper noPadding hideNavigation>
       <div className="flex flex-col h-[100dvh] w-full bg-transparent overflow-hidden">
         
-        {/* Header Fixo: Barra de Progresso */}
+        {/* Header Fixo: Barra de Progresso + Botão Voltar */}
         <div className="shrink-0 px-6 pt-6 mb-4">
-          <div className="flex justify-between items-end mb-2">
-            <span className="text-xs font-bold" style={{ color: COLORS.Primary }}>
-              {showHabitSelection ? 'ETAPA FINAL' : `QUESTÃO ${currentIndex + 1}`} 
-              {!showHabitSelection && <span style={{ color: COLORS.TextSecondary }}> / {totalQuestions}</span>}
-            </span>
-            <span className="text-xs" style={{ color: COLORS.TextSecondary }}>
-              {Math.round(progress)}%
-            </span>
+          <div className="flex items-center gap-3 mb-2">
+            <button 
+              onClick={handleBack}
+              className="p-1.5 -ml-1 rounded-full active:bg-white/10 transition-colors"
+              style={{ color: COLORS.TextSecondary }}
+              aria-label="Voltar"
+            >
+              <ChevronLeft size={24} />
+            </button>
+            <div className="flex-1 flex justify-between items-end">
+              <span className="text-xs font-bold" style={{ color: COLORS.Primary }}>
+                {showHabitSelection ? 'ETAPA FINAL' : `QUESTÃO ${currentIndex + 1}`} 
+                {!showHabitSelection && <span style={{ color: COLORS.TextSecondary }}> / {totalQuestions}</span>}
+              </span>
+              <span className="text-xs" style={{ color: COLORS.TextSecondary }}>
+                {Math.round(progress)}%
+              </span>
+            </div>
           </div>
           <div className="w-full h-1 rounded-full bg-[#1C2533]">
             <div 
