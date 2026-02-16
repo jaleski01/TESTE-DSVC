@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { COLORS } from '../types';
 
@@ -71,28 +72,34 @@ export const StreakTimer: React.FC<StreakTimerProps> = ({ startDate }) => {
     );
   }
 
-  const TimeUnit = ({ value, label }: { value: string, label: string }) => (
-    <div className="flex flex-col items-center flex-1 min-w-[50px]">
-      {/* 
-        AJUSTE RESPONSIVO:
-        text-3xl para telas pequenas
-        text-5xl para telas maiores (sm)
-        Isso impede que números grandes (ex: 100 DIAS) quebrem o layout
-      */}
-      <div 
-        className="text-3xl sm:text-5xl font-bold font-mono tracking-tighter text-white drop-shadow-lg leading-none"
-      >
-        {value}
+  const TimeUnit = ({ value, label }: { value: string, label: string }) => {
+    // Lógica de pluralização: Exibe "DIA" se o valor for "01", caso contrário usa o label padrão ("DIAS")
+    // Mantém a consistência com o contador principal da Dashboard
+    const displayLabel = (label === 'DIAS' && value === '01') ? 'DIA' : label;
+
+    return (
+      <div className="flex flex-col items-center flex-1 min-w-[50px]">
+        {/* 
+          AJUSTE RESPONSIVO:
+          text-3xl para telas pequenas
+          text-5xl para telas maiores (sm)
+          Isso impede que números grandes (ex: 100 DIAS) quebrem o layout
+        */}
+        <div 
+          className="text-3xl sm:text-5xl font-bold font-mono tracking-tighter text-white drop-shadow-lg leading-none"
+        >
+          {value}
+        </div>
+        
+        <div 
+          className="text-[9px] sm:text-xs font-bold uppercase tracking-widest mt-2"
+          style={{ color: COLORS.TextSecondary }}
+        >
+          {displayLabel}
+        </div>
       </div>
-      
-      <div 
-        className="text-[9px] sm:text-xs font-bold uppercase tracking-widest mt-2"
-        style={{ color: COLORS.TextSecondary }}
-      >
-        {label}
-      </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="w-full py-4">

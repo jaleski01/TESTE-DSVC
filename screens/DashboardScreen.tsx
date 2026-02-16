@@ -115,6 +115,7 @@ export const DashboardScreen: React.FC = () => {
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 4000);
     }
+    // Atualiza o contexto local imediatamente, forçando a re-renderização da Dashboard com "1 dia"
     updateLocalProfile(updatedProfile);
   };
 
@@ -153,7 +154,9 @@ export const DashboardScreen: React.FC = () => {
                 <h2 className={`text-5xl font-black ${isCheckedInToday ? 'text-white' : 'text-gray-700'}`}>
                   {profile?.currentStreak || 0}
                 </h2>
-                <span className="text-sm font-bold text-gray-500">DIAS</span>
+                <span className="text-sm font-bold text-gray-500 uppercase">
+                  {(profile?.currentStreak || 0) === 1 ? 'DIA' : 'DIAS'}
+                </span>
               </div>
 
               {isCheckedInToday ? (
