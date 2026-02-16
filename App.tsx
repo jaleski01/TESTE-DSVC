@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { HashRouter, Routes, Route, Navigate, useLocation, Outlet } from 'react-router-dom';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
@@ -21,7 +20,7 @@ import { NotificationManager } from './components/NotificationManager';
 import { DataSyncManager } from './components/DataSyncManager';
 import { DataProvider } from './contexts/DataContext';
 
-const AppContent: React.FC<{ user: any }> = ({ user }) => {
+const AppContent: React.FC<{ user: any; isOnboardingComplete: boolean }> = ({ user, isOnboardingComplete }) => {
   const location = useLocation();
 
   return (
@@ -31,7 +30,7 @@ const AppContent: React.FC<{ user: any }> = ({ user }) => {
       <Routes location={location}>
         <Route 
           path={AppRoutes.LOGIN} 
-          element={user ? <Navigate to={AppRoutes.DASHBOARD} replace /> : <LoginScreen />} 
+          element={user ? (isOnboardingComplete ? <Navigate to={AppRoutes.DASHBOARD} replace /> : <Navigate to={AppRoutes.ONBOARDING} replace />) : <LoginScreen />} 
         />
         <Route 
           path={AppRoutes.SUPPORT} 
@@ -39,14 +38,17 @@ const AppContent: React.FC<{ user: any }> = ({ user }) => {
         />
         <Route 
           path={AppRoutes.ONBOARDING} 
-          element={user ? <OnboardingScreen /> : <Navigate to={AppRoutes.LOGIN} replace />} 
+          element={user ? (isOnboardingComplete ? <Navigate to={AppRoutes.DASHBOARD} replace /> : <OnboardingScreen />) : <Navigate to={AppRoutes.LOGIN} replace />} 
         />
-        <Route element={user ? <Outlet /> : <Navigate to={AppRoutes.LOGIN} replace />}>
+        
+        {/* Rotas Protegidas (Autenticação + Onboarding Completo) */}
+        <Route element={user && isOnboardingComplete ? <Outlet /> : <Navigate to={user ? AppRoutes.ONBOARDING : AppRoutes.LOGIN} replace />}>
           <Route path={AppRoutes.DASHBOARD} element={<DashboardScreen />} />
           <Route path={AppRoutes.PROGRESS} element={<ProgressScreen />} />
           <Route path={AppRoutes.LEARNING} element={<LearningScreen />} />
           <Route path={AppRoutes.PROFILE} element={<ProfileScreen />} />
         </Route>
+
         <Route 
           path={AppRoutes.SOS} 
           element={user ? <SosScreen /> : <Navigate to={AppRoutes.LOGIN} replace />} 
@@ -59,6 +61,7 @@ const AppContent: React.FC<{ user: any }> = ({ user }) => {
 
 const App: React.FC = () => {
   const [user, setUser] = useState<any>(null);
+  const [isOnboardingComplete, setIsOnboardingComplete] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -81,22 +84,30 @@ const App: React.FC = () => {
 
           if (userDocSnap.exists()) {
             const userData = userDocSnap.data();
+            
+            // Verificação de Assinatura
             const status = userData?.subscription_status;
             const blockedStatuses = ['canceled', 'unpaid', 'past_due'];
 
             if (status && blockedStatuses.includes(status)) {
               await signOut(auth);
               setUser(null);
+              setIsOnboardingComplete(false);
             } else {
               setUser(currentUser);
+              setIsOnboardingComplete(!!userData?.onboarding_completed);
             }
           } else {
+            // Usuário novo sem documento no Firestore
             setUser(currentUser);
+            setIsOnboardingComplete(false);
           }
         } else {
           setUser(null);
+          setIsOnboardingComplete(false);
         }
       } catch (error) {
+        console.error("Erro na validação de sessão:", error);
         setUser(currentUser); 
       } finally {
         setLoading(false);
@@ -130,7 +141,7 @@ const App: React.FC = () => {
     <HashRouter>
       <DataProvider>
         <NotificationManager />
-        <AppContent user={user} />
+        <AppContent user={user} isOnboardingComplete={isOnboardingComplete} />
       </DataProvider>
     </HashRouter>
   );

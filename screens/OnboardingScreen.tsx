@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 import { Wrapper } from '../components/Wrapper';
 import { Button } from '../components/Button';
@@ -24,6 +23,7 @@ export const OnboardingScreen: React.FC = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<AnswersState>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   
   // Novo estado para seleção de hábitos
   const [showHabitSelection, setShowHabitSelection] = useState(false);
@@ -34,19 +34,74 @@ export const OnboardingScreen: React.FC = () => {
   const progress = showHabitSelection ? 100 : ((currentIndex + 1) / totalQuestions) * 100;
 
   /**
+   * RECUPERAÇÃO DE PROGRESSO
+   */
+  useEffect(() => {
+    const fetchSavedStep = async () => {
+      if (!auth.currentUser) return;
+      try {
+        const userDocRef = doc(db, "users", auth.currentUser.uid);
+        const userDocSnap = await getDoc(userDocRef);
+        
+        if (userDocSnap.exists()) {
+          const data = userDocSnap.data();
+          if (data.last_onboarding_step !== undefined) {
+            // Se o passo salvo for maior que o total, vai para hábitos
+            if (data.last_onboarding_step >= totalQuestions) {
+              setShowHabitSelection(true);
+            } else {
+              setCurrentIndex(data.last_onboarding_step);
+            }
+          }
+          // Recupera respostas parciais se houver
+          if (data.partial_answers) {
+            setAnswers(data.partial_answers);
+          }
+        }
+      } catch (error) {
+        console.error("Erro ao recuperar passo salvo:", error);
+      } finally {
+        setIsInitialLoading(false);
+      }
+    };
+
+    fetchSavedStep();
+  }, [totalQuestions]);
+
+  /**
    * LÓGICA DE VOLTAR (UX Mobile Optimization)
    */
   const handleBack = () => {
     if (showHabitSelection) {
       setShowHabitSelection(false);
+      syncStep(totalQuestions - 1);
     } else if (currentIndex > 0) {
-      setCurrentIndex(prev => prev - 1);
+      const prevIndex = currentIndex - 1;
+      setCurrentIndex(prevIndex);
+      syncStep(prevIndex);
       // Reset scroll position when going back
       const scrollContainer = document.getElementById('onboarding-scroll-container');
       if (scrollContainer) scrollContainer.scrollTo(0, 0);
     } else {
       // Se estiver na primeira pergunta, volta para a tela de login/anterior
       navigate(-1);
+    }
+  };
+
+  /**
+   * SINCRONIZAÇÃO DE PASSO NO FIRESTORE
+   */
+  const syncStep = async (step: number, partialAnswers?: AnswersState) => {
+    if (!auth.currentUser) return;
+    try {
+      const userRef = doc(db, "users", auth.currentUser.uid);
+      await updateDoc(userRef, { 
+        last_onboarding_step: step,
+        partial_answers: partialAnswers || answers,
+        last_updated: serverTimestamp() 
+      });
+    } catch (e) {
+      console.warn("Falha ao sincronizar passo:", e);
     }
   };
 
@@ -74,10 +129,13 @@ export const OnboardingScreen: React.FC = () => {
   }, [currentIndex, showHabitSelection]);
 
   const handleSelectOption = (option: any) => {
-    setAnswers((prev) => ({
-      ...prev,
+    const newAnswers = {
+      ...answers,
       [currentQuestion.id]: option
-    }));
+    };
+    setAnswers(newAnswers);
+    // Salva a resposta atual imediatamente
+    syncStep(currentIndex, newAnswers);
   };
 
   const handleToggleHabit = (id: string) => {
@@ -128,17 +186,15 @@ export const OnboardingScreen: React.FC = () => {
         selected_habits: selectedHabits, 
         email: auth.currentUser.email,
         onboarding_completed_at: serverTimestamp(),
-        last_updated: serverTimestamp()
+        last_updated: serverTimestamp(),
+        last_onboarding_step: totalQuestions, // Marca como finalizado
+        partial_answers: null // Limpa rascunho
       };
 
       await setDoc(doc(db, "users", auth.currentUser.uid), userProfile, { merge: true });
       
-      localStorage.setItem('user_profile', JSON.stringify({
-        ...userProfile,
-        current_streak_start: nowISO
-      }));
-      
-      navigate(Routes.DASHBOARD);
+      // Força recarregamento da aplicação para App.tsx detectar o onboarding_completed
+      window.location.reload();
 
     } catch (error: any) {
       console.error("Error saving profile:", error);
@@ -150,13 +206,24 @@ export const OnboardingScreen: React.FC = () => {
 
   const handleNext = () => {
     if (currentIndex < totalQuestions - 1) {
-      setCurrentIndex(currentIndex + 1);
+      const nextIndex = currentIndex + 1;
+      setCurrentIndex(nextIndex);
+      syncStep(nextIndex);
       const scrollContainer = document.getElementById('onboarding-scroll-container');
       if (scrollContainer) scrollContainer.scrollTo(0, 0);
     } else {
       setShowHabitSelection(true);
+      syncStep(totalQuestions); // Indica que foi para a tela de rituais
     }
   };
+
+  if (isInitialLoading) {
+    return (
+      <div className="h-[100dvh] w-full flex flex-col items-center justify-center bg-void">
+        <div className="w-8 h-8 border-4 border-violet-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   const currentAnswer = answers[currentQuestion.id];
 
