@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
@@ -222,7 +221,10 @@ export const OnboardingScreen: React.FC = () => {
 
   if (isInitialLoading) {
     return (
-      <div className="h-[100dvh] w-full flex flex-col items-center justify-center bg-void">
+      <div 
+        className="h-[100dvh] w-full flex flex-col items-center justify-center text-white"
+        style={{ background: 'linear-gradient(to bottom, #000000 0%, #000000 25%, #2E1065 100%)' }}
+      >
         <div className="w-8 h-8 border-4 border-violet-500 border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
