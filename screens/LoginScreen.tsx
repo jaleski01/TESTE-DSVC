@@ -134,12 +134,12 @@ export const LoginScreen: React.FC = () => {
         // Se for 'active', 'trialing' ou undefined -> Deixa passar
 
         if (userData?.onboarding_completed) {
-          navigate(Routes.DASHBOARD);
+          navigate(Routes.DASHBOARD, { replace: true });
         } else {
-          navigate(Routes.ONBOARDING);
+          navigate(Routes.ONBOARDING, { replace: true });
         }
       } else {
-        navigate(Routes.ONBOARDING);
+        navigate(Routes.ONBOARDING, { replace: true });
       }
     } catch (err: any) {
       setError("Senha incorreta. Tente novamente.");

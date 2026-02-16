@@ -193,8 +193,12 @@ export const OnboardingScreen: React.FC = () => {
 
       await setDoc(doc(db, "users", auth.currentUser.uid), userProfile, { merge: true });
       
-      // Força recarregamento da aplicação para App.tsx detectar o onboarding_completed
-      window.location.reload();
+      // Navegação definitiva para o Dashboard limpando a pilha de histórico
+      navigate(Routes.DASHBOARD, { replace: true });
+      
+      // Em alguns casos, pode ser necessário um reload para reavaliar a árvore de rotas no App.tsx
+      // Mas o replace: true já garante a UX correta no histórico.
+      // window.location.reload(); 
 
     } catch (error: any) {
       console.error("Error saving profile:", error);
