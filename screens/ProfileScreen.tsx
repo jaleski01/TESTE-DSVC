@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Wrapper } from '../components/Wrapper';
 import { Button } from '../components/Button';
@@ -41,7 +40,7 @@ export const ProfileScreen: React.FC = () => {
 
   useEffect(() => {
     const fetchProfile = async () => {
-      const cached = localStorage.getItem('user_profile');
+      const cached = localStorage.getItem('user_profile_cache_v1');
       if (cached) {
         const data = JSON.parse(cached);
         calculateStreak(data.current_streak_start);
@@ -54,7 +53,6 @@ export const ProfileScreen: React.FC = () => {
           if (snap.exists()) {
              const data = snap.data();
              calculateStreak(data.current_streak_start);
-             localStorage.setItem('user_profile', JSON.stringify(data));
           }
         } catch (e) {
           console.error("Erro ao sincronizar perfil", e);
@@ -99,12 +97,46 @@ export const ProfileScreen: React.FC = () => {
     setStreakDays(diff);
   };
 
+  /**
+   * handleLogout - Protocolo Deep Clean
+   * Garante a purga total de dados sensíveis e estados do navegador.
+   */
   const handleLogout = async () => {
     try {
+      console.log("[Security] Iniciando Protocolo Deep Clean...");
+
+      // 1. Limpeza de Storage (Dados locais e flags)
+      localStorage.clear();
+      sessionStorage.clear();
+
+      // 2. Limpeza de Cache de Navegador (PWA Cache)
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        await Promise.all(cacheNames.map(name => caches.delete(name)));
+        console.log("[Security] Cache do sistema purgado.");
+      }
+
+      // 3. Desregistro de Service Workers
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (const registration of registrations) {
+          await registration.unregister();
+        }
+        console.log("[Security] Service Workers desativados.");
+      }
+
+      // 4. Logout do Firebase
       await signOut(auth);
-      navigate(Routes.LOGIN);
+
+      // 5. Hard Reset (Limpeza de Memória RAM/React States)
+      // Força o carregamento do zero para garantir que nenhum estado sensível persista.
+      window.location.href = window.location.origin;
+
     } catch (error) {
-      console.error("Logout failed", error);
+      console.error("[Security Error] Falha no Deep Clean:", error);
+      // Fallback de emergência: desloga e recarrega de qualquer forma
+      await signOut(auth).catch(() => {});
+      window.location.reload();
     }
   };
 
@@ -178,12 +210,6 @@ export const ProfileScreen: React.FC = () => {
       localStorage.removeItem(`@habits_${todayKey}`);
       const randomQuote = MOTIVATIONAL_QUOTES[Math.floor(Math.random() * MOTIVATIONAL_QUOTES.length)];
       setCurrentQuote(randomQuote);
-      const cachedProfile = localStorage.getItem('user_profile');
-      if (cachedProfile) {
-        const profileData = JSON.parse(cachedProfile);
-        profileData.current_streak_start = nowISO;
-        localStorage.setItem('user_profile', JSON.stringify(profileData));
-      }
       setStreakDays(0);
       setShowConfirmModal(false);
       setShowMotivationModal(true);
