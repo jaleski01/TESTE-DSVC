@@ -128,8 +128,8 @@ const App: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="h-[100dvh] w-full bg-void flex flex-col items-center justify-center" style={{ backgroundImage: 'radial-gradient(circle at 50% 0%, rgba(176, 38, 255, 0.6) 0%, rgba(176, 38, 255, 0.15) 50%, #000000 100%)', backgroundSize: 'cover' }}>
-        <div className="w-10 h-10 rounded-full border-4 border-neon-purple border-t-transparent animate-spin mb-4"></div>
+      <div className="min-h-screen w-full bg-slate-950 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black flex flex-col items-center justify-center">
+        <div className="w-10 h-10 rounded-full border-4 border-violet-500 border-t-transparent animate-spin mb-4"></div>
         <span className="text-[10px] font-bold tracking-[0.3em] text-gray-400 uppercase animate-pulse">
           Validando Protocolo
         </span>
