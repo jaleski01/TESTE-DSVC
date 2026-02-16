@@ -13,8 +13,8 @@ interface WrapperProps {
 
 /**
  * Wrapper Component - Mobile Edge-to-Edge Optimized
- * O fundo (background) herda o gradiente global que ocupa 100% da tela física.
- * O conteúdo interno respeita as Safe Areas (Notch e Gestures bar).
+ * Implementa gradiente linear de preto sólido (topo) para roxo escuro (base).
+ * Garante que os primeiros 25% da tela sejam pretos para clareza da StatusBar.
  */
 export const Wrapper: React.FC<WrapperProps> = ({ 
   children, 
@@ -25,7 +25,10 @@ export const Wrapper: React.FC<WrapperProps> = ({
 }) => {
   return (
     <div 
-      className={`flex flex-col h-[100dvh] w-full text-white overflow-hidden relative bg-transparent ${className}`}
+      className={`flex flex-col h-[100dvh] w-full text-white overflow-hidden relative ${className}`}
+      style={{ 
+        background: 'linear-gradient(to bottom, #000000 0%, #000000 25%, #2E1065 100%)' 
+      }}
     >
       {/* 
         Main Area com Safe Area Padding.
