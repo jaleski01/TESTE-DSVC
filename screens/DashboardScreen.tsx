@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../lib/firebase';
@@ -48,7 +49,11 @@ export const DashboardScreen: React.FC = () => {
   const currentStreak = profile?.currentStreak || 0;
   const isCheckedInToday = profile?.lastCheckInDate === todayStr;
 
-  // --- LÓGICA BLINDADA DO EPITÁFIO (CORRIGIDA) ---
+  // Lógica de Epitáfio Futuro (Pré-Checkin)
+  // Verifica se o próximo check-in resultará em um dia de Epitáfio (0, 7, 14...)
+  const isUpcomingEpitaph = !isCheckedInToday && (currentStreak === 0 || (currentStreak + 1) % 7 === 0);
+
+  // --- LÓGICA BLINDADA DO EPITÁFIO (PÓS-CHECKIN) ---
   
   // Se o usuário JÁ fez check-in hoje (isCheckedInToday), o 'currentStreak' já foi incrementado.
   // Portanto, o dia que acabamos de "vencer" e sobre o qual queremos escrever é (currentStreak - 1).
@@ -72,7 +77,8 @@ export const DashboardScreen: React.FC = () => {
     effectiveDay,
     isEpitaphDay, 
     hasWrittenToday, 
-    lastEpitaph: profile?.last_epitaph_date 
+    lastEpitaph: profile?.last_epitaph_date,
+    isUpcomingEpitaph
   });
 
   // Mostra o card SE: É dia de Epitáfio E (Não escreveu OU escreveu mas queremos permitir edição/visualização se necessário)
@@ -306,7 +312,20 @@ export const DashboardScreen: React.FC = () => {
                   )}
                 </div>
               ) : (
-                <HoldToConfirmButton label="Reivindicar Vitória de Hoje" onComplete={() => setIsCheckInModalOpen(true)} />
+                <>
+                  <HoldToConfirmButton label="Reivindicar Vitória de Hoje" onComplete={() => setIsCheckInModalOpen(true)} />
+                  {/* AVISO DE EPITÁFIO (PRE-CHECKIN) */}
+                  {isUpcomingEpitaph && (
+                    <div className="mt-4 animate-in fade-in slide-in-from-top-2 duration-700">
+                      <div className="flex items-center justify-center gap-2 py-2 px-4 rounded-full bg-amber-500/10 border border-amber-500/20">
+                        <Feather size={14} className="text-amber-500" />
+                        <span className="text-xs font-medium text-amber-500 uppercase tracking-wide">
+                          Epitáfio do Dia {currentStreak === 0 ? '0' : currentStreak + 1} Disponível
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </section>
