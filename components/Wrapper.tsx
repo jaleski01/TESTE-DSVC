@@ -9,6 +9,7 @@ interface WrapperProps {
   hideNavigation?: boolean;
   centerContent?: boolean;
   className?: string;
+  disableDefaultBackground?: boolean;
 }
 
 /**
@@ -20,19 +21,22 @@ export const Wrapper: React.FC<WrapperProps> = ({
   noPadding = false, 
   hideNavigation = false,
   centerContent = false,
-  className = ''
+  className = '',
+  disableDefaultBackground = false
 }) => {
   return (
     <div 
       className={`relative flex flex-col h-[100dvh] w-full text-white overflow-hidden bg-void ${className}`}
     >
       {/* --- UNIFIED ATMOSPHERE BACKGROUND (Extracted from Dashboard) --- */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-        {/* Violet Orb (Top Center/Left) */}
-        <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-violet-900/10 rounded-full blur-[100px]" />
-        {/* Cyan Orb (Bottom Right) */}
-        <div className="absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] bg-cyan-900/10 rounded-full blur-[80px]" />
-      </div>
+      {!disableDefaultBackground && (
+        <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+          {/* Violet Orb (Top Center/Left) */}
+          <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-violet-900/10 rounded-full blur-[100px]" />
+          {/* Cyan Orb (Bottom Right) */}
+          <div className="absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] bg-cyan-900/10 rounded-full blur-[80px]" />
+        </div>
+      )}
 
       {/* --- CONTENT LAYER --- */}
       <main 

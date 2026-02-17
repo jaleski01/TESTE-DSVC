@@ -247,7 +247,7 @@ export const DashboardScreen: React.FC = () => {
   };
 
   return (
-    <Wrapper noPadding hideNavigation={isTourActive}> 
+    <Wrapper noPadding hideNavigation={isTourActive} disableDefaultBackground={true}> 
       
       {/* --- DYNAMIC ATMOSPHERE BACKGROUND --- */}
       <div className={`fixed inset-0 overflow-hidden pointer-events-none z-0 transition-opacity duration-1000 ${isGoldenHour ? 'opacity-0' : 'opacity-100'}`}>
