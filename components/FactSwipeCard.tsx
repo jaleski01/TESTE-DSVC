@@ -87,7 +87,7 @@ export const FactSwipeCard: React.FC<FactSwipeCardProps> = ({ fact, onSwipe }) =
         </h3>
         
         <p className="mt-8 text-[10px] text-gray-500 uppercase tracking-widest font-black opacity-60">
-          Arraste para decidir
+          Arraste para os lados
         </p>
       </div>
 
