@@ -318,7 +318,7 @@ export const ProfileScreen: React.FC = () => {
         </div>
 
         {!isStandalone && (
-          <div className="w-full bg-[#1A1A1A] border border-gray-800 rounded-2xl p-5 mb-6">
+          <div className="w-full bg-gradient-to-br from-[#0B101A] to-[#112240] border border-[#2E243D] rounded-2xl p-5 mb-6">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-white font-bold text-base flex items-center gap-2">Instalar Aplicativo</h3>
               <div className="flex bg-gray-900 rounded-lg p-1 border border-gray-800">
@@ -336,7 +336,7 @@ export const ProfileScreen: React.FC = () => {
           </div>
         )}
 
-        <div className={`w-full bg-[#1A1A1A] border border-gray-800 rounded-2xl p-5 mb-6 ${permissionStatus === 'granted' ? 'opacity-40 grayscale' : ''}`}>
+        <div className={`w-full bg-gradient-to-br from-[#0B101A] to-[#112240] border border-[#2E243D] rounded-2xl p-5 mb-6 ${permissionStatus === 'granted' ? 'opacity-40 grayscale' : ''}`}>
           <div className="flex items-start gap-4">
             <div className="p-3 bg-violet-500/10 rounded-xl shrink-0">
               <svg className="w-6 h-6 text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
