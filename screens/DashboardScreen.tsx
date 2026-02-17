@@ -132,7 +132,7 @@ export const DashboardScreen: React.FC = () => {
 
   return (
     <Wrapper noPadding hideNavigation={isTourActive}> 
-      <div className="flex-1 w-full h-full overflow-y-auto scrollbar-hide bg-transparent">
+      <div className="flex-1 w-full h-full overflow-y-auto overflow-x-hidden scrollbar-hide bg-transparent">
         <div className="w-full max-w-full px-5 pt-8 pb-32 flex flex-col items-center">
           
           <header id="tour-timer" className="flex flex-col w-full mb-6">
