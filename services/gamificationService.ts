@@ -1,3 +1,4 @@
+
 import { doc, updateDoc, serverTimestamp, arrayUnion, increment } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { UserProfile } from '../types';
@@ -81,6 +82,11 @@ export const verifyAndResetStreak = async (uid: string, profile: UserProfile): P
   } else if (diff > 2) {
     const userRef = doc(db, "users", uid);
     const update = { currentStreak: 0, lastCheckInDate: today };
+    
+    // IMPORTANTE: NÃO DELETAR A SUBCOLEÇÃO 'epitaph_logs'. O HISTÓRICO DEVE SER ETERNO.
+    // Esta função reseta apenas os contadores numéricos para reiniciar a gamificação.
+    // Os registros de epitáfio permanecem como um histórico de vida do usuário.
+    
     await updateDoc(userRef, update);
     return { ...profile, ...update, streakStatus: 'RESET' };
   }
@@ -120,6 +126,11 @@ export const forceResetStreak = async (uid: string) => {
     lastCheckInDate: today,
     last_updated: serverTimestamp()
   };
+  
+  // IMPORTANTE: NÃO DELETAR A SUBCOLEÇÃO 'epitaph_logs'. O HISTÓRICO DEVE SER ETERNO.
+  // Esta função é chamada quando o usuário falha no teste de recuperação ou registra recaída.
+  // O reset afeta apenas o streak atual, preservando todos os dados de insights anteriores.
+  
   await updateDoc(userRef, update);
   return update;
 };

@@ -43,10 +43,12 @@ export const DashboardScreen: React.FC = () => {
   const todayStr = getTodayString();
   const streak = profile?.currentStreak || 0;
 
-  // Lógica do Epitáfio:
-  // 1. Deve ser dia 0, 7, 14, 21... (Múltiplo de 7)
-  // 2. O usuário ainda não deve ter escrito hoje (last_epitaph_date !== todayStr)
-  const isEpitaphDay = streak % 7 === 0 && streak > 0; // Ex: Dia 7, 14, 21... (Dia 0 é onboarding)
+  // Lógica do Epitáfio (Arquitetura UX):
+  // 1. Dia 0 (Reset/Início): O usuário DEVE escrever para marcar o novo começo.
+  // 2. Dias 7, 14, 21... (Múltiplos de 7): Marcos de evolução.
+  // 3. O usuário ainda não deve ter escrito hoje (last_epitaph_date !== todayStr).
+  const isEpitaphDay = streak === 0 || (streak > 0 && streak % 7 === 0);
+  
   const hasWrittenEpitaph = profile?.last_epitaph_date === todayStr;
   const showEpitaphCard = isEpitaphDay && !hasWrittenEpitaph;
 
@@ -190,7 +192,9 @@ export const DashboardScreen: React.FC = () => {
                         className="w-full py-4 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 flex items-center justify-center gap-3 shadow-[0_0_20px_rgba(245,158,11,0.3)] hover:shadow-[0_0_30px_rgba(245,158,11,0.5)] active:scale-[0.98] transition-all border border-amber-400/20"
                       >
                          <Feather size={18} className="text-black" strokeWidth={2.5} />
-                         <span className="text-xs font-black text-black uppercase tracking-widest">Escrever Epitáfio</span>
+                         <span className="text-xs font-black text-black uppercase tracking-widest">
+                            {streak === 0 ? 'Escrever o Começo' : 'Escrever Epitáfio'}
+                         </span>
                       </button>
                     </motion.div>
                   )}
