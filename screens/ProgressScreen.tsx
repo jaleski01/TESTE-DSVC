@@ -74,7 +74,13 @@ export const ProgressScreen: React.FC = () => {
   const progressPathData = useMemo(() => {
     if (!profile) return "";
     const streak = profile.currentStreak || 0;
-    const progressPoints = journeyPoints.slice(0, streak + 1);
+    
+    // CORREÇÃO: Alinhamento estrito com a Dashboard.
+    // Se a Dashboard mostra "10", a linha deve ir até o ponto 10.
+    // Se streak for 0, desenha até o ponto 1 (início).
+    const activeDay = streak === 0 ? 1 : streak;
+    
+    const progressPoints = journeyPoints.slice(0, activeDay);
     return generatePathData(progressPoints);
   }, [profile, journeyPoints]);
 
@@ -287,29 +293,32 @@ export const ProgressScreen: React.FC = () => {
               {journeyPoints.map((pt) => {
                 const currentStreak = profile?.currentStreak || 0;
                 
-                // --- STATE LOGIC ---
-                const isCompleted = pt.day <= currentStreak;
-                const isCurrent = pt.day === currentStreak + 1;
-                const isLocked = pt.day > currentStreak + 1;
+                // --- STATE LOGIC CORRIGIDA ---
+                // Sincronia Estrita: Se Dashboard diz 10, o ponto 10 é o "Current" (Ativo).
+                const activeDay = currentStreak === 0 ? 1 : currentStreak;
+
+                const isCurrent = pt.day === activeDay;
+                const isCompleted = pt.day < activeDay; // Apenas dias ANTERIORES ao atual são "completed" visualmente
+                const isLocked = pt.day > activeDay;
                 
                 // Identify Milestone
                 const isMilestoneDay = pt.isMilestone || pt.day === 3;
                 
                 // --- STRICT GOLD LOGIC (BUG FIX) ---
-                // O dia só deve ser GOLD se for um marco E estiver completado.
-                // Se estiver bloqueado ou for o dia atual, segue as regras padrão.
-                const isGold = isMilestoneDay && isCompleted;
+                // Um dia é Gold/Reward se for um marco e já tiver sido alcançado (streak >= dia).
+                const isReached = currentStreak >= pt.day;
+                const isGold = isMilestoneDay && isReached;
                 
                 // --- REWARD LOGIC ---
                 const isRewardClaimed = pt.day === 3 && profile?.claimed_rewards?.includes('reward_coolidge_day3');
-                const canClaimReward = pt.day === 3 && isCompleted && !isRewardClaimed;
+                const canClaimReward = pt.day === 3 && isReached && !isRewardClaimed;
 
                 const labelSide = pt.x < 50 ? 'right' : 'left';
 
                 const renderIcon = () => {
                   // 1. MILESTONES (Specific Icons)
                   if (isMilestoneDay) {
-                    // Gold text only if completed (isGold), otherwise Locked(Gray) or Current(White/Violet)
+                    // Gold text only if reached (isGold), otherwise Locked(Gray) or Current(White/Violet)
                     const iconColor = isGold ? 'text-black' : (isLocked ? 'text-gray-600' : 'text-white');
                     
                     const renderIconForDay = () => {
@@ -329,7 +338,6 @@ export const ProgressScreen: React.FC = () => {
                   }
 
                   // 2. REGULAR DAYS (ALWAYS Show Number)
-                  // BUG FIX: Removido o retorno de checkmark. Dias normais completados mostram o número em branco.
                   return (
                     <span className={`text-2xl font-black ${isCompleted ? 'text-white' : (isLocked ? 'text-gray-600' : 'text-white')}`}>
                       {pt.day}
