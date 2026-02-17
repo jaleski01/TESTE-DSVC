@@ -78,20 +78,42 @@ export const DashboardScreen: React.FC = () => {
 
   // --- DEBUG FUNCTIONALITY START ---
   const handleDebugAction = async () => {
-    if (!auth.currentUser || !profile) return;
+    if (!profile || !auth.currentUser) return;
+
     try {
+      // 1. Calcula "Ontem" para liberar o check-in de hoje
+      // Isso simula que o dia virou e o usuário ainda não fez o check-in
+      const today = new Date();
+      const yesterdayDate = new Date(today);
+      yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+      // Formata para YYYY-MM-DD para compatibilidade com o sistema
+      const yesterdayString = yesterdayDate.toISOString().split('T')[0];
+
+      // 2. Novos valores (Incrementa o dia)
       const newStreak = (profile.currentStreak || 0) + 1;
+
+      // 3. Atualiza Firestore
+      const userRef = doc(db, 'users', auth.currentUser.uid);
+      await updateDoc(userRef, {
+        currentStreak: newStreak,
+        lastCheckInDate: yesterdayString, // Reseta o check-in para "pendente" hoje
+        daily_fact_count: 0 // Opcional: Reseta o contador de fatos para teste
+      });
+
+      // 4. Atualiza UI imediatamente (Optimistic Update)
+      // Importante: Passamos a streak nova e a data de check-in ANTIGA (ontem)
+      // para que a variável isCheckedInToday se torne FALSE e libere o botão.
+      updateLocalProfile({
+        ...profile,
+        currentStreak: newStreak,
+        lastCheckInDate: yesterdayString,
+        daily_fact_count: 0
+      });
+
+      alert(`DEBUG: Dia avançado para ${newStreak}. Estado de Check-in resetado.`);
       
-      // 1. Update UI immediately (Optimistic)
-      updateLocalProfile({ currentStreak: newStreak });
-
-      // 2. Update Firestore
-      const userRef = doc(db, "users", auth.currentUser.uid);
-      await updateDoc(userRef, { currentStreak: newStreak });
-
-      alert(`DEBUG: Ofensiva aumentada para ${newStreak} dias.`);
     } catch (error) {
-      console.error("Debug Error:", error);
+      console.error("Erro no debug:", error);
       alert("Erro ao executar debug.");
     }
   };
