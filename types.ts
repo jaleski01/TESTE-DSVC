@@ -12,7 +12,8 @@ export const COLORS = {
   TextSecondary: '#9CA3AF',   
   Cyan: '#A78BFA',            
   Success: '#10B981',
-  Warning: '#F59E0B'
+  Warning: '#F59E0B',
+  Gold: '#F59E0B' // Nova cor para o Epitáfio
 };
 
 export enum Routes {
@@ -41,8 +42,20 @@ export interface UserProfile {
   lastCheckInDate?: string;
   seen_fact_ids?: number[];
   selected_habits?: string[];
+  
+  // Epitáfio
+  last_epitaph_date?: string;
+
   // Index signature para permitir propriedades extras do Firestore sem quebrar o build
   [key: string]: any;
+}
+
+export interface EpitaphLog {
+  id?: string;
+  date: string;
+  day_number: number;
+  content: string;
+  created_at: any;
 }
 
 export interface HabitDefinition {

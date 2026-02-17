@@ -10,6 +10,7 @@ import { ShortcutPrompt } from '../components/ShortcutPrompt';
 import { HoldToConfirmButton } from '../components/HoldToConfirmButton';
 import { StreakRecoveryModal } from '../components/StreakRecoveryModal';
 import { DailyCheckInModal } from '../components/DailyCheckInModal';
+import { EpitaphModal } from '../components/EpitaphModal'; // NEW
 import { FactSwipeCard } from '../components/FactSwipeCard';
 import { OnboardingTour } from '../components/OnboardingTour';
 import { COLORS, Routes, UserProfile } from '../types';
@@ -22,7 +23,7 @@ import {
   forceResetStreak,
   saveRealityCheckResult,
 } from '../services/gamificationService';
-import { Brain, AlertCircle, Sparkles, BookOpen, Check } from 'lucide-react';
+import { Brain, AlertCircle, Sparkles, BookOpen, Check, Feather } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const DashboardScreen: React.FC = () => {
@@ -30,6 +31,7 @@ export const DashboardScreen: React.FC = () => {
   const { userProfile: profile, loading: isLoading, updateLocalProfile, refreshData } = useData();
   
   const [isCheckInModalOpen, setIsCheckInModalOpen] = useState(false);
+  const [isEpitaphModalOpen, setIsEpitaphModalOpen] = useState(false); // NEW
   const [showRecoveryModal, setShowRecoveryModal] = useState(false);
   const [isTourActive, setIsTourActive] = useState(false);
   
@@ -37,6 +39,16 @@ export const DashboardScreen: React.FC = () => {
   const [currentFact, setCurrentFact] = useState<RealityFact | null>(null);
   const [feedback, setFeedback] = useState<{ isCorrect: boolean; fact: RealityFact } | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
+
+  const todayStr = getTodayString();
+  const streak = profile?.currentStreak || 0;
+
+  // Lógica do Epitáfio:
+  // 1. Deve ser dia 0, 7, 14, 21... (Múltiplo de 7)
+  // 2. O usuário ainda não deve ter escrito hoje (last_epitaph_date !== todayStr)
+  const isEpitaphDay = streak % 7 === 0 && streak > 0; // Ex: Dia 7, 14, 21... (Dia 0 é onboarding)
+  const hasWrittenEpitaph = profile?.last_epitaph_date === todayStr;
+  const showEpitaphCard = isEpitaphDay && !hasWrittenEpitaph;
 
   // Initialize facts of the day when profile is available
   useEffect(() => {
@@ -59,7 +71,7 @@ export const DashboardScreen: React.FC = () => {
     };
     
     if (profile) checkStreak();
-  }, [profile?.uid, profile?.last_fact_date]); // Use stable IDs or markers
+  }, [profile?.uid, profile?.last_fact_date]); 
 
   const handleSwipe = async (direction: 'left' | 'right') => {
     if (!currentFact || !auth.currentUser || !profile) return;
@@ -115,8 +127,12 @@ export const DashboardScreen: React.FC = () => {
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 4000);
     }
-    // Atualiza o contexto local imediatamente, forçando a re-renderização da Dashboard com "1 dia"
     updateLocalProfile(updatedProfile);
+  };
+
+  const handleEpitaphSuccess = () => {
+    // Atualiza localmente para remover o card imediatamente
+    updateLocalProfile({ last_epitaph_date: getTodayString() });
   };
 
   const isCheckedInToday = profile?.lastCheckInDate === getTodayString();
@@ -140,10 +156,6 @@ export const DashboardScreen: React.FC = () => {
                <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-pulse"></div>
                <span className="text-[10px] font-bold tracking-wider uppercase" style={{ color: COLORS.TextSecondary }}>Status: Operante</span>
             </div>
-            {/* 
-              MODIFICAÇÃO: Fallback para new Date() caso current_streak_start seja nulo.
-              Isso garante que o timer inicie zerado (00:00:00:00) ao invés de quebrar ou mostrar loading eterno.
-            */}
             <StreakTimer startDate={profile?.current_streak_start || new Date().toISOString()} />
           </header>
 
@@ -165,6 +177,23 @@ export const DashboardScreen: React.FC = () => {
                     <Check size={16} className="text-green-500" />
                     <span className="text-xs font-bold text-green-500 uppercase">Vitória Registrada</span>
                   </div>
+                  
+                  {/* CARD EPITÁFIO (SÓ APARECE SE JÁ FEZ CHECKIN E É O DIA CERTO) */}
+                  {showEpitaphCard && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="mt-2"
+                    >
+                      <button 
+                        onClick={() => setIsEpitaphModalOpen(true)}
+                        className="w-full py-4 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 flex items-center justify-center gap-3 shadow-[0_0_20px_rgba(245,158,11,0.3)] hover:shadow-[0_0_30px_rgba(245,158,11,0.5)] active:scale-[0.98] transition-all border border-amber-400/20"
+                      >
+                         <Feather size={18} className="text-black" strokeWidth={2.5} />
+                         <span className="text-xs font-black text-black uppercase tracking-widest">Escrever Epitáfio</span>
+                      </button>
+                    </motion.div>
+                  )}
                 </div>
               ) : (
                 <HoldToConfirmButton label="Reivindicar Vitória de Hoje" onComplete={() => setIsCheckInModalOpen(true)} />
@@ -269,6 +298,15 @@ export const DashboardScreen: React.FC = () => {
 
       {isCheckInModalOpen && profile && (
         <DailyCheckInModal profile={profile} onClose={() => setIsCheckInModalOpen(false)} onSuccess={handleCheckInSuccess} />
+      )}
+
+      {/* MODAL DO EPITÁFIO */}
+      {isEpitaphModalOpen && profile && (
+        <EpitaphModal 
+          dayNumber={streak} 
+          onClose={() => setIsEpitaphModalOpen(false)} 
+          onSuccess={handleEpitaphSuccess} 
+        />
       )}
 
       <ShortcutPrompt />

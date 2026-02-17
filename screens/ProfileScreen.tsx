@@ -7,6 +7,8 @@ import { signOut } from 'firebase/auth';
 import { doc, updateDoc, increment, getDoc } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 import { COLORS, Routes } from '../types';
+import { EpitaphHistoryModal } from '../components/EpitaphHistoryModal'; // NEW
+import { Feather } from 'lucide-react';
 
 const MOTIVATIONAL_QUOTES = [
   "O sucesso não é linear. O que define você é a velocidade com que você se levanta agora.",
@@ -27,6 +29,7 @@ export const ProfileScreen: React.FC = () => {
   const navigate = useNavigate();
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showMotivationModal, setShowMotivationModal] = useState(false);
+  const [showEpitaphHistory, setShowEpitaphHistory] = useState(false); // NEW
   const [currentQuote, setCurrentQuote] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [streakDays, setStreakDays] = useState(0);
@@ -44,7 +47,6 @@ export const ProfileScreen: React.FC = () => {
       const cached = localStorage.getItem('user_profile_cache_v1');
       if (cached) {
         const data = JSON.parse(cached);
-        // MODIFICAÇÃO: Uso direto de currentStreak em vez de cálculo de data
         setStreakDays(data.currentStreak || 0);
       }
       
@@ -54,7 +56,6 @@ export const ProfileScreen: React.FC = () => {
           const snap = await getDoc(docRef);
           if (snap.exists()) {
              const data = snap.data();
-             // MODIFICAÇÃO: Uso direto de currentStreak em vez de cálculo de data
              setStreakDays(data.currentStreak || 0);
           }
         } catch (e) {
@@ -89,44 +90,25 @@ export const ProfileScreen: React.FC = () => {
     };
   }, [permissionStatus]);
 
-  /**
-   * handleLogout - Protocolo Deep Clean
-   * Garante a purga total de dados sensíveis e estados do navegador.
-   */
   const handleLogout = async () => {
     try {
       console.log("[Security] Iniciando Protocolo Deep Clean...");
-
-      // 1. Limpeza de Storage (Dados locais e flags)
       localStorage.clear();
       sessionStorage.clear();
-
-      // 2. Limpeza de Cache de Navegador (PWA Cache)
       if ('caches' in window) {
         const cacheNames = await caches.keys();
         await Promise.all(cacheNames.map(name => caches.delete(name)));
-        console.log("[Security] Cache do sistema purgado.");
       }
-
-      // 3. Desregistro de Service Workers
       if ('serviceWorker' in navigator) {
         const registrations = await navigator.serviceWorker.getRegistrations();
         for (const registration of registrations) {
           await registration.unregister();
         }
-        console.log("[Security] Service Workers desativados.");
       }
-
-      // 4. Logout do Firebase
       await signOut(auth);
-
-      // 5. Hard Reset (Limpeza de Memória RAM/React States)
-      // Força o carregamento do zero para garantir que nenhum estado sensível persista.
       window.location.href = window.location.origin;
-
     } catch (error) {
       console.error("[Security Error] Falha no Deep Clean:", error);
-      // Fallback de emergência: desloga e recarrega de qualquer forma
       await signOut(auth).catch(() => {});
       window.location.reload();
     }
@@ -141,11 +123,9 @@ export const ProfileScreen: React.FC = () => {
       alert("Seu navegador não suporta notificações.");
       return;
     }
-    
     try {
       const permission = await Notification.requestPermission();
       setPermissionStatus(permission);
-      
       if (permission === 'granted') {
         const token = await requestForToken();
         if (token && auth.currentUser) {
@@ -160,32 +140,6 @@ export const ProfileScreen: React.FC = () => {
     }
   };
 
-  const handleCheckUpdate = async () => {
-    setIsCheckingUpdate(true);
-    if (!('serviceWorker' in navigator)) {
-      alert("Navegador incompatível.");
-      setIsCheckingUpdate(false);
-      return;
-    }
-    try {
-      const registration = await navigator.serviceWorker.ready;
-      let updateFound = false;
-      const updateListener = () => {
-        updateFound = true;
-        alert("Atualizando..."); 
-      };
-      registration.addEventListener('updatefound', updateListener);
-      await registration.update();
-      setTimeout(() => {
-        registration.removeEventListener('updatefound', updateListener);
-        if (!updateFound) alert("Você está na versão mais recente.");
-        setIsCheckingUpdate(false);
-      }, 1500);
-    } catch (error) {
-      setIsCheckingUpdate(false);
-    }
-  };
-
   const executeRelapse = async () => {
     const user = auth.currentUser;
     if (!user) return;
@@ -195,7 +149,7 @@ export const ProfileScreen: React.FC = () => {
       const nowISO = new Date().toISOString();
       await updateDoc(userRef, {
         current_streak_start: nowISO,
-        currentStreak: 0, // Garante zerar o contador inteiro também
+        currentStreak: 0, 
         relapse_count: increment(1),
         last_relapse_date: nowISO
       });
@@ -233,13 +187,24 @@ export const ProfileScreen: React.FC = () => {
     <Wrapper noPadding>
       <div className="flex flex-col items-center w-full h-full pt-8 px-4 pb-32 overflow-y-auto scrollbar-hide">
         <div className="flex flex-col items-center mb-8">
-          <div className="p-1 rounded-full border-2 border-[#8B5CF6] mb-3 shadow-[0_0_15px_rgba(139,92,246,0.4)]">
-             <div className="w-16 h-16 rounded-full bg-[#2E243D] flex items-center justify-center overflow-hidden">
-                <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-             </div>
+          <div className="relative">
+            <div className="p-1 rounded-full border-2 border-[#8B5CF6] mb-3 shadow-[0_0_15px_rgba(139,92,246,0.4)] relative z-10">
+               <div className="w-16 h-16 rounded-full bg-[#2E243D] flex items-center justify-center overflow-hidden">
+                  <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+               </div>
+            </div>
+            
+            {/* BOTÃO DE HISTÓRICO DO EPITÁFIO */}
+            <button 
+              onClick={() => setShowEpitaphHistory(true)}
+              className="absolute -right-2 top-0 w-8 h-8 bg-amber-500 rounded-full border-2 border-[#000] flex items-center justify-center shadow-lg z-20 active:scale-95 transition-transform"
+            >
+              <Feather size={14} className="text-black" />
+            </button>
           </div>
+          
           <h1 className="text-xl font-bold text-white tracking-wide">Meu Perfil</h1>
           <p className="text-xs text-gray-400">
              {streakDays > 0 ? `${streakDays} Dias Limpos` : 'Dia 0 - O Início'}
@@ -281,7 +246,6 @@ export const ProfileScreen: React.FC = () => {
           </div>
         </div>
 
-        {/* Seção de Instalação: Exibida APENAS se o app NÃO estiver instalado (isStandalone false) */}
         {!isStandalone && (
           <div className="w-full bg-[#1A1A1A] border border-gray-800 rounded-2xl p-5 mb-6">
             <div className="flex justify-between items-center mb-4">
@@ -347,6 +311,10 @@ export const ProfileScreen: React.FC = () => {
             <Button onClick={finishProcess} className="w-full bg-violet-600">Voltar ao Foco</Button>
           </div>
         </div>
+      )}
+
+      {showEpitaphHistory && (
+        <EpitaphHistoryModal onClose={() => setShowEpitaphHistory(false)} />
       )}
     </Wrapper>
   );
