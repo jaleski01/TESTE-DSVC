@@ -289,7 +289,7 @@ export const DashboardScreen: React.FC = () => {
           {/* HERO: Floating Streak Counter */}
           <motion.section 
             variants={itemVariants}
-            className="w-full mb-10 relative flex flex-col items-center justify-center py-6"
+            className="w-full mb-4 relative flex flex-col items-center justify-center py-6"
           >
             <div className={`absolute inset-0 rounded-full blur-3xl transform scale-75 transition-all duration-1000 ${
               isGoldenHour 
@@ -302,7 +302,7 @@ export const DashboardScreen: React.FC = () => {
                 {isGoldenHour ? 'Marco Alcançado' : 'Foco Contínuo'}
               </span>
               
-              <div className="flex items-baseline gap-2 mb-4">
+              <div className="flex items-baseline gap-2 mb-10">
                 <h2 className={`text-7xl font-light tracking-tighter transition-all duration-700 ${
                   isGoldenHour 
                     ? 'text-amber-100 drop-shadow-[0_0_25px_rgba(245,158,11,0.6)]' 

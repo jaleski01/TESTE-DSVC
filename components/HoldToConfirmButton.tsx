@@ -58,7 +58,7 @@ export const HoldToConfirmButton: React.FC<HoldToConfirmButtonProps> = ({
   }, []);
 
   return (
-    <div className="relative w-full group">
+    <div className="relative w-[85%] mx-auto group">
       <button
         onMouseDown={startHold}
         onMouseUp={resetHold}
