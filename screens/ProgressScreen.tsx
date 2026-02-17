@@ -2,9 +2,10 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
+import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../lib/firebase';
 import { Wrapper } from '../components/Wrapper';
-import { COLORS, UserProfile } from '../types';
+import { COLORS, UserProfile, Routes } from '../types';
 import { claimStreakReward } from '../services/gamificationService';
 import { 
   fetchAndCacheProgressData, 
@@ -34,11 +35,15 @@ interface PathPoint {
 }
 
 export const ProgressScreen: React.FC = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TabType>('JOURNEY');
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [showRewardAlert, setShowRewardAlert] = useState(false);
   const [isClaiming, setIsClaiming] = useState(false);
+  
+  // New State for Universal Milestone Unlock
+  const [selectedUnlockDay, setSelectedUnlockDay] = useState<number | null>(null);
 
   // Analysis State
   const [selectedRange, setSelectedRange] = useState(7);
@@ -76,8 +81,6 @@ export const ProgressScreen: React.FC = () => {
     const streak = profile.currentStreak || 0;
     
     // CORREÇÃO: Alinhamento estrito com a Dashboard.
-    // Se a Dashboard mostra "10", a linha deve ir até o ponto 10.
-    // Se streak for 0, desenha até o ponto 1 (início).
     const activeDay = streak === 0 ? 1 : streak;
     
     const progressPoints = journeyPoints.slice(0, activeDay);
@@ -113,7 +116,7 @@ export const ProgressScreen: React.FC = () => {
   const handleClaimReward = async (day: number) => {
     if (!profile || !auth.currentUser || isClaiming) return;
     
-    // Atualmente só temos recompensa implementada para o dia 3
+    // Processamento específico para o Dia 3 (único que tem lógica de 'claim' explícito no banco por enquanto)
     if (day === 3 && (profile.currentStreak || 0) >= 3) {
       const rewardId = 'reward_coolidge_day3';
       if (profile.claimed_rewards?.includes(rewardId)) return;
@@ -131,6 +134,14 @@ export const ProgressScreen: React.FC = () => {
         setIsClaiming(false);
       }
     }
+  };
+
+  const handleAccessContent = () => {
+    if (selectedUnlockDay === 3) {
+      handleClaimReward(3);
+    }
+    navigate(Routes.LEARNING);
+    setSelectedUnlockDay(null);
   };
 
   const refreshAnalysisData = async (rangeToRefresh: number) => {
@@ -169,23 +180,38 @@ export const ProgressScreen: React.FC = () => {
     refreshAnalysisData(selectedRange);
   }, [selectedRange]);
 
-  // ANIMATED INITIAL SCROLL: Using useEffect + setTimeout to allow the browser to paint
-  // the top of the list first, then smooth scroll down to the user's current day.
+  // ANIMATED INITIAL SCROLL
   useEffect(() => {
     if (activeTab === 'JOURNEY' && currentDayNodeRef.current && journeyContainerRef.current && !isLoadingProfile) {
       const container = journeyContainerRef.current;
       const targetElement = currentDayNodeRef.current;
       
-      // Calculate target scroll position to center the current day node
-      const target = targetElement.offsetTop - (container.clientHeight / 2) + (targetElement.clientHeight / 2);
-      
-      // Delay slightly to ensure visual render, then scroll smoothly
+      const targetPosition = targetElement.offsetTop - (container.clientHeight / 2) + (targetElement.clientHeight / 2);
+      const startPosition = container.scrollTop;
+      const distance = targetPosition - startPosition;
+      const duration = 2000;
+      let startTime: number | null = null;
+
+      const easeInOutQuad = (t: number) => {
+        return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+      };
+
+      const animation = (currentTime: number) => {
+        if (startTime === null) startTime = currentTime;
+        const timeElapsed = currentTime - startTime;
+        const progress = Math.min(timeElapsed / duration, 1);
+        const ease = easeInOutQuad(progress);
+
+        container.scrollTop = startPosition + (distance * ease);
+
+        if (timeElapsed < duration) {
+          requestAnimationFrame(animation);
+        }
+      };
+
       const timer = setTimeout(() => {
-        container.scrollTo({
-          top: target,
-          behavior: 'smooth'
-        });
-      }, 500); // 500ms delay for visual impact
+        requestAnimationFrame(animation);
+      }, 300);
 
       return () => clearTimeout(timer);
     }
@@ -202,6 +228,17 @@ export const ProgressScreen: React.FC = () => {
   }, [activeTab, chartData]);
 
   const getBarWidthClass = () => (selectedRange === 7 ? "w-8" : "w-4");
+
+  const getUnlockData = (day: number) => {
+    switch(day) {
+      case 3: return { title: "Protocolo de Dopamina", subtitle: "O Efeito Coolidge", description: "Entenda a ciência da novidade e como seu cérebro busca estímulos." };
+      case 7: return { title: "Neuroplasticidade Acelerada", subtitle: "Módulo de 7 Dias", description: "Técnicas avançadas de estoicismo aplicadas à resistência mental." };
+      case 15: return { title: "Controle de Impulso", subtitle: "Arquivos do Tenente", description: "Um mergulho técnico na capacidade do cérebro de se regenerar." };
+      case 30: return { title: "Identidade Blindada", subtitle: "Dossiê Major", description: "Sublimação da energia sexual em poder e foco profissional." };
+      case 90: return { title: "O Novo Eu", subtitle: "Legado do Veterano", description: "A graduação final. O vício se torna memória e o propósito guia." };
+      default: return { title: "Marco Alcançado", subtitle: `Dia ${day}`, description: "Continue firme na jornada." };
+    }
+  };
 
   return (
     <Wrapper noPadding>
@@ -221,7 +258,7 @@ export const ProgressScreen: React.FC = () => {
                </div>
                <div className="flex-1">
                   <h4 className="text-sm font-black text-black uppercase tracking-tight">Recompensa Desbloqueada!</h4>
-                  <p className="text-[10px] font-bold text-black/70">Aula sobre Efeito Coolidge disponível na aba Base.</p>
+                  <p className="text-[10px] font-bold text-black/70">Aula disponível na aba Base.</p>
                </div>
                <button onClick={() => setShowRewardAlert(false)} className="text-black/40 hover:text-black">
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -299,52 +336,40 @@ export const ProgressScreen: React.FC = () => {
 
               {journeyPoints.map((pt) => {
                 const currentStreak = profile?.currentStreak || 0;
-                
-                // --- STATE LOGIC CORRIGIDA ---
-                // Sincronia Estrita: Se Dashboard diz 10, o ponto 10 é o "Current" (Ativo).
                 const activeDay = currentStreak === 0 ? 1 : currentStreak;
-
                 const isCurrent = pt.day === activeDay;
-                const isCompleted = pt.day < activeDay; // Apenas dias ANTERIORES ao atual são "completed" visualmente
+                const isCompleted = pt.day < activeDay; 
                 const isLocked = pt.day > activeDay;
                 
-                // Identify Milestone
-                const isMilestoneDay = pt.isMilestone || pt.day === 3;
+                // Special Days handling (3, 7, 15, 30, 90)
+                const isSpecialDay = MILESTONES.includes(pt.day);
                 
-                // --- STRICT GOLD LOGIC (BUG FIX) ---
-                // Um dia é Gold/Reward se for um marco e já tiver sido alcançado (streak >= dia).
-                const isReached = currentStreak >= pt.day;
-                const isGold = isMilestoneDay && isReached;
-                
-                // --- REWARD LOGIC ---
-                const isRewardClaimed = pt.day === 3 && profile?.claimed_rewards?.includes('reward_coolidge_day3');
-                const canClaimReward = pt.day === 3 && isReached && !isRewardClaimed;
+                // Logic: A milestone is unlocked if user reached it or passed it
+                const isUnlockedMilestone = isSpecialDay && currentStreak >= pt.day;
 
                 const labelSide = pt.x < 50 ? 'right' : 'left';
 
                 const renderIcon = () => {
-                  // 1. MILESTONES (Specific Icons)
-                  if (isMilestoneDay) {
-                    // Gold text only if reached (isGold), otherwise Locked(Gray) or Current(White/Violet)
-                    const iconColor = isGold ? 'text-black' : (isLocked ? 'text-gray-600' : 'text-white');
+                  if (isSpecialDay) {
+                    const iconColor = isUnlockedMilestone ? 'text-black' : (isLocked ? 'text-gray-600' : 'text-white');
                     
                     const renderIconForDay = () => {
-                      if (pt.day === 3) return <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />;
-                      if (pt.day === 7) return <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />;
-                      if (pt.day === 15) return <path strokeLinecap="round" strokeLinejoin="round" d="M4 10h16M4 14h16" />;
-                      if (pt.day === 30) return <path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363 1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />;
-                      if (pt.day === 90) return <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />;
+                      if (pt.day === 3) return <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />; // Bolt
+                      if (pt.day === 7) return <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />; // Chevron
+                      if (pt.day === 15) return <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />; // Shield
+                      if (pt.day === 30) return <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />; // Sun
+                      if (pt.day === 90) return <path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-.363 1.118l-3.976 2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />; // Star
                       return null;
                     };
 
                     return (
-                      <svg className={`w-8 h-8 ${iconColor}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={pt.day >= 30 ? 2 : 3}>
+                      <svg className={`w-8 h-8 ${iconColor}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         {renderIconForDay()}
                       </svg>
                     );
                   }
 
-                  // 2. REGULAR DAYS (ALWAYS Show Number)
+                  // REGULAR DAYS
                   return (
                     <span className={`text-2xl font-black ${isCompleted ? 'text-white' : (isLocked ? 'text-gray-600' : 'text-white')}`}>
                       {pt.day}
@@ -360,19 +385,22 @@ export const ProgressScreen: React.FC = () => {
                     style={{ left: `${pt.x}%`, top: `${pt.y}px` }}
                   >
                     <button 
-                      onClick={() => pt.day === 3 && handleClaimReward(pt.day)}
-                      disabled={pt.day !== 3 || !canClaimReward || isClaiming}
+                      onClick={() => {
+                        if (isSpecialDay && isUnlockedMilestone) {
+                           setSelectedUnlockDay(pt.day);
+                        }
+                      }}
+                      disabled={isSpecialDay && !isUnlockedMilestone}
                       className={`
                         w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-500 border-2
-                        ${isGold 
-                          ? 'bg-gradient-to-br from-yellow-400 to-yellow-600 text-black border-yellow-300/50 shadow-[0_0_20px_rgba(234,179,8,0.5)] scale-105' 
+                        ${isUnlockedMilestone 
+                          ? 'bg-gradient-to-br from-yellow-400 to-yellow-600 text-black border-yellow-300/50 shadow-[0_0_20px_rgba(234,179,8,0.5)] scale-105 cursor-pointer hover:scale-110' 
                           : isCurrent 
                             ? 'bg-[#0F0A15] border-violet-500 animate-pulse scale-110 shadow-[0_0_25px_rgba(139,92,246,0.8)]' 
                             : isCompleted 
                               ? 'bg-violet-600 border-violet-400 shadow-[0_0_15px_rgba(139,92,246,0.4)]' 
-                              : 'bg-[#111111] border-gray-800 opacity-60' // Locked (Prioridade visual correta)
+                              : 'bg-[#111111] border-gray-800 opacity-60' 
                         }
-                        ${pt.day === 3 && isRewardClaimed ? 'border-yellow-500 bg-yellow-900/40 opacity-100' : ''}
                       `}
                     >
                       {renderIcon()}
@@ -381,25 +409,25 @@ export const ProgressScreen: React.FC = () => {
                     <div 
                       className={`absolute top-1/2 -translate-y-1/2 whitespace-nowrap px-6
                         ${labelSide === 'right' ? 'left-full text-left' : 'right-full text-right'}
-                        ${isCurrent || isGold ? 'opacity-100' : 'opacity-30'}
+                        ${isCurrent || isUnlockedMilestone ? 'opacity-100' : 'opacity-30'}
                       `}
                     >
-                      <span className={`text-[10px] font-black uppercase tracking-tighter block leading-none ${isGold ? 'text-yellow-500' : (isCurrent ? 'text-violet-400' : 'text-gray-500')}`}>
+                      <span className={`text-[10px] font-black uppercase tracking-tighter block leading-none ${isUnlockedMilestone ? 'text-yellow-500' : (isCurrent ? 'text-violet-400' : 'text-gray-500')}`}>
                         DIA {pt.day}
                       </span>
                       {pt.isMilestone && (
                         <div className={`mt-1 flex items-center gap-1 ${labelSide === 'right' ? 'flex-row' : 'flex-row-reverse'} ${isLocked ? 'opacity-40 grayscale' : ''}`}>
                            <div className={`w-1 h-1 rounded-full ${
-                             pt.day === 3 && canClaimReward 
+                             isUnlockedMilestone 
                                ? 'bg-yellow-400 shadow-[0_0_8px_rgba(234,179,8,1)] animate-pulse' 
-                               : (isLocked ? 'bg-gray-600' : 'bg-yellow-500 shadow-[0_0_5px_rgba(234,179,8,0.8)]')
+                               : 'bg-yellow-500 shadow-[0_0_5px_rgba(234,179,8,0.8)]'
                            }`}></div>
                            <span className={`text-[8px] font-black tracking-widest uppercase ${
-                             pt.day === 3 && canClaimReward 
+                             isUnlockedMilestone 
                                ? 'text-yellow-400 animate-pulse' 
-                               : (isLocked ? 'text-gray-500' : 'text-yellow-500')
+                               : 'text-yellow-500'
                            }`}>
-                             {pt.day === 3 && canClaimReward ? 'RESGATAR AGORA' : 'RECOMPENSA'}
+                             {isUnlockedMilestone ? 'ACESSAR' : 'RECOMPENSA'}
                            </span>
                         </div>
                       )}
@@ -549,6 +577,54 @@ export const ProgressScreen: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* MODAL DE DESBLOQUEIO DE MARCO */}
+      <AnimatePresence>
+        {selectedUnlockDay !== null && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/95 backdrop-blur-md">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="w-full max-w-sm bg-[#0F0A15] border border-yellow-500/30 rounded-3xl p-6 relative overflow-hidden shadow-[0_0_50px_rgba(234,179,8,0.2)] flex flex-col items-center text-center"
+            >
+              {/* Efeito Glow */}
+              <div className="absolute -top-20 -left-20 w-40 h-40 bg-yellow-500/20 rounded-full blur-3xl pointer-events-none" />
+
+              <div className="w-20 h-20 bg-yellow-500/10 rounded-full border border-yellow-500/50 flex items-center justify-center mb-6 shadow-[0_0_25px_rgba(234,179,8,0.3)] animate-pulse relative z-10">
+                <span className="text-3xl">🏆</span>
+              </div>
+
+              <h2 className="text-xl font-black text-white uppercase italic tracking-wide mb-1">
+                {getUnlockData(selectedUnlockDay).title}
+              </h2>
+              <p className="text-[10px] font-bold text-yellow-500 uppercase tracking-[0.2em] mb-4">
+                {getUnlockData(selectedUnlockDay).subtitle}
+              </p>
+
+              <p className="text-gray-400 text-sm leading-relaxed mb-8">
+                {getUnlockData(selectedUnlockDay).description}
+              </p>
+
+              <div className="flex flex-col gap-3 w-full">
+                <button 
+                  onClick={handleAccessContent}
+                  className="w-full py-4 rounded-xl bg-gradient-to-r from-yellow-600 to-yellow-500 text-black font-black uppercase tracking-widest shadow-lg hover:shadow-[0_0_20px_rgba(234,179,8,0.4)] active:scale-95 transition-all"
+                >
+                  Acessar Conteúdo
+                </button>
+                <button 
+                  onClick={() => setSelectedUnlockDay(null)}
+                  className="w-full py-4 rounded-xl text-gray-500 font-bold hover:text-white transition-colors uppercase text-xs tracking-widest"
+                >
+                  Fechar
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </Wrapper>
   );
 };
+    
