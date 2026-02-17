@@ -1,4 +1,3 @@
-
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenAI } from "@google/genai";
 
@@ -47,9 +46,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       Use tom sério, marcial e encorajador. Sem introduções, vá direto aos pontos.
     `;
 
-    // 4. Chamada ao Modelo (Gemini Flash para velocidade)
+    // 4. Chamada ao Modelo (Gemini Flash para velocidade e estabilidade)
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-latest', // Usando modelo atualizado conforme guidelines
+      model: 'gemini-1.5-flash', 
       contents: prompt,
     });
 
