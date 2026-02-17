@@ -389,7 +389,13 @@ export const DashboardScreen: React.FC = () => {
       )}
 
       {isCheckInModalOpen && profile && (
-        <DailyCheckInModal profile={profile} onClose={() => setIsCheckInModalOpen(false)} onSuccess={handleCheckInSuccess} />
+        <DailyCheckInModal 
+          profile={profile} 
+          isEpitaphDay={isEpitaphDay}
+          hasWrittenEpitaphToday={hasWrittenEpitaph}
+          onClose={() => setIsCheckInModalOpen(false)} 
+          onSuccess={handleCheckInSuccess} 
+        />
       )}
 
       {/* MODAL DO EPITÁFIO */}
