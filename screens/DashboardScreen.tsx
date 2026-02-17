@@ -5,7 +5,6 @@ import { auth, db } from '../lib/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { Wrapper } from '../components/Wrapper';
 import { Button } from '../components/Button';
-import { StreakTimer } from '../components/StreakTimer';
 import { DailyHabits } from '../components/DailyHabits';
 import { ShortcutPrompt } from '../components/ShortcutPrompt';
 import { HoldToConfirmButton } from '../components/HoldToConfirmButton';
@@ -286,14 +285,13 @@ export const DashboardScreen: React.FC = () => {
                  Status: Operante
                </span>
             </div>
-            <StreakTimer startDate={profile?.current_streak_start || new Date().toISOString()} />
           </header>
 
           <section className="w-full mb-8 p-6 rounded-2xl bg-[#0F0A15] border border-[#2E243D] relative overflow-hidden group">
             <div className="relative z-10">
               <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 mb-2 block">Ofensiva Atual</span>
               <div className="flex items-baseline gap-2 mb-4">
-                <h2 className={`text-5xl font-black ${isCheckedInToday ? 'text-white' : 'text-gray-700'}`}>
+                <h2 className="text-5xl font-black text-white">
                   {profile?.currentStreak || 0}
                 </h2>
                 <span className="text-sm font-bold text-gray-500 uppercase">
