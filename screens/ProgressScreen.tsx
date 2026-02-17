@@ -295,21 +295,21 @@ export const ProgressScreen: React.FC = () => {
                 // Identify Milestone
                 const isMilestoneDay = pt.isMilestone || pt.day === 3;
                 
+                // --- STRICT GOLD LOGIC (BUG FIX) ---
+                // O dia só deve ser GOLD se for um marco E estiver completado.
+                // Se estiver bloqueado ou for o dia atual, segue as regras padrão.
+                const isGold = isMilestoneDay && isCompleted;
+                
                 // --- REWARD LOGIC ---
                 const isRewardClaimed = pt.day === 3 && profile?.claimed_rewards?.includes('reward_coolidge_day3');
                 const canClaimReward = pt.day === 3 && isCompleted && !isRewardClaimed;
-
-                // --- STYLING LOGIC (STRICT GOLD) ---
-                // Gold state is ONLY for COMPLETED milestones (or Claimable Rewards).
-                // It should NOT apply if the milestone is just 'Current' (in progress).
-                const isGold = isMilestoneDay && isCompleted;
 
                 const labelSide = pt.x < 50 ? 'right' : 'left';
 
                 const renderIcon = () => {
                   // 1. MILESTONES (Specific Icons)
                   if (isMilestoneDay) {
-                    // Gold text only if completed, otherwise Locked(Gray) or Current(White/Violet)
+                    // Gold text only if completed (isGold), otherwise Locked(Gray) or Current(White/Violet)
                     const iconColor = isGold ? 'text-black' : (isLocked ? 'text-gray-600' : 'text-white');
                     
                     const renderIconForDay = () => {
@@ -328,9 +328,8 @@ export const ProgressScreen: React.FC = () => {
                     );
                   }
 
-                  // 2. REGULAR DAYS (Always Show Number)
-                  // Even if completed, we show the number, not a generic checkmark.
-                  // Status is indicated by background color.
+                  // 2. REGULAR DAYS (ALWAYS Show Number)
+                  // BUG FIX: Removido o retorno de checkmark. Dias normais completados mostram o número em branco.
                   return (
                     <span className={`text-2xl font-black ${isCompleted ? 'text-white' : (isLocked ? 'text-gray-600' : 'text-white')}`}>
                       {pt.day}
@@ -356,7 +355,7 @@ export const ProgressScreen: React.FC = () => {
                             ? 'bg-[#0F0A15] border-violet-500 animate-pulse scale-110 shadow-[0_0_25px_rgba(139,92,246,0.8)]' 
                             : isCompleted 
                               ? 'bg-violet-600 border-violet-400 shadow-[0_0_15px_rgba(139,92,246,0.4)]' 
-                              : 'bg-[#111111] border-gray-800 opacity-60' // Locked
+                              : 'bg-[#111111] border-gray-800 opacity-60' // Locked (Prioridade visual correta)
                         }
                         ${pt.day === 3 && isRewardClaimed ? 'border-yellow-500 bg-yellow-900/40 opacity-100' : ''}
                       `}

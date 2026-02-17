@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { motion, useMotionValue, useTransform } from 'framer-motion';
 import { RealityFact } from '../data/realityCheckData';
 import { Check, X } from 'lucide-react';
@@ -10,11 +10,9 @@ interface FactSwipeCardProps {
 }
 
 export const FactSwipeCard: React.FC<FactSwipeCardProps> = ({ fact, onSwipe }) => {
-  const [hasInteracted, setHasInteracted] = useState(false);
-  
   // 1. Motion Values & Transforms
   const x = useMotionValue(0);
-  // Vincula a rotação ao movimento X para feedback natural (Prioridade de Rotação Manual)
+  // Vincula a rotação ao movimento X para feedback natural
   const rotate = useTransform(x, [-200, 200], [-25, 25]);
   const opacity = useTransform(x, [-200, -150, 0, 150, 200], [0, 1, 1, 1, 0]);
   
@@ -35,25 +33,10 @@ export const FactSwipeCard: React.FC<FactSwipeCardProps> = ({ fact, onSwipe }) =
       style={{ x, rotate, opacity }}
       drag="x"
       dragConstraints={{ left: 0, right: 0 }}
-      // Desativa animação "breathing" assim que o usuário toca no card
-      onDragStart={() => setHasInteracted(true)}
       onDragEnd={handleDragEnd}
       
-      // 2. Desativação Total da Animação de Instrução durante interação
-      // Se interagiu (arrastando), removemos os keyframes para que o 'drag' (x) e 'style' (rotate) assumam controle total.
-      animate={!hasInteracted ? {
-        x: [0, -5, 0, 5, 0],
-        rotate: [0, -1, 0, 1, 0] 
-      } : undefined}
-      
-      // 3. Ajuste de Transição
-      // Alterna entre o loop suave (idle) e a física de mola (release do drag)
-      transition={!hasInteracted ? {
-        duration: 6,
-        repeat: Infinity,
-        repeatType: "loop",
-        ease: "easeInOut"
-      } : {
+      // Animação de retorno (mola) quando o usuário solta o card
+      transition={{
         type: "spring",
         stiffness: 300,
         damping: 30
@@ -90,13 +73,9 @@ export const FactSwipeCard: React.FC<FactSwipeCardProps> = ({ fact, onSwipe }) =
           {fact.statement}
         </h3>
         
-        {/* Oculta instrução visualmente ao interagir para limpar a UI */}
-        <motion.p 
-            animate={{ opacity: hasInteracted ? 0 : 1 }}
-            className="mt-8 text-[10px] text-gray-500 uppercase tracking-widest font-black"
-        >
+        <p className="mt-8 text-[10px] text-gray-500 uppercase tracking-widest font-black">
           Arraste para os lados
-        </motion.p>
+        </p>
       </div>
 
       <div className="absolute bottom-6 left-0 right-0 flex justify-between px-8 text-[10px] font-bold tracking-widest text-gray-600 uppercase w-full pointer-events-none">
