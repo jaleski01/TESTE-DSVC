@@ -10,7 +10,7 @@ import { logTrigger } from '../services/triggerService';
 import { saveEpitaph } from '../services/epitaphService';
 import { forceResetStreak, performDailyCheckIn } from '../services/gamificationService';
 import { auth, db } from '../lib/firebase';
-import { Feather } from 'lucide-react';
+import { Feather, ShieldCheck } from 'lucide-react';
 
 interface DailyCheckInModalProps {
   profile: UserProfile;
@@ -45,6 +45,19 @@ export const DailyCheckInModal: React.FC<DailyCheckInModalProps> = ({
     setStep('EMOTION'); // Sempre coleta emoção agora
   };
 
+  const handleCleanCheckIn = () => {
+    // Check-in Limpo: Define gatilhos como null para não salvar logs
+    setEmotion(null);
+    setContext(null);
+
+    // Se for dia de Epitáfio, obriga a escrita mesmo sem gatilhos
+    if (shouldShowEpitaph) {
+      setStep('EPITAPH_INPUT');
+    } else {
+      finishVictory();
+    }
+  };
+
   const handleContextNext = () => {
     if (isRelapse) {
       finishRelapse();
@@ -65,7 +78,9 @@ export const DailyCheckInModal: React.FC<DailyCheckInModalProps> = ({
     try {
       const today = new Date().toLocaleDateString('en-CA');
 
-      // 1. Salvar contexto e emoção no histórico diário
+      // 1. Lógica Condicional de Salvamento:
+      // Só salva no histórico diário se houver emoção e contexto (Gatilhos identificados).
+      // Se for "Dia Limpo" (ambos null), pula esta etapa para manter os logs puros.
       if (emotion && context) {
         const historyRef = doc(db, "users", user.uid, "daily_history", today);
         await setDoc(historyRef, {
@@ -82,7 +97,7 @@ export const DailyCheckInModal: React.FC<DailyCheckInModalProps> = ({
         await saveEpitaph(user.uid, epitaphText, streakForEpitaph);
       }
 
-      // 3. Realiza o Check-in de Ofensiva
+      // 3. Realiza o Check-in de Ofensiva (Sempre ocorre, mesmo em dia limpo)
       const result = await performDailyCheckIn(user.uid, profile);
       
       if (result && result.success) {
@@ -177,8 +192,19 @@ export const DailyCheckInModal: React.FC<DailyCheckInModalProps> = ({
         return (
           <motion.div key="emotion" variants={variants} initial="enter" animate="center" exit="exit" className="flex flex-col h-full">
             <h2 className="text-lg font-bold text-white mb-1 text-center">Diagnóstico Emocional</h2>
-            <p className="text-xs text-gray-500 text-center mb-6">Como você se sentiu predominantemente hoje?</p>
+            <p className="text-xs text-gray-500 text-center mb-4">Como você se sentiu predominantemente hoje?</p>
             
+            {/* Opção de Check-in Limpo (Apenas se não for recaída) */}
+            {!isRelapse && (
+              <button
+                onClick={handleCleanCheckIn}
+                className="w-full mb-4 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/50 text-emerald-500 font-bold uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-emerald-500/20 active:scale-95 transition-all shadow-[0_0_15px_rgba(16,185,129,0.2)] shrink-0"
+              >
+                <ShieldCheck size={20} />
+                Dia Limpo - Sem Gatilhos
+              </button>
+            )}
+
             <div className="grid grid-cols-2 gap-3 mb-6 overflow-y-auto scrollbar-hide flex-1">
               {EMOTIONS.map((item) => (
                 <button
@@ -194,6 +220,7 @@ export const DailyCheckInModal: React.FC<DailyCheckInModalProps> = ({
                 </button>
               ))}
             </div>
+            
             <Button 
               onClick={() => setStep('CONTEXT')} 
               disabled={!emotion}

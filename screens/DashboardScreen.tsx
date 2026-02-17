@@ -46,11 +46,19 @@ export const DashboardScreen: React.FC = () => {
   const debugTimerRef = useRef<any>(null);
 
   const todayStr = getTodayString();
+  
+  // --- LÓGICA ROBUSTA DO EPITÁFIO ---
+  // Garante data local correta (YYYY-MM-DD) para evitar conflito de fuso
+  const localToday = new Date().toLocaleDateString('en-CA'); 
   const streak = profile?.currentStreak || 0;
 
   // Lógica do Epitáfio (CORRIGIDA): Aceita streak 1 (pós-checkin inicial) e múltiplos de 7
   const isEpitaphDay = streak <= 1 || (streak > 0 && streak % 7 === 0);
-  const hasWrittenEpitaph = profile?.last_epitaph_date === todayStr;
+
+  // Verifica se JÁ escreveu hoje. Compara com a data salva no perfil.
+  const hasWrittenEpitaph = profile?.last_epitaph_date === localToday || profile?.last_epitaph_date === todayStr;
+
+  // Só mostra se for o dia E AINDA NÃO tiver escrito
   const showEpitaphCard = isEpitaphDay && !hasWrittenEpitaph;
 
   // Initialize facts of the day when profile is available
@@ -268,13 +276,9 @@ export const DashboardScreen: React.FC = () => {
                     <span className="text-xs font-bold text-green-500 uppercase">Vitória Registrada</span>
                   </div>
                   
-                  {/* CARD EPITÁFIO (SÓ APARECE SE JÁ FEZ CHECKIN E É O DIA CERTO) */}
+                  {/* CARD EPITÁFIO - RENDERIZAÇÃO BLINDADA */}
                   {showEpitaphCard && (
-                    <motion.div 
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="mt-2"
-                    >
+                    <div className="mt-2 w-full animate-in fade-in slide-in-from-bottom-2 duration-500">
                       <button 
                         onClick={() => setIsEpitaphModalOpen(true)}
                         className="w-full py-4 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 flex items-center justify-center gap-3 shadow-[0_0_20px_rgba(245,158,11,0.3)] hover:shadow-[0_0_30px_rgba(245,158,11,0.5)] active:scale-[0.98] transition-all border border-amber-400/20"
@@ -284,7 +288,7 @@ export const DashboardScreen: React.FC = () => {
                             {streak <= 1 ? 'Escrever o Começo' : 'Escrever Epitáfio'}
                          </span>
                       </button>
-                    </motion.div>
+                    </div>
                   )}
                 </div>
               ) : (
