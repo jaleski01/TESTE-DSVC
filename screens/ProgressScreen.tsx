@@ -268,7 +268,7 @@ export const ProgressScreen: React.FC = () => {
         </AnimatePresence>
 
         {/* FIXED HEADER & TAB SELECTOR */}
-        <div className="px-5 pt-6 pb-4 shrink-0 z-50 bg-void/60 backdrop-blur-xl border-b border-white/5">
+        <div className="px-5 pt-6 pb-4 shrink-0 z-50 bg-transparent">
           <div className="flex flex-col mb-4">
             <h1 className="text-xl font-black text-white tracking-tight uppercase italic">
               Evolução Tática
@@ -627,4 +627,3 @@ export const ProgressScreen: React.FC = () => {
     </Wrapper>
   );
 };
-    
