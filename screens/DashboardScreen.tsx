@@ -49,40 +49,50 @@ export const DashboardScreen: React.FC = () => {
   const currentStreak = profile?.currentStreak || 0;
   const isCheckedInToday = profile?.lastCheckInDate === todayStr;
 
-  // Lógica de Epitáfio Futuro (Pré-Checkin)
-  // Verifica se o próximo check-in resultará em um dia de Epitáfio (0, 7, 14...)
+  // --- LÓGICA MATEMÁTICA CORRIGIDA DO EPITÁFIO ---
+  let isEpitaphDay = false;
+  let effectiveDay = currentStreak;
+
+  if (!isCheckedInToday) {
+    // [PRE-CHECKIN]: O usuário está prestes a conquistar o próximo dia.
+    // Verificamos se o PRÓXIMO número será um marco.
+    // Ex: Estou no dia 6. Se ganhar, viro 7. 7 é marco. Então hoje tem Epitáfio.
+    const potentialStreak = currentStreak + 1;
+    
+    // Regra: É dia 0 (Início) OU o próximo dia é múltiplo de 7.
+    isEpitaphDay = (currentStreak === 0) || (potentialStreak > 0 && potentialStreak % 7 === 0);
+    
+    // Define o dia efetivo para o modal (Alvo)
+    effectiveDay = (currentStreak === 0) ? 0 : potentialStreak;
+  } else {
+    // [POST-CHECKIN]: O usuário já conquistou o dia.
+    // Verificamos se o número ATUAL é um marco.
+    // Exception: Se currentStreak for 1, significa que ele acabou de sair do 0. O Epitáfio do 0 deve estar visível.
+    
+    isEpitaphDay = (currentStreak === 1) || (currentStreak > 0 && currentStreak % 7 === 0);
+    
+    // Se for dia 1 (acabou de sair do 0), effectiveDay mantém 0 para permitir escrita do início.
+    // Caso contrário, é o próprio streak.
+    effectiveDay = (currentStreak === 1) ? 0 : currentStreak;
+  }
+
+  // Debug para garantir funcionamento
+  console.log('Epitaph Logic Fix:', { 
+    streak: currentStreak, 
+    checkedIn: isCheckedInToday, 
+    isEpitaph: isEpitaphDay,
+    effectiveDay
+  });
+
+  // Lógica de Epitáfio Futuro (Pré-Checkin) - Mantida para o aviso visual
   const isUpcomingEpitaph = !isCheckedInToday && (currentStreak === 0 || (currentStreak + 1) % 7 === 0);
 
-  // --- LÓGICA BLINDADA DO EPITÁFIO (PÓS-CHECKIN) ---
-  
-  // Se o usuário JÁ fez check-in hoje (isCheckedInToday), o 'currentStreak' já foi incrementado.
-  // Portanto, o dia que acabamos de "vencer" e sobre o qual queremos escrever é (currentStreak - 1).
-  // Se NÃO fez check-in, o dia alvo é o próprio currentStreak.
-  const effectiveDay = (isCheckedInToday && currentStreak > 0) 
-    ? currentStreak - 1 
-    : currentStreak;
-
-  // Agora verificamos se esse "Dia Efetivo" é um marco (0, 7, 14, 21...)
-  const isEpitaphDay = effectiveDay % 7 === 0;
-
   // Verificação de escrita (Data Local vs Data Salva)
-  const localToday = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
+  const localToday = new Date().toLocaleDateString('en-CA');
   // Se last_epitaph_date for igual a hoje, já escreveu.
   const hasWrittenToday = profile?.last_epitaph_date === localToday;
 
-  // DEBUG LOG (Para garantir que o desenvolvedor veja o que está acontecendo)
-  console.log('Epitaph Debug:', { 
-    currentStreak, 
-    isCheckedInToday,
-    effectiveDay,
-    isEpitaphDay, 
-    hasWrittenToday, 
-    lastEpitaph: profile?.last_epitaph_date,
-    isUpcomingEpitaph
-  });
-
   // Mostra o card SE: É dia de Epitáfio E (Não escreveu OU escreveu mas queremos permitir edição/visualização se necessário)
-  // REGRA: Ocultar apenas se tiver certeza absoluta que escreveu hoje.
   const showEpitaphCard = isEpitaphDay && !hasWrittenToday;
 
   // Initialize facts of the day when profile is available
