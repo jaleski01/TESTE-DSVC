@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../lib/firebase';
@@ -45,31 +44,40 @@ export const DashboardScreen: React.FC = () => {
   const [debugClicks, setDebugClicks] = useState(0);
   const debugTimerRef = useRef<any>(null);
 
-  // --- LÓGICA ROBUSTA DO EPITÁFIO (CORRIGIDA) ---
   const todayStr = getTodayString();
   const currentStreak = profile?.currentStreak || 0;
-  
-  // 1. Verifica status do Check-in HOJE
   const isCheckedInToday = profile?.lastCheckInDate === todayStr;
 
-  // 2. Calcula o Dia Alvo (Target)
-  // Se já fez check-in, o dia conquistado é o atual (ex: 7).
-  // Se NÃO fez check-in, ele está batalhando pelo PRÓXIMO dia (ex: tem 6, busca o 7).
-  const targetDay = isCheckedInToday ? currentStreak : currentStreak + 1;
+  // --- LÓGICA BLINDADA DO EPITÁFIO (CORRIGIDA) ---
+  
+  // Se o usuário JÁ fez check-in hoje (isCheckedInToday), o 'currentStreak' já foi incrementado.
+  // Portanto, o dia que acabamos de "vencer" e sobre o qual queremos escrever é (currentStreak - 1).
+  // Se NÃO fez check-in, o dia alvo é o próprio currentStreak.
+  const effectiveDay = (isCheckedInToday && currentStreak > 0) 
+    ? currentStreak - 1 
+    : currentStreak;
 
-  // 3. Define se é dia de Epitáfio
-  // Dia 1 (Início/Começo) OU Múltiplos de 7 (7, 14, 21...)
-  // targetDay > 0 garante que não tente calcular módulo de zero incorretamente na lógica visual
-  const isEpitaphDay = targetDay === 1 || (targetDay > 0 && targetDay % 7 === 0);
+  // Agora verificamos se esse "Dia Efetivo" é um marco (0, 7, 14, 21...)
+  const isEpitaphDay = effectiveDay % 7 === 0;
 
-  // 4. Verifica se JÁ escreveu o texto hoje para não pedir de novo.
-  // Compara a data salva no perfil com a data local de hoje (formato YYYY-MM-DD).
-  const localToday = new Date().toLocaleDateString('en-CA'); 
-  const hasWrittenEpitaph = profile?.last_epitaph_date === localToday || profile?.last_epitaph_date === todayStr;
+  // Verificação de escrita (Data Local vs Data Salva)
+  const localToday = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
+  // Se last_epitaph_date for igual a hoje, já escreveu.
+  const hasWrittenToday = profile?.last_epitaph_date === localToday;
 
-  // 5. Decide se mostra o Card na Home
-  // Mostra se é o dia certo E ainda não escreveu, independente se já fez o check-in "limpo".
-  const showEpitaphCard = isEpitaphDay && !hasWrittenEpitaph;
+  // DEBUG LOG (Para garantir que o desenvolvedor veja o que está acontecendo)
+  console.log('Epitaph Debug:', { 
+    currentStreak, 
+    isCheckedInToday,
+    effectiveDay,
+    isEpitaphDay, 
+    hasWrittenToday, 
+    lastEpitaph: profile?.last_epitaph_date 
+  });
+
+  // Mostra o card SE: É dia de Epitáfio E (Não escreveu OU escreveu mas queremos permitir edição/visualização se necessário)
+  // REGRA: Ocultar apenas se tiver certeza absoluta que escreveu hoje.
+  const showEpitaphCard = isEpitaphDay && !hasWrittenToday;
 
   // Initialize facts of the day when profile is available
   useEffect(() => {
@@ -284,19 +292,17 @@ export const DashboardScreen: React.FC = () => {
                     <span className="text-xs font-bold text-green-500 uppercase">Vitória Registrada</span>
                   </div>
                   
-                  {/* CARD EPITÁFIO - VISÍVEL SE FOR O DIA E AINDA NÃO TIVER ESCRITO */}
+                  {/* CARD EPITÁFIO - RENDERIZAÇÃO FORÇADA */}
                   {showEpitaphCard && (
-                    <div className="mt-2 w-full animate-in fade-in slide-in-from-bottom-2 duration-500">
-                      <button 
-                        onClick={() => setIsEpitaphModalOpen(true)}
-                        className="w-full py-4 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 flex items-center justify-center gap-3 shadow-[0_0_20px_rgba(245,158,11,0.3)] hover:shadow-[0_0_30px_rgba(245,158,11,0.5)] active:scale-[0.98] transition-all border border-amber-400/20"
-                      >
-                         <Feather size={18} className="text-black" strokeWidth={2.5} />
-                         <span className="text-xs font-black text-black uppercase tracking-widest">
-                            {targetDay <= 1 ? 'Escrever o Começo' : 'Escrever Epitáfio'}
-                         </span>
-                      </button>
-                    </div>
+                    <button 
+                      onClick={() => setIsEpitaphModalOpen(true)}
+                      className="w-full py-4 rounded-xl bg-[#F59E0B] text-black flex items-center justify-center gap-3 shadow-lg shadow-amber-900/20 hover:bg-amber-400 transition-all active:scale-95"
+                    >
+                       <Feather size={18} className="text-black" strokeWidth={2.5} />
+                       <span className="text-xs font-black uppercase tracking-widest">
+                          {effectiveDay === 0 ? 'ESCREVER O COMEÇO' : 'ESCREVER EPITÁFIO'}
+                       </span>
+                    </button>
                   )}
                 </div>
               ) : (
@@ -404,7 +410,7 @@ export const DashboardScreen: React.FC = () => {
         <DailyCheckInModal 
           profile={profile} 
           isEpitaphDay={isEpitaphDay}
-          hasWrittenEpitaphToday={hasWrittenEpitaph}
+          hasWrittenEpitaphToday={hasWrittenToday}
           onClose={() => setIsCheckInModalOpen(false)} 
           onSuccess={handleCheckInSuccess} 
         />
@@ -413,7 +419,7 @@ export const DashboardScreen: React.FC = () => {
       {/* MODAL DO EPITÁFIO */}
       {isEpitaphModalOpen && profile && (
         <EpitaphModal 
-          dayNumber={targetDay} 
+          dayNumber={effectiveDay} 
           onClose={() => setIsEpitaphModalOpen(false)} 
           onSuccess={handleEpitaphSuccess} 
         />
