@@ -112,16 +112,39 @@ export const DashboardScreen: React.FC = () => {
 
   const handleRecoverySuccess = async () => {
     if (!profile || !auth.currentUser) return;
-    const updatedProfile = await restoreStreak(auth.currentUser.uid, profile);
-    updateLocalProfile(updatedProfile);
-    setShowRecoveryModal(false);
+    try {
+      const updatedProfile = await restoreStreak(auth.currentUser.uid, profile);
+      
+      // Força a UI a reconhecer que hoje está pago e a streak está salva para evitar frustração
+      updateLocalProfile({
+        ...updatedProfile,
+        lastCheckInDate: getTodayString() 
+      });
+      
+      setShowRecoveryModal(false);
+      setShowConfetti(true);
+    } catch (error) {
+      console.error("Erro ao recuperar ofensiva:", error);
+    }
   };
 
   const handleRecoveryFail = async () => {
     if (!profile || !auth.currentUser) return;
-    const updateData = await forceResetStreak(auth.currentUser.uid);
-    updateLocalProfile(updateData);
-    setShowRecoveryModal(false);
+    try {
+      const updateData = await forceResetStreak(auth.currentUser.uid);
+      
+      // Força a UI para o Dia 0 (que é dia de Epitáfio) e marca como check-in feito
+      // Isso garante que o botão "Escrever o Começo" apareça imediatamente
+      updateLocalProfile({
+        ...updateData,
+        currentStreak: 0,
+        lastCheckInDate: getTodayString()
+      });
+      
+      setShowRecoveryModal(false);
+    } catch (error) {
+      console.error("Erro ao resetar ofensiva:", error);
+    }
   };
 
   const handleCheckInSuccess = (updatedProfile: UserProfile) => {

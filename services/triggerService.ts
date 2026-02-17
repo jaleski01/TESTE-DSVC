@@ -1,4 +1,11 @@
 
+/*
+ * ⚠️ SEGURANÇA DE DADOS CRÍTICA:
+ * Este serviço manipula 'trigger_logs'.
+ * SOB NENHUMA HIPÓTESE manipule ou apague a subcoleção 'epitaph_logs' durante resets ou limpezas.
+ * O histórico de Epitáfios deve ser IMUTÁVEL e ETERNO, independente da perda de ofensiva.
+ */
+
 import { 
   collection, 
   addDoc, 
