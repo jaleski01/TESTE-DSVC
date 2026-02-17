@@ -2,7 +2,7 @@
 import React from 'react';
 import { motion, useMotionValue, useTransform } from 'framer-motion';
 import { RealityFact } from '../data/realityCheckData';
-import { Check, X } from 'lucide-react';
+import { Check, X, ArrowLeft, ArrowRight, Hand } from 'lucide-react';
 
 interface FactSwipeCardProps {
   fact: RealityFact;
@@ -86,9 +86,36 @@ export const FactSwipeCard: React.FC<FactSwipeCardProps> = ({ fact, onSwipe }) =
           {fact.statement}
         </h3>
         
-        <p className="mt-8 text-[10px] text-gray-500 uppercase tracking-widest font-black opacity-60">
-          Arraste para os lados
-        </p>
+        {/* Nova Call-to-Action Animada */}
+        <motion.div
+          animate={{
+            opacity: [0.6, 1, 0.6],
+            scale: [0.98, 1.05, 0.98],
+            filter: [
+              'drop-shadow(0 0 0px rgba(139,92,246,0))',
+              'drop-shadow(0 0 8px rgba(139,92,246,0.3))',
+              'drop-shadow(0 0 0px rgba(139,92,246,0))'
+            ]
+          }}
+          transition={{
+            duration: 2.5,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+          className="mt-10 flex items-center justify-center gap-2 pointer-events-none"
+        >
+          <ArrowLeft size={16} className="text-violet-500" />
+          
+          <Hand size={16} className="text-slate-400 -rotate-12" />
+          
+          <span className="text-[10px] font-black text-slate-100 uppercase tracking-[0.2em] px-1">
+            ARRASTE PARA OS LADOS
+          </span>
+
+          <Hand size={16} className="text-slate-400 rotate-12 scale-x-[-1]" />
+          
+          <ArrowRight size={16} className="text-violet-500" />
+        </motion.div>
       </div>
 
       {/* RÓTULOS NEON (Sobrepostos e Reativos) */}
