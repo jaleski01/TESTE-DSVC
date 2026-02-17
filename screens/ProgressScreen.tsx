@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef, useMemo, useLayoutEffect } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -285,21 +286,32 @@ export const ProgressScreen: React.FC = () => {
 
               {journeyPoints.map((pt) => {
                 const currentStreak = profile?.currentStreak || 0;
+                
+                // --- STATE LOGIC ---
                 const isCompleted = pt.day <= currentStreak;
                 const isCurrent = pt.day === currentStreak + 1;
                 const isLocked = pt.day > currentStreak + 1;
-                const labelSide = pt.x < 50 ? 'right' : 'left';
+                
+                // Identify Milestone
+                const isMilestoneDay = pt.isMilestone || pt.day === 3;
+                
+                // --- REWARD LOGIC ---
                 const isRewardClaimed = pt.day === 3 && profile?.claimed_rewards?.includes('reward_coolidge_day3');
                 const canClaimReward = pt.day === 3 && isCompleted && !isRewardClaimed;
 
+                // --- STYLING LOGIC (STRICT GOLD) ---
+                // Gold state is ONLY for COMPLETED milestones (or Claimable Rewards).
+                // It should NOT apply if the milestone is just 'Current' (in progress).
+                const isGold = isMilestoneDay && isCompleted;
+
+                const labelSide = pt.x < 50 ? 'right' : 'left';
+
                 const renderIcon = () => {
-                  const isMilestone = pt.isMilestone || pt.day === 3;
-                  const milestoneColor = (isCompleted || isCurrent) && (pt.day !== 3 || !isRewardClaimed) ? 'text-yellow-400 animate-pulse' : 'text-yellow-500';
-                  // Milestone gold buttons will have text-black, so we adjust icon color if completed milestone
-                  const iconColor = isLocked ? 'text-gray-600' : (isMilestone ? (isCompleted ? 'text-black' : milestoneColor) : 'text-white');
-                  
-                  // Milestone: Dia 3 (Check)
-                  if (isMilestone || pt.day === 3) {
+                  // 1. MILESTONES (Specific Icons)
+                  if (isMilestoneDay) {
+                    // Gold text only if completed, otherwise Locked(Gray) or Current(White/Violet)
+                    const iconColor = isGold ? 'text-black' : (isLocked ? 'text-gray-600' : 'text-white');
+                    
                     const renderIconForDay = () => {
                       if (pt.day === 3) return <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />;
                       if (pt.day === 7) return <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />;
@@ -308,6 +320,7 @@ export const ProgressScreen: React.FC = () => {
                       if (pt.day === 90) return <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />;
                       return null;
                     };
+
                     return (
                       <svg className={`w-8 h-8 ${iconColor}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={pt.day >= 30 ? 2 : 3}>
                         {renderIconForDay()}
@@ -315,25 +328,14 @@ export const ProgressScreen: React.FC = () => {
                     );
                   }
 
-                  // Casos padrão para outros dias
-                  if (isCompleted) {
-                    return (
-                      <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                    );
-                  }
-
-                  if (isLocked) {
-                    return (
-                      <svg className="w-6 h-6 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                      </svg>
-                    );
-                  }
-
-                  // Dia atual (Não milestone)
-                  return <span className="text-2xl font-black text-white">{pt.day}</span>;
+                  // 2. REGULAR DAYS (Always Show Number)
+                  // Even if completed, we show the number, not a generic checkmark.
+                  // Status is indicated by background color.
+                  return (
+                    <span className={`text-2xl font-black ${isCompleted ? 'text-white' : (isLocked ? 'text-gray-600' : 'text-white')}`}>
+                      {pt.day}
+                    </span>
+                  );
                 };
 
                 return (
@@ -347,13 +349,15 @@ export const ProgressScreen: React.FC = () => {
                       onClick={() => pt.day === 3 && handleClaimReward(pt.day)}
                       disabled={pt.day !== 3 || !canClaimReward || isClaiming}
                       className={`
-                        w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-500
-                        ${isCompleted ? 'bg-violet-600 border-2 border-violet-400 shadow-[0_0_15px_rgba(139,92,246,0.4)]' : ''}
-                        ${isCurrent ? 'bg-[#0F0A15] border-2 border-violet-500 animate-pulse scale-110 shadow-[0_0_25px_rgba(139,92,246,0.8)]' : ''}
-                        ${isLocked ? 'bg-[#111111] border-2 border-gray-800 opacity-60' : ''}
-                        ${(pt.day === 3 || pt.isMilestone) && isCompleted
-                          ? 'bg-gradient-to-br from-yellow-400 to-yellow-600 text-black shadow-[0_0_20px_rgba(234,179,8,0.5)] scale-105 border-2 border-yellow-300/50' 
-                          : 'border-2'}
+                        w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-500 border-2
+                        ${isGold 
+                          ? 'bg-gradient-to-br from-yellow-400 to-yellow-600 text-black border-yellow-300/50 shadow-[0_0_20px_rgba(234,179,8,0.5)] scale-105' 
+                          : isCurrent 
+                            ? 'bg-[#0F0A15] border-violet-500 animate-pulse scale-110 shadow-[0_0_25px_rgba(139,92,246,0.8)]' 
+                            : isCompleted 
+                              ? 'bg-violet-600 border-violet-400 shadow-[0_0_15px_rgba(139,92,246,0.4)]' 
+                              : 'bg-[#111111] border-gray-800 opacity-60' // Locked
+                        }
                         ${pt.day === 3 && isRewardClaimed ? 'border-yellow-500 bg-yellow-900/40 opacity-100' : ''}
                       `}
                     >
@@ -363,10 +367,10 @@ export const ProgressScreen: React.FC = () => {
                     <div 
                       className={`absolute top-1/2 -translate-y-1/2 whitespace-nowrap px-6
                         ${labelSide === 'right' ? 'left-full text-left' : 'right-full text-right'}
-                        ${isCurrent ? 'opacity-100' : 'opacity-30'}
+                        ${isCurrent || isGold ? 'opacity-100' : 'opacity-30'}
                       `}
                     >
-                      <span className={`text-[10px] font-black uppercase tracking-tighter block leading-none ${isCurrent ? 'text-violet-400' : 'text-gray-500'}`}>
+                      <span className={`text-[10px] font-black uppercase tracking-tighter block leading-none ${isGold ? 'text-yellow-500' : (isCurrent ? 'text-violet-400' : 'text-gray-500')}`}>
                         DIA {pt.day}
                       </span>
                       {pt.isMilestone && (
