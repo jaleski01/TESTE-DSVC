@@ -1,7 +1,8 @@
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { auth } from '../lib/firebase';
+import { auth, db } from '../lib/firebase';
+import { doc, updateDoc } from 'firebase/firestore';
 import { Wrapper } from '../components/Wrapper';
 import { Button } from '../components/Button';
 import { StreakTimer } from '../components/StreakTimer';
@@ -10,7 +11,7 @@ import { ShortcutPrompt } from '../components/ShortcutPrompt';
 import { HoldToConfirmButton } from '../components/HoldToConfirmButton';
 import { StreakRecoveryModal } from '../components/StreakRecoveryModal';
 import { DailyCheckInModal } from '../components/DailyCheckInModal';
-import { EpitaphModal } from '../components/EpitaphModal'; // NEW
+import { EpitaphModal } from '../components/EpitaphModal'; 
 import { FactSwipeCard } from '../components/FactSwipeCard';
 import { OnboardingTour } from '../components/OnboardingTour';
 import { COLORS, Routes, UserProfile } from '../types';
@@ -31,7 +32,7 @@ export const DashboardScreen: React.FC = () => {
   const { userProfile: profile, loading: isLoading, updateLocalProfile, refreshData } = useData();
   
   const [isCheckInModalOpen, setIsCheckInModalOpen] = useState(false);
-  const [isEpitaphModalOpen, setIsEpitaphModalOpen] = useState(false); // NEW
+  const [isEpitaphModalOpen, setIsEpitaphModalOpen] = useState(false); 
   const [showRecoveryModal, setShowRecoveryModal] = useState(false);
   const [isTourActive, setIsTourActive] = useState(false);
   
@@ -40,15 +41,15 @@ export const DashboardScreen: React.FC = () => {
   const [feedback, setFeedback] = useState<{ isCorrect: boolean; fact: RealityFact } | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
 
+  // Debug State
+  const [debugClicks, setDebugClicks] = useState(0);
+  const debugTimerRef = useRef<any>(null);
+
   const todayStr = getTodayString();
   const streak = profile?.currentStreak || 0;
 
   // Lógica do Epitáfio (Arquitetura UX):
-  // 1. Dia 0 (Reset/Início): O usuário DEVE escrever para marcar o novo começo.
-  // 2. Dias 7, 14, 21... (Múltiplos de 7): Marcos de evolução.
-  // 3. O usuário ainda não deve ter escrito hoje (last_epitaph_date !== todayStr).
   const isEpitaphDay = streak === 0 || (streak > 0 && streak % 7 === 0);
-  
   const hasWrittenEpitaph = profile?.last_epitaph_date === todayStr;
   const showEpitaphCard = isEpitaphDay && !hasWrittenEpitaph;
 
@@ -74,6 +75,42 @@ export const DashboardScreen: React.FC = () => {
     
     if (profile) checkStreak();
   }, [profile?.uid, profile?.last_fact_date]); 
+
+  // --- DEBUG FUNCTIONALITY START ---
+  const handleDebugAction = async () => {
+    if (!auth.currentUser || !profile) return;
+    try {
+      const newStreak = (profile.currentStreak || 0) + 1;
+      
+      // 1. Update UI immediately (Optimistic)
+      updateLocalProfile({ currentStreak: newStreak });
+
+      // 2. Update Firestore
+      const userRef = doc(db, "users", auth.currentUser.uid);
+      await updateDoc(userRef, { currentStreak: newStreak });
+
+      alert(`DEBUG: Ofensiva aumentada para ${newStreak} dias.`);
+    } catch (error) {
+      console.error("Debug Error:", error);
+      alert("Erro ao executar debug.");
+    }
+  };
+
+  const handleStatusClick = () => {
+    setDebugClicks(prev => {
+      const newCount = prev + 1;
+      
+      if (debugTimerRef.current) clearTimeout(debugTimerRef.current);
+      debugTimerRef.current = setTimeout(() => setDebugClicks(0), 2000);
+
+      if (newCount === 3) {
+        handleDebugAction();
+        return 0;
+      }
+      return newCount;
+    });
+  };
+  // --- DEBUG FUNCTIONALITY END ---
 
   const handleSwipe = async (direction: 'left' | 'right') => {
     if (!currentFact || !auth.currentUser || !profile) return;
@@ -134,7 +171,6 @@ export const DashboardScreen: React.FC = () => {
       const updateData = await forceResetStreak(auth.currentUser.uid);
       
       // Força a UI para o Dia 0 (que é dia de Epitáfio) e marca como check-in feito
-      // Isso garante que o botão "Escrever o Começo" apareça imediatamente
       updateLocalProfile({
         ...updateData,
         currentStreak: 0,
@@ -179,7 +215,14 @@ export const DashboardScreen: React.FC = () => {
           <header id="tour-timer" className="flex flex-col w-full mb-6">
             <div className="flex items-center gap-2 mb-2 w-fit">
                <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-pulse"></div>
-               <span className="text-[10px] font-bold tracking-wider uppercase" style={{ color: COLORS.TextSecondary }}>Status: Operante</span>
+               {/* DEBUG TRIGGER HERE */}
+               <span 
+                 onClick={handleStatusClick}
+                 className="text-[10px] font-bold tracking-wider uppercase cursor-pointer select-none active:text-white transition-colors" 
+                 style={{ color: COLORS.TextSecondary }}
+               >
+                 Status: Operante
+               </span>
             </div>
             <StreakTimer startDate={profile?.current_streak_start || new Date().toISOString()} />
           </header>
