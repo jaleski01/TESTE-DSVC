@@ -129,7 +129,7 @@ const App: React.FC = () => {
   if (loading) {
     return (
       <div 
-        className="h-[100dvh] w-full flex flex-col items-center justify-center text-white overflow-hidden bg-[#0F0A15] relative"
+        className="h-[100dvh] w-full flex flex-col items-center justify-center text-white overflow-hidden bg-void relative"
       >
         {/* Background Atmosphere */}
         <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-violet-900/10 rounded-full blur-[100px] pointer-events-none" />
