@@ -7,8 +7,11 @@ import { signOut } from 'firebase/auth';
 import { doc, updateDoc, increment, getDoc } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 import { COLORS, Routes } from '../types';
-import { EpitaphHistoryModal } from '../components/EpitaphHistoryModal'; // NEW
+import { EpitaphHistoryModal } from '../components/EpitaphHistoryModal';
 import { Feather } from 'lucide-react';
+import { logTrigger } from '../services/triggerService';
+import { EMOTIONS, CONTEXTS } from '../data/triggerConstants';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const MOTIVATIONAL_QUOTES = [
   "O sucesso não é linear. O que define você é a velocidade com que você se levanta agora.",
@@ -27,9 +30,16 @@ const RANKS = [
 
 export const ProfileScreen: React.FC = () => {
   const navigate = useNavigate();
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  
+  // States para o Fluxo de Recaída (TriggerModal Pattern)
+  const [relapseModalOpen, setRelapseModalOpen] = useState(false);
+  const [relapseStep, setRelapseStep] = useState(1);
+  const [relapseEmotion, setRelapseEmotion] = useState<string | null>(null);
+  const [relapseContext, setRelapseContext] = useState<string | null>(null);
+  const [relapseIntensity, setRelapseIntensity] = useState(3);
+
   const [showMotivationModal, setShowMotivationModal] = useState(false);
-  const [showEpitaphHistory, setShowEpitaphHistory] = useState(false); // NEW
+  const [showEpitaphHistory, setShowEpitaphHistory] = useState(false);
   const [currentQuote, setCurrentQuote] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [streakDays, setStreakDays] = useState(0);
@@ -40,7 +50,6 @@ export const ProfileScreen: React.FC = () => {
 
   const [isStandalone, setIsStandalone] = useState(false);
   const [installTab, setInstallTab] = useState<'android' | 'ios'>('android');
-  const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -115,7 +124,12 @@ export const ProfileScreen: React.FC = () => {
   };
 
   const handleRelapseClick = () => {
-    setShowConfirmModal(true);
+    // Reset e Abre o Modal de Recaída
+    setRelapseStep(1);
+    setRelapseEmotion(null);
+    setRelapseContext(null);
+    setRelapseIntensity(3);
+    setRelapseModalOpen(true);
   };
 
   const handleEnableNotifications = async () => {
@@ -145,6 +159,12 @@ export const ProfileScreen: React.FC = () => {
     if (!user) return;
     setIsLoading(true);
     try {
+      // 1. Registra o Log de Recaída com o motivo
+      if (relapseEmotion && relapseContext) {
+        await logTrigger(user.uid, relapseEmotion, relapseContext, relapseIntensity, 'relapse');
+      }
+
+      // 2. Reseta a Ofensiva
       const userRef = doc(db, "users", user.uid);
       const nowISO = new Date().toISOString();
       await updateDoc(userRef, {
@@ -153,12 +173,15 @@ export const ProfileScreen: React.FC = () => {
         relapse_count: increment(1),
         last_relapse_date: nowISO
       });
+
       const todayKey = new Date().toLocaleDateString('en-CA');
       localStorage.removeItem(`@habits_${todayKey}`);
+      
       const randomQuote = MOTIVATIONAL_QUOTES[Math.floor(Math.random() * MOTIVATIONAL_QUOTES.length)];
       setCurrentQuote(randomQuote);
       setStreakDays(0);
-      setShowConfirmModal(false);
+      
+      setRelapseModalOpen(false);
       setShowMotivationModal(true);
     } catch (error) {
       alert("Erro ao registrar.");
@@ -176,10 +199,59 @@ export const ProfileScreen: React.FC = () => {
     switch (icon) {
       case 'chevron': return <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />;
       case 'bars': return <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 10h16M4 14h16" />;
-      case 'star': return <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />;
+      case 'star': return <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363 1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />;
       case 'shield': return <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />;
       case 'sun': return <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />;
       default: return null;
+    }
+  };
+
+  // Renderização do Conteúdo do Modal de Recaída
+  const renderRelapseContent = () => {
+    switch(relapseStep) {
+      case 1: // Emotion
+        return (
+           <div className="animate-fadeIn w-full">
+             <h2 className="text-xl font-black text-white mb-2 text-center uppercase italic">Diagnóstico de Falha</h2>
+             <p className="text-sm text-gray-400 text-center mb-6">Identifique o gatilho emocional.</p>
+             <div className="grid grid-cols-2 gap-3">
+               {EMOTIONS.map((item) => (
+                 <button key={item} onClick={() => setRelapseEmotion(item)} className={`p-4 rounded-xl border text-sm font-bold transition-all ${relapseEmotion === item ? 'bg-red-500/20 border-red-500 text-white' : 'bg-[#1F2937] border-[#374151] text-gray-400'}`}>{item}</button>
+               ))}
+             </div>
+             <Button className="mt-6" disabled={!relapseEmotion} onClick={() => setRelapseStep(2)}>Próximo</Button>
+           </div>
+        );
+      case 2: // Context
+        return (
+           <div className="animate-fadeIn w-full">
+             <h2 className="text-xl font-black text-white mb-2 text-center uppercase italic">Contexto</h2>
+             <p className="text-sm text-gray-400 text-center mb-6">Onde você estava vulnerável?</p>
+             <div className="grid grid-cols-2 gap-3">
+               {CONTEXTS.map((item) => (
+                 <button key={item} onClick={() => setRelapseContext(item)} className={`p-4 rounded-xl border text-sm font-bold transition-all ${relapseContext === item ? 'bg-red-500/20 border-red-500 text-white' : 'bg-[#1F2937] border-[#374151] text-gray-400'}`}>{item}</button>
+               ))}
+             </div>
+             <Button className="mt-6" disabled={!relapseContext} onClick={() => setRelapseStep(3)}>Próximo</Button>
+           </div>
+        );
+      case 3: // Intensity & Confirm
+         return (
+           <div className="animate-fadeIn w-full text-center">
+             <h2 className="text-xl font-black text-white mb-2 uppercase italic">Intensidade</h2>
+             <div className="flex justify-between items-center px-2 mb-8 mt-6">
+                {[1,2,3,4,5].map(val => (
+                   <button key={val} onClick={() => setRelapseIntensity(val)} className={`w-12 h-12 rounded-full font-black border-2 transition-all ${relapseIntensity === val ? 'bg-red-600 border-red-400 text-white scale-110' : 'bg-[#1A1A1A] border-gray-800 text-gray-600'}`}>{val}</button>
+                ))}
+             </div>
+             <div className="p-4 bg-red-900/10 border border-red-900/30 rounded-xl mb-6">
+               <p className="text-xs text-red-400 leading-relaxed font-bold">
+                 Ao confirmar, sua ofensiva será zerada. Este dado será usado para fortalecer sua próxima tentativa.
+               </p>
+             </div>
+             <Button onClick={executeRelapse} isLoading={isLoading} className="bg-red-600 hover:bg-red-700 shadow-lg shadow-red-900/20">CONFIRMAR RECAÍDA</Button>
+           </div>
+         );
     }
   };
 
@@ -196,7 +268,6 @@ export const ProfileScreen: React.FC = () => {
                </div>
             </div>
             
-            {/* BOTÃO DE HISTÓRICO DO EPITÁFIO */}
             <button 
               onClick={() => setShowEpitaphHistory(true)}
               className="absolute -right-2 top-0 w-8 h-8 bg-amber-500 rounded-full border-2 border-[#000] flex items-center justify-center shadow-lg z-20 active:scale-95 transition-transform"
@@ -291,17 +362,23 @@ export const ProfileScreen: React.FC = () => {
         </div>
       </div>
 
-      {showConfirmModal && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-black/90 backdrop-blur-sm">
-          <div className="w-full max-w-sm bg-[#0F0A15] border border-red-900/30 rounded-2xl p-6 shadow-2xl">
-            <h2 className="text-xl font-bold text-white mb-4 text-center">Confirmar Recaída?</h2>
-            <div className="flex gap-3">
-              <button onClick={() => setShowConfirmModal(false)} className="flex-1 py-3 rounded-xl font-bold bg-[#1F2937] text-white">Cancelar</button>
-              <button onClick={executeRelapse} className="flex-1 py-3 rounded-xl font-bold bg-red-600 text-white">Sim, recaí</button>
+      <AnimatePresence>
+        {relapseModalOpen && (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-black/90 backdrop-blur-md">
+            <motion.div 
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className="w-full max-w-sm bg-[#0F0A15] border border-red-900/50 rounded-3xl p-6 shadow-2xl relative overflow-hidden"
+            >
+                <button onClick={() => setRelapseModalOpen(false)} className="absolute top-4 right-4 text-gray-600 hover:text-gray-400">
+                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+                {renderRelapseContent()}
+            </motion.div>
             </div>
-          </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
 
       {showMotivationModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-black/95">
