@@ -64,6 +64,11 @@ export const DailyHabits: React.FC<DailyHabitsProps> = ({ profile }) => {
   };
 
   const toggleHabit = (id: string) => {
+    // --- HAPTIC FEEDBACK (Micro-Vitória Tátil) ---
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      navigator.vibrate(15); // Short, crisp vibration
+    }
+
     setCompletedIds(prev => {
       const isCompleted = prev.includes(id);
       let newHabits = isCompleted ? prev.filter(item => item !== id) : [...prev, id];
@@ -72,7 +77,6 @@ export const DailyHabits: React.FC<DailyHabitsProps> = ({ profile }) => {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newHabits));
       
       // ATUALIZAÇÃO EM BACKGROUND (ZERO LOADING)
-      // Otimização: Atualiza TODOS os gráficos (7, 15, 30, 90) com uma única leitura de banco
       updateAllProgressCaches()
         .then(() => console.log("[UI-Optimistic] Todos os rituais sincronizados com sucesso."))
         .catch(err => console.error("Erro na atualização em massa dos rituais:", err));
@@ -85,26 +89,40 @@ export const DailyHabits: React.FC<DailyHabitsProps> = ({ profile }) => {
   };
 
   const getIcon = (name: string, checked: boolean) => {
-    const color = checked ? '#FFFFFF' : '#9CA3AF';
+    // --- BIO-LUMINESCENCE LOGIC ---
+    // Se checado, o ícone brilha com a cor de sucesso.
+    // Se não, permanece neutro/apagado.
+    const color = checked ? '#10B981' : '#9CA3AF'; // Emerald vs Gray
+    const style = checked ? { filter: 'drop-shadow(0 0 8px rgba(16, 185, 129, 0.6))' } : {};
+
+    const iconProps = {
+        className: "w-5 h-5 transition-all duration-300",
+        fill: "none",
+        viewBox: "0 0 24 24",
+        stroke: color,
+        strokeWidth: 2,
+        style: style
+    };
+
     switch (name) {
       case 'barbell': case 'musculacao':
-        return <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke={color} strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 6h18M3 18h18M8 6v12M16 6v12M4 6h16M4 18h16" /></svg>;
+        return <svg {...iconProps}><path strokeLinecap="round" strokeLinejoin="round" d="M3 6h18M3 18h18M8 6v12M16 6v12M4 6h16M4 18h16" /></svg>;
       case 'book': case 'leitura':
-        return <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke={color} strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>;
+        return <svg {...iconProps}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>;
       case 'water': case 'cardio':
-        return <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke={color} strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>;
+        return <svg {...iconProps}><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>;
       case 'sparkles': case 'meditacao':
-        return <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke={color} strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-7.714 2.143L11 21l-2.286-6.857L1 12l7.714-2.143L11 3z" /></svg>;
+        return <svg {...iconProps}><path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-7.714 2.143L11 21l-2.286-6.857L1 12l7.714-2.143L11 3z" /></svg>;
       case 'snow': case 'banho_gelado':
-        return <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke={color} strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v18m-6.364-1.636l12.728-12.728M3 12h18M5.636 5.636l12.728 12.728" /></svg>;
+        return <svg {...iconProps}><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v18m-6.364-1.636l12.728-12.728M3 12h18M5.636 5.636l12.728 12.728" /></svg>;
       case 'moon': case 'sono':
-        return <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke={color} strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>;
+        return <svg {...iconProps}><path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>;
       case 'sun': case 'sol':
-        return <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke={color} strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>;
+        return <svg {...iconProps}><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>;
       case 'pencil': case 'journaling':
-        return <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke={color} strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>;
+        return <svg {...iconProps}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>;
       default:
-        return <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke={color} strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>;
+        return <svg {...iconProps}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>;
     }
   };
 
@@ -116,27 +134,31 @@ export const DailyHabits: React.FC<DailyHabitsProps> = ({ profile }) => {
           <button
             key={habit.id}
             onClick={() => toggleHabit(habit.id)}
-            className="flex flex-row items-center w-full mb-3 px-4 rounded-xl border transition-all duration-200 active:scale-[0.98]"
-            style={{ height: '60px', backgroundColor: '#111827', borderColor: '#1F2937' }}
+            className={`flex flex-row items-center w-full mb-3 px-4 rounded-xl border transition-all duration-300 active:scale-[0.98] group
+              ${isChecked 
+                ? 'bg-[#10B981]/5 border-[#10B981]/30 shadow-[0_0_15px_rgba(16,185,129,0.1)]' 
+                : 'bg-[#111827] border-[#1F2937] hover:border-[#374151]'}`}
+            style={{ height: '60px' }}
           >
-            <div className="flex-shrink-0 opacity-70">
+            <div className={`flex-shrink-0 transition-all duration-500 ${isChecked ? 'opacity-100 scale-110' : 'opacity-60 grayscale group-hover:opacity-80'}`}>
               {getIcon(habit.id, isChecked)}
             </div>
             <div className="flex-1 ml-3 text-left">
-              <span className="text-sm font-medium" style={{ color: isChecked ? '#FFFFFF' : '#D1D5DB' }}>
+              <span className={`text-sm font-medium transition-colors duration-300 ${isChecked ? 'text-white' : 'text-[#D1D5DB]'}`}>
                 {habit.label}
               </span>
             </div>
             <div className="flex-shrink-0">
-               {isChecked ? (
-                 <div className="w-6 h-6 rounded-full flex items-center justify-center bg-[#10B981]">
-                    <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+               <div className={`w-6 h-6 rounded-full flex items-center justify-center border transition-all duration-300
+                 ${isChecked 
+                   ? 'bg-[#10B981] border-[#10B981] shadow-[0_0_10px_rgba(16,185,129,0.5)]' 
+                   : 'border-[#374151] bg-transparent group-hover:border-gray-500'}`}>
+                 {isChecked && (
+                    <svg className="w-3.5 h-3.5 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
-                 </div>
-               ) : (
-                 <div className="w-6 h-6 rounded-full border-2 border-[#374151]"></div>
-               )}
+                 )}
+               </div>
             </div>
           </button>
         );

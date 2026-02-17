@@ -12,9 +12,9 @@ interface WrapperProps {
 }
 
 /**
- * Wrapper Component - Mobile Edge-to-Edge Optimized
- * Implementa gradiente linear de preto sólido (topo) para roxo escuro (base).
- * Garante que os primeiros 25% da tela sejam pretos para clareza da StatusBar.
+ * Wrapper Component - Visual Immersion Layer
+ * Implements the "Digital Fog" aesthetic with animated orbs, glassmorphism, 
+ * and a cinematic vignette.
  */
 export const Wrapper: React.FC<WrapperProps> = ({ 
   children, 
@@ -25,30 +25,43 @@ export const Wrapper: React.FC<WrapperProps> = ({
 }) => {
   return (
     <div 
-      className={`flex flex-col h-[100dvh] w-full text-white overflow-hidden relative ${className}`}
-      style={{ 
-        background: 'linear-gradient(to bottom, #000000 0%, #000000 25%, #2E1065 100%)' 
-      }}
+      className={`relative flex flex-col h-[100dvh] w-full text-white overflow-hidden bg-void ${className}`}
     >
-      {/* 
-        Main Area com Safe Area Padding.
-        pt-[max(1rem,env(safe-area-inset-top))]: Garante que o conteúdo não fique sob o notch.
-        pb-[env(safe-area-inset-bottom)]: Protege contra a barra de gestos do iOS/Android.
-      */}
+      {/* --- VISUAL IMMERSION LAYER (BACKGROUND) --- */}
+      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+        
+        {/* Orb 1: Deep Purple (Top Left) - Breathing */}
+        <div className="absolute -top-[10%] -left-[10%] w-[70vw] h-[70vw] bg-violet-900/20 rounded-full blur-[100px] animate-blob mix-blend-screen" />
+        
+        {/* Orb 2: Dark Cyan (Bottom Right) - Drifting */}
+        <div className="absolute top-[40%] -right-[10%] w-[60vw] h-[60vw] bg-cyan-900/10 rounded-full blur-[80px] animate-blob-slow animation-delay-2000 mix-blend-screen" />
+        
+        {/* Orb 3: Void/Black Anchor (Center) - Depth */}
+        <div className="absolute bottom-[-10%] left-[20%] w-[80vw] h-[50vw] bg-indigo-950/20 rounded-full blur-[90px] animate-pulse-slow" />
+
+        {/* Digital Noise / Film Grain (Texture) */}
+        <div className="absolute inset-0 bg-noise opacity-30" />
+
+        {/* Cinematic Vignette (Focus on Center) */}
+        <div className="absolute inset-0 bg-radial-vignette" />
+      </div>
+
+      {/* --- CONTENT LAYER --- */}
       <main 
         className={`
-          flex-1 w-full relative overflow-hidden flex flex-col 
+          flex-1 w-full relative z-10 flex flex-col 
           pt-[max(1rem,env(safe-area-inset-top))]
           pb-[env(safe-area-inset-bottom)]
           ${!noPadding ? 'px-6' : ''} 
           ${centerContent ? 'justify-center items-center' : ''}
-          backdrop-blur-[2px]
+          /* Ensure smooth scrolling within the container */
+          overflow-hidden
         `}
       >
         {children}
       </main>
 
-      {/* Navegação Inferior */}
+      {/* Navegação Inferior (Glassmorphic Hub) */}
       {!hideNavigation && <TabLayout />}
     </div>
   );
