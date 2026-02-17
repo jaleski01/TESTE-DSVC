@@ -88,10 +88,10 @@ export const EpitaphHistoryModal: React.FC<EpitaphHistoryModalProps> = ({ onClos
                  </div>
                  <div>
                    <h3 className="text-sm font-black text-gray-300 uppercase tracking-widest flex items-center gap-2">
-                     Análise Neural Bloqueada
+                     Análise Bloqueada
                    </h3>
                    <p className="text-xs text-gray-500 mt-1 leading-relaxed max-w-[250px]">
-                     A IA precisa de mais dados para traçar seu perfil psicológico. Complete 3 Epitáfios (Dia 21) para desbloquear.
+                     O Epitáfio não é um diário comum, é o túmulo do seu antigo eu. A IA analisará os padrões de sofrimento que você matou e deixou para trás, destacando sua nova força. Complete 3 escritas (Dia 14) para ler o legado da sua superação.
                    </p>
                  </div>
                </div>
@@ -122,7 +122,7 @@ export const EpitaphHistoryModal: React.FC<EpitaphHistoryModalProps> = ({ onClos
                     <Brain size={16} className="text-amber-500" />
                  )}
                  <h3 className="text-xs font-black text-amber-500 uppercase tracking-[0.2em] flex-1">
-                   {loadingAI ? 'Processando Neuro-Dados...' : 'Análise de Inteligência'}
+                   {loadingAI ? 'Lendo seus Epitáfios...' : 'Relatório de Renascimento'}
                  </h3>
                  {!loadingAI && <Zap size={14} className="text-amber-400 fill-amber-400" />}
                </div>
