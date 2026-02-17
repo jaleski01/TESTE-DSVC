@@ -48,8 +48,8 @@ export const DashboardScreen: React.FC = () => {
   const todayStr = getTodayString();
   const streak = profile?.currentStreak || 0;
 
-  // Lógica do Epitáfio (Arquitetura UX):
-  const isEpitaphDay = streak === 0 || (streak > 0 && streak % 7 === 0);
+  // Lógica do Epitáfio (CORRIGIDA): Aceita streak 1 (pós-checkin inicial) e múltiplos de 7
+  const isEpitaphDay = streak <= 1 || (streak > 0 && streak % 7 === 0);
   const hasWrittenEpitaph = profile?.last_epitaph_date === todayStr;
   const showEpitaphCard = isEpitaphDay && !hasWrittenEpitaph;
 
@@ -281,7 +281,7 @@ export const DashboardScreen: React.FC = () => {
                       >
                          <Feather size={18} className="text-black" strokeWidth={2.5} />
                          <span className="text-xs font-black text-black uppercase tracking-widest">
-                            {streak === 0 ? 'Escrever o Começo' : 'Escrever Epitáfio'}
+                            {streak <= 1 ? 'Escrever o Começo' : 'Escrever Epitáfio'}
                          </span>
                       </button>
                     </motion.div>
