@@ -297,7 +297,7 @@ export const DashboardScreen: React.FC = () => {
                 : 'bg-gradient-to-b from-violet-500/5 to-transparent'
             }`} />
 
-            <div className="relative z-10 flex flex-col items-center">
+            <div className="relative z-10 flex flex-col items-center w-full">
               <span className={`text-xs font-bold uppercase tracking-[0.2em] mb-2 transition-colors duration-500 ${isGoldenHour ? 'text-amber-300' : 'text-violet-300/70'}`}>
                 {isGoldenHour ? 'Marco Alcançado' : 'Foco Contínuo'}
               </span>
@@ -316,7 +316,7 @@ export const DashboardScreen: React.FC = () => {
               </div>
 
               {isCheckedInToday ? (
-                <div className="flex flex-col items-center gap-4 w-full max-w-xs">
+                <div className="flex flex-col items-center gap-4 w-full max-w-md mx-auto">
                   <motion.div 
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
@@ -349,7 +349,7 @@ export const DashboardScreen: React.FC = () => {
                   )}
                 </div>
               ) : (
-                <div className="w-full max-w-xs space-y-4">
+                <div className="w-full max-w-md mx-auto space-y-4">
                   {isGoldenHour ? (
                      <motion.button
                        initial={{ y: 5, opacity: 0 }}
@@ -378,7 +378,7 @@ export const DashboardScreen: React.FC = () => {
                         </div>
                      </motion.button>
                   ) : (
-                    <HoldToConfirmButton label="Confirmar Foco Hoje" onComplete={() => setIsCheckInModalOpen(true)} />
+                    <HoldToConfirmButton onComplete={() => setIsCheckInModalOpen(true)} />
                   )}
                   
                   {isUpcomingEpitaph && !isGoldenHour && (

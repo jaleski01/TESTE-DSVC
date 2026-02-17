@@ -1,18 +1,17 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, useAnimation } from 'framer-motion';
-import { COLORS } from '../types';
 
 interface HoldToConfirmButtonProps {
   onComplete: () => void;
   isLoading?: boolean;
-  label: string;
+  label?: string;
 }
 
 export const HoldToConfirmButton: React.FC<HoldToConfirmButtonProps> = ({ 
   onComplete, 
   isLoading = false, 
-  label 
+  label = 'MANTER OFENSIVA'
 }) => {
   const [isHolding, setIsHolding] = useState(false);
   const controls = useAnimation();
@@ -68,9 +67,9 @@ export const HoldToConfirmButton: React.FC<HoldToConfirmButtonProps> = ({
         onTouchEnd={resetHold}
         disabled={isLoading}
         className={`
-          relative w-full py-4 rounded-xl bg-[#1A1A1A] border border-[#2E243D] 
+          relative w-full py-4 rounded-xl bg-[#050505] border border-violet-500/50
           overflow-hidden select-none touch-none active:scale-[0.98] transition-all
-          ${isHolding ? 'shadow-[0_0_20px_rgba(139,92,246,0.3)]' : 'shadow-lg shadow-black/20'}
+          ${isHolding ? 'shadow-[0_0_20px_rgba(139,92,246,0.3)]' : 'shadow-[0_0_15px_rgba(139,92,246,0.15)]'}
         `}
       >
         {/* Background Progress Layer */}
@@ -95,7 +94,7 @@ export const HoldToConfirmButton: React.FC<HoldToConfirmButtonProps> = ({
               >
                 <path d="M12 21.5c-4.1 0-7.5-3.4-7.5-7.5 0-3.5 2.1-6.1 4.5-8.5.6-.6 1.3-1.2 1.8-1.9.4-.5.7-1.1.9-1.8.1-.3.5-.4.8-.2.5.4 1 1.2 1.1 2.1.1.8-.1 1.6-.5 2.3-.3.4-.6.8-.9 1.2-1.8 2.3-3.2 4.1-3.2 6.7 0 3.2 2.6 5.8 5.8 5.8s5.8-2.6 5.8-5.8c0-1.8-.9-3.7-2.6-5.3-.2-.2-.2-.5 0-.7.2-.2.5-.2.7 0 2 1.8 3.1 4.1 3.1 6.1 0 4.1-3.4 7.5-7.5 7.5z"/>
               </motion.svg>
-              <span className={`text-sm font-bold tracking-wide uppercase ${isHolding ? 'text-white' : 'text-gray-300'}`}>
+              <span className={`text-sm font-bold uppercase tracking-widest ${isHolding ? 'text-white' : 'text-gray-300'}`}>
                 {isHolding ? 'Mantenha pressionado...' : label}
               </span>
             </>
