@@ -86,11 +86,11 @@ export const FactSwipeCard: React.FC<FactSwipeCardProps> = ({ fact, onSwipe }) =
           {fact.statement}
         </h3>
         
-        {/* Nova Call-to-Action Animada */}
+        {/* Nova Call-to-Action Animada (Refinada: Respiração Suave) */}
         <motion.div
           animate={{
-            opacity: [0.6, 1, 0.6],
-            scale: [0.98, 1.05, 0.98],
+            opacity: [0.5, 1, 0.5],
+            scale: [0.98, 1.02, 0.98],
             filter: [
               'drop-shadow(0 0 0px rgba(139,92,246,0))',
               'drop-shadow(0 0 8px rgba(139,92,246,0.3))',
@@ -98,11 +98,11 @@ export const FactSwipeCard: React.FC<FactSwipeCardProps> = ({ fact, onSwipe }) =
             ]
           }}
           transition={{
-            duration: 2.5,
+            duration: 3,
             repeat: Infinity,
             ease: "easeInOut"
           }}
-          className="mt-10 flex items-center justify-center gap-2 pointer-events-none"
+          className="mt-16 flex items-center justify-center gap-2 pointer-events-none pb-2"
         >
           <ArrowLeft size={16} className="text-violet-500" />
           

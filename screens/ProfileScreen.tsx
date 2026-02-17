@@ -287,8 +287,8 @@ export const ProfileScreen: React.FC = () => {
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-white font-bold text-base flex items-center gap-2">Instalar Aplicativo</h3>
               <div className="flex bg-gray-900 rounded-lg p-1 border border-gray-800">
-                <button onClick={() => setInstallTab('android')} className={`px-3 py-1 rounded-md text-[10px] font-bold ${installTab === 'android' ? 'bg-gray-800 text-white' : 'text-gray-500'}`}>Android</button>
-                <button onClick={() => setInstallTab('ios')} className={`px-3 py-1 rounded-md text-[10px] font-bold ${installTab === 'ios' ? 'bg-gray-800 text-white' : 'text-gray-500'}`}>iPhone</button>
+                <button onClick={() => setInstallTab('android')} className={`px-3 py-1 rounded-md text-[10px] font-bold ${installTab === 'android' ? 'bg-gray-800 text-white' : 'text-gray-500'}`}>Chrome</button>
+                <button onClick={() => setInstallTab('ios')} className={`px-3 py-1 rounded-md text-[10px] font-bold ${installTab === 'ios' ? 'bg-gray-800 text-white' : 'text-gray-500'}`}>Safari</button>
               </div>
             </div>
             <div className="bg-gray-900/50 rounded-xl p-4 border border-gray-800/50">
