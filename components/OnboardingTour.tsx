@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useLayoutEffect } from 'react';
-import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, ChevronRight } from 'lucide-react';
 
@@ -108,8 +107,7 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({ isReady, onTourS
   const step = TOUR_STEPS[currentStep];
   const isLastStep = currentStep === TOUR_STEPS.length - 1;
 
-  // USO DE PORTAL: Garante que o Tour fique acima de TUDO (z-index 100 > z-index 50 do Hub)
-  return createPortal(
+  return (
     <AnimatePresence>
       <motion.div 
         initial={{ opacity: 0 }}
@@ -176,7 +174,6 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({ isReady, onTourS
           <div className="h-6 w-full" />
         </motion.div>
       </motion.div>
-    </AnimatePresence>,
-    document.body
+    </AnimatePresence>
   );
 };

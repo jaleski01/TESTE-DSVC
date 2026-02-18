@@ -5,7 +5,7 @@ import { Routes } from '../types';
 
 /**
  * TabLayout (Hub de Navegação)
- * Refatorado com Glassmorphism Premium e correção de ícones.
+ * Refatorado com Glassmorphism Premium.
  * Atua como o menu inferior fixo da aplicação.
  */
 export const TabLayout: React.FC = () => {
@@ -16,10 +16,10 @@ export const TabLayout: React.FC = () => {
 
   return (
     <div 
-      className="fixed bottom-0 left-0 right-0 top-auto z-50 border-t border-white/5 pb-[env(safe-area-inset-bottom)] bg-[#0F0A15]/85 backdrop-blur-xl"
+      className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/5 pb-[env(safe-area-inset-bottom)] bg-black/60 backdrop-blur-xl"
       style={{ 
         height: '80px',
-        boxShadow: '0 -1px 0 rgba(255,255,255,0.05)' // Borda sutil de luz superior
+        boxShadow: '0 -1px 0 rgba(255,255,255,0.03)' // Borda sutil de luz superior
       }}
     >
       <div className="flex justify-around items-center h-full px-2 pb-1 relative">
@@ -75,7 +75,7 @@ const TabButton: React.FC<TabButtonProps> = ({ isActive, onClick, label, childre
       className={`
         relative flex flex-col items-center justify-center w-full h-full space-y-1.5 
         transition-all duration-300 ease-out active:scale-95 group
-        ${isActive ? 'text-violet-400' : 'text-gray-500 hover:text-gray-300'}
+        ${isActive ? 'text-violet-400' : 'text-white/40 hover:text-white/60'}
       `}
     >
       {/* Background Glow for Active State (Subtle) */}
@@ -86,10 +86,10 @@ const TabButton: React.FC<TabButtonProps> = ({ isActive, onClick, label, childre
       <div className="relative">
         <svg 
           className={`w-6 h-6 transition-all duration-300 ${isActive ? 'drop-shadow-[0_0_8px_rgba(167,139,250,0.6)]' : ''}`}
-          fill="none" 
+          fill={isActive ? "currentColor" : "none"} 
           viewBox="0 0 24 24" 
           stroke="currentColor" 
-          strokeWidth={isActive ? 2.5 : 2}
+          strokeWidth={isActive ? 0 : 2}
         >
           {children}
         </svg>

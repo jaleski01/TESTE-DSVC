@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { HashRouter, Routes, Route, Navigate, useLocation, Outlet } from 'react-router-dom';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
@@ -20,63 +19,43 @@ import { Routes as AppRoutes } from './types';
 import { NotificationManager } from './components/NotificationManager';
 import { DataSyncManager } from './components/DataSyncManager';
 import { DataProvider } from './contexts/DataContext';
-import { TabLayout } from './components/TabLayout';
 
 const AppContent: React.FC<{ user: any; isOnboardingComplete: boolean }> = ({ user, isOnboardingComplete }) => {
   const location = useLocation();
 
-  const showTabBar = user && isOnboardingComplete && (
-    location.pathname === AppRoutes.DASHBOARD ||
-    location.pathname === AppRoutes.PROGRESS ||
-    location.pathname === AppRoutes.LEARNING ||
-    location.pathname === AppRoutes.PROFILE
-  );
-
   return (
-    <>
-      <div className="absolute inset-0 flex flex-col overflow-hidden bg-transparent">
-        {user && <DataSyncManager />}
+    <div key={location.pathname} className="animate-page-transition w-full flex-1 flex flex-col overflow-hidden bg-transparent">
+      {user && <DataSyncManager />}
+      
+      <Routes location={location}>
+        <Route 
+          path={AppRoutes.LOGIN} 
+          element={user ? (isOnboardingComplete ? <Navigate to={AppRoutes.DASHBOARD} replace /> : <Navigate to={AppRoutes.ONBOARDING} replace />) : <LoginScreen />} 
+        />
+        <Route 
+          path={AppRoutes.SUPPORT} 
+          element={<SupportScreen />} 
+        />
+        <Route 
+          path={AppRoutes.ONBOARDING} 
+          element={user ? (isOnboardingComplete ? <Navigate to={AppRoutes.DASHBOARD} replace /> : <OnboardingScreen />) : <Navigate to={AppRoutes.LOGIN} replace />} 
+        />
         
-        {/* Route Container: Manages the animation key and renders current route */}
-        <div key={location.pathname} className="flex-1 w-full h-full relative z-0 animate-page-transition">
-          <Routes location={location}>
-            <Route 
-              path={AppRoutes.LOGIN} 
-              element={user ? (isOnboardingComplete ? <Navigate to={AppRoutes.DASHBOARD} replace /> : <Navigate to={AppRoutes.ONBOARDING} replace />) : <LoginScreen />} 
-            />
-            <Route 
-              path={AppRoutes.SUPPORT} 
-              element={<SupportScreen />} 
-            />
-            <Route 
-              path={AppRoutes.ONBOARDING} 
-              element={user ? (isOnboardingComplete ? <Navigate to={AppRoutes.DASHBOARD} replace /> : <OnboardingScreen />) : <Navigate to={AppRoutes.LOGIN} replace />} 
-            />
-            
-            {/* Rotas Protegidas (Autenticação + Onboarding Completo) */}
-            <Route element={user && isOnboardingComplete ? <Outlet /> : <Navigate to={user ? AppRoutes.ONBOARDING : AppRoutes.LOGIN} replace />}>
-              <Route path={AppRoutes.DASHBOARD} element={<DashboardScreen />} />
-              <Route path={AppRoutes.PROGRESS} element={<ProgressScreen />} />
-              <Route path={AppRoutes.LEARNING} element={<LearningScreen />} />
-              <Route path={AppRoutes.PROFILE} element={<ProfileScreen />} />
-            </Route>
+        {/* Rotas Protegidas (Autenticação + Onboarding Completo) */}
+        <Route element={user && isOnboardingComplete ? <Outlet /> : <Navigate to={user ? AppRoutes.ONBOARDING : AppRoutes.LOGIN} replace />}>
+          <Route path={AppRoutes.DASHBOARD} element={<DashboardScreen />} />
+          <Route path={AppRoutes.PROGRESS} element={<ProgressScreen />} />
+          <Route path={AppRoutes.LEARNING} element={<LearningScreen />} />
+          <Route path={AppRoutes.PROFILE} element={<ProfileScreen />} />
+        </Route>
 
-            <Route 
-              path={AppRoutes.SOS} 
-              element={user ? <SosScreen /> : <Navigate to={AppRoutes.LOGIN} replace />} 
-            />
-            <Route path="*" element={<Navigate to={AppRoutes.LOGIN} replace />} />
-          </Routes>
-        </div>
-      </div>
-
-      {/* 
-        TabLayout:
-        Fixed positioning at the bottom. 
-        Rendered outside the route container to persist across navigations.
-      */}
-      {showTabBar && <TabLayout />}
-    </>
+        <Route 
+          path={AppRoutes.SOS} 
+          element={user ? <SosScreen /> : <Navigate to={AppRoutes.LOGIN} replace />} 
+        />
+        <Route path="*" element={<Navigate to={AppRoutes.LOGIN} replace />} />
+      </Routes>
+    </div>
   );
 };
 
