@@ -16,7 +16,7 @@ export const TabLayout: React.FC = () => {
 
   return (
     <div 
-      className="shrink-0 w-full z-50 border-t border-white/5 pb-[env(safe-area-inset-bottom)] bg-black/60 backdrop-blur-xl"
+      className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/5 pb-[env(safe-area-inset-bottom)] bg-black/60 backdrop-blur-xl"
       style={{ 
         height: '80px',
         boxShadow: '0 -1px 0 rgba(255,255,255,0.03)' // Borda sutil de luz superior
