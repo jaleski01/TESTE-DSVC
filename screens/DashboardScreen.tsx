@@ -267,7 +267,7 @@ export const DashboardScreen: React.FC = () => {
         initial="hidden"
         animate="visible"
       >
-        <div className="w-full max-w-full px-5 pt-8 pb-20 flex flex-col items-center">
+        <div className="w-full max-w-full px-5 pt-8 pb-24 flex flex-col items-center">
           
           {/* HEADER: Date & Debug */}
           <header id="tour-timer" className="w-full flex items-center justify-between mb-8 px-1">
@@ -507,7 +507,7 @@ export const DashboardScreen: React.FC = () => {
           </motion.div>
 
           {/* ZEN SOS BUTTON */}
-          <motion.div variants={itemVariants} className="mt-12 w-full px-2">
+          <motion.div variants={itemVariants} className="mt-8 w-full px-2">
             <button 
               onClick={() => navigate(Routes.SOS)}
               className="w-full h-16 rounded-2xl relative overflow-hidden group shadow-lg shadow-orange-500/10 active:scale-[0.98] transition-transform"

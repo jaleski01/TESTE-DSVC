@@ -137,7 +137,7 @@ export const DailyHabits: React.FC<DailyHabitsProps> = ({ profile }) => {
             className={`flex flex-row items-center w-full mb-3 px-4 rounded-xl border transition-all duration-300 active:scale-[0.98] group
               ${isChecked 
                 ? 'bg-[#10B981]/5 border-[#10B981]/30 shadow-[0_0_15px_rgba(16,185,129,0.1)]' 
-                : 'bg-[#111827] border-[#1F2937] hover:border-[#374151]'}`}
+                : 'bg-[#0F0A15]/60 backdrop-blur-md border-[#2E243D] hover:border-violet-500/20'}`}
             style={{ height: '60px' }}
           >
             <div className={`flex-shrink-0 transition-all duration-500 ${isChecked ? 'opacity-100 scale-110' : 'opacity-60 grayscale group-hover:opacity-80'}`}>
@@ -152,7 +152,7 @@ export const DailyHabits: React.FC<DailyHabitsProps> = ({ profile }) => {
                <div className={`w-6 h-6 rounded-full flex items-center justify-center border transition-all duration-300
                  ${isChecked 
                    ? 'bg-[#10B981] border-[#10B981] shadow-[0_0_10px_rgba(16,185,129,0.5)]' 
-                   : 'border-[#374151] bg-transparent group-hover:border-gray-500'}`}>
+                   : 'border-[#2E243D] bg-transparent group-hover:border-violet-500/50'}`}>
                  {isChecked && (
                     <svg className="w-3.5 h-3.5 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
