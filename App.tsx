@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { HashRouter, Routes, Route, Navigate, useLocation, Outlet } from 'react-router-dom';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
@@ -34,7 +33,12 @@ const AppContent: React.FC<{ user: any; isOnboardingComplete: boolean }> = ({ us
 
   return (
     <>
-      <div key={location.pathname} className="animate-page-transition w-full flex-1 flex flex-col overflow-hidden bg-transparent">
+      {/* 
+        Route Container: 
+        Mantido simples e sem restrições de overflow desnecessárias que possam clipar elementos fixos.
+        z-0 garante que o conteúdo fique abaixo do TabLayout (z-50) e Modais (z-100+).
+      */}
+      <div key={location.pathname} className="animate-page-transition w-full flex-1 flex flex-col bg-transparent relative z-0">
         {user && <DataSyncManager />}
         
         <Routes location={location}>
@@ -67,6 +71,11 @@ const AppContent: React.FC<{ user: any; isOnboardingComplete: boolean }> = ({ us
         </Routes>
       </div>
 
+      {/* 
+        TabLayout:
+        Renderizado fora do container de rotas para garantir posicionamento 'fixed' absoluto 
+        sem interferência de contextos de empilhamento ou margens do conteúdo.
+      */}
       {showTabBar && <TabLayout />}
     </>
   );
