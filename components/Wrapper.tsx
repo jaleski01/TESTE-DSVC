@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { TabLayout } from './TabLayout';
 import { COLORS } from '../types';
 
 interface WrapperProps {
@@ -53,8 +52,7 @@ export const Wrapper: React.FC<WrapperProps> = ({
         {children}
       </main>
 
-      {/* Navegação Inferior (Glassmorphic Hub) */}
-      {!hideNavigation && <TabLayout />}
+      {/* TabLayout removido daqui para evitar conflitos de stacking context. Agora reside em App.tsx */}
     </div>
   );
 };
