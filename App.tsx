@@ -136,9 +136,16 @@ const App: React.FC = () => {
     });
 
     const handleContextMenu = (e: MouseEvent) => {
-      e.preventDefault();
-      return false;
+      // Verifica se é dispositivo móvel
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints && navigator.maxTouchPoints > 1);
+      
+      // Só previne o menu se for mobile
+      if (isMobile) {
+        e.preventDefault();
+        return false;
+      }
     };
+    
     document.addEventListener('contextmenu', handleContextMenu);
 
     return () => {
