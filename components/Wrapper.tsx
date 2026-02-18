@@ -43,7 +43,7 @@ export const Wrapper: React.FC<WrapperProps> = ({
         className={`
           flex-1 w-full relative z-10 flex flex-col 
           pt-[max(1rem,env(safe-area-inset-top))]
-          pb-24
+          pb-16
           ${!noPadding ? 'px-6' : ''} 
           ${centerContent ? 'justify-center items-center' : ''}
           /* Ensure smooth scrolling within the container */
@@ -53,7 +53,7 @@ export const Wrapper: React.FC<WrapperProps> = ({
         {children}
       </main>
 
-      {/* Navegação Inferior (Glassmorphic Hub) */}
+      {/* Navegação Inferior (Compacta e Integrada) */}
       {!hideNavigation && <TabLayout />}
     </div>
   );

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore'; 
@@ -154,8 +155,17 @@ export const LoginScreen: React.FC = () => {
   };
 
   return (
-    <Wrapper noPadding hideNavigation>
-      <div className="flex flex-col h-[100dvh] w-full bg-transparent overflow-hidden">
+    <Wrapper noPadding hideNavigation disableDefaultBackground={true}>
+      {/* 
+        DYNAMIC ATMOSPHERE BACKGROUND (Idêntico à Dashboard)
+        Adiciona os orbes de luz para tirar o aspecto "totalmente preto"
+      */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-violet-900/15 rounded-full blur-[110px]" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] bg-cyan-900/10 rounded-full blur-[90px]" />
+      </div>
+
+      <div className="flex flex-col h-[100dvh] w-full bg-transparent overflow-hidden relative z-10">
         <div className="flex-1 overflow-y-auto w-full px-6 scrollbar-hide">
           <div className="flex flex-col items-center pt-24 pb-40">
             
@@ -203,7 +213,7 @@ export const LoginScreen: React.FC = () => {
                         )}
                         <div className="space-y-1">
                           <label className="text-xs font-medium ml-1 text-gray-500">E-mail que realizou o pagamento</label>
-                          <div className="flex items-center rounded-xl px-4 py-3.5 bg-[#0F0A15] border border-[#2E243D] focus-within:ring-1 focus-within:ring-violet-500 transition-all">
+                          <div className="flex items-center rounded-xl px-4 py-3.5 bg-[#0F0A15]/80 backdrop-blur-md border border-[#2E243D] focus-within:ring-1 focus-within:ring-violet-500 transition-all">
                             <input 
                               type="email" 
                               value={email} 
@@ -243,7 +253,7 @@ export const LoginScreen: React.FC = () => {
 
                         <div className="space-y-1">
                           <label className="text-xs font-medium ml-1 text-gray-500">Sua Senha</label>
-                          <div className="flex items-center rounded-xl px-4 py-3.5 bg-[#0F0A15] border border-[#2E243D] focus-within:ring-1 focus-within:ring-violet-500 transition-all">
+                          <div className="flex items-center rounded-xl px-4 py-3.5 bg-[#0F0A15]/80 backdrop-blur-md border border-[#2E243D] focus-within:ring-1 focus-within:ring-violet-500 transition-all">
                             <input 
                               type="password" 
                               value={password} 
@@ -286,7 +296,7 @@ export const LoginScreen: React.FC = () => {
                     Verifique seu e-mail
                   </h1>
 
-                  <div className="p-6 rounded-2xl bg-[#0F0A15] border border-[#2E243D] text-center mb-8">
+                  <div className="p-6 rounded-2xl bg-[#0F0A15]/80 backdrop-blur-md border border-[#2E243D] text-center mb-8">
                     <p className="text-gray-400 text-sm leading-relaxed">
                       Se houver uma conta vinculada ao e-mail <strong className="text-white">{email}</strong>, enviamos um link para você definir sua senha.
                     </p>
