@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { HashRouter, Routes, Route, Navigate, useLocation, Outlet } from 'react-router-dom';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
@@ -33,48 +34,46 @@ const AppContent: React.FC<{ user: any; isOnboardingComplete: boolean }> = ({ us
 
   return (
     <>
-      {/* 
-        Route Container: 
-        Mantido simples e sem restrições de overflow desnecessárias que possam clipar elementos fixos.
-        z-0 garante que o conteúdo fique abaixo do TabLayout (z-50) e Modais (z-100+).
-      */}
-      <div key={location.pathname} className="animate-page-transition w-full flex-1 flex flex-col bg-transparent relative z-0">
+      <div className="absolute inset-0 flex flex-col overflow-hidden bg-transparent">
         {user && <DataSyncManager />}
         
-        <Routes location={location}>
-          <Route 
-            path={AppRoutes.LOGIN} 
-            element={user ? (isOnboardingComplete ? <Navigate to={AppRoutes.DASHBOARD} replace /> : <Navigate to={AppRoutes.ONBOARDING} replace />) : <LoginScreen />} 
-          />
-          <Route 
-            path={AppRoutes.SUPPORT} 
-            element={<SupportScreen />} 
-          />
-          <Route 
-            path={AppRoutes.ONBOARDING} 
-            element={user ? (isOnboardingComplete ? <Navigate to={AppRoutes.DASHBOARD} replace /> : <OnboardingScreen />) : <Navigate to={AppRoutes.LOGIN} replace />} 
-          />
-          
-          {/* Rotas Protegidas (Autenticação + Onboarding Completo) */}
-          <Route element={user && isOnboardingComplete ? <Outlet /> : <Navigate to={user ? AppRoutes.ONBOARDING : AppRoutes.LOGIN} replace />}>
-            <Route path={AppRoutes.DASHBOARD} element={<DashboardScreen />} />
-            <Route path={AppRoutes.PROGRESS} element={<ProgressScreen />} />
-            <Route path={AppRoutes.LEARNING} element={<LearningScreen />} />
-            <Route path={AppRoutes.PROFILE} element={<ProfileScreen />} />
-          </Route>
+        {/* Route Container: Manages the animation key and renders current route */}
+        <div key={location.pathname} className="flex-1 w-full h-full relative z-0 animate-page-transition">
+          <Routes location={location}>
+            <Route 
+              path={AppRoutes.LOGIN} 
+              element={user ? (isOnboardingComplete ? <Navigate to={AppRoutes.DASHBOARD} replace /> : <Navigate to={AppRoutes.ONBOARDING} replace />) : <LoginScreen />} 
+            />
+            <Route 
+              path={AppRoutes.SUPPORT} 
+              element={<SupportScreen />} 
+            />
+            <Route 
+              path={AppRoutes.ONBOARDING} 
+              element={user ? (isOnboardingComplete ? <Navigate to={AppRoutes.DASHBOARD} replace /> : <OnboardingScreen />) : <Navigate to={AppRoutes.LOGIN} replace />} 
+            />
+            
+            {/* Rotas Protegidas (Autenticação + Onboarding Completo) */}
+            <Route element={user && isOnboardingComplete ? <Outlet /> : <Navigate to={user ? AppRoutes.ONBOARDING : AppRoutes.LOGIN} replace />}>
+              <Route path={AppRoutes.DASHBOARD} element={<DashboardScreen />} />
+              <Route path={AppRoutes.PROGRESS} element={<ProgressScreen />} />
+              <Route path={AppRoutes.LEARNING} element={<LearningScreen />} />
+              <Route path={AppRoutes.PROFILE} element={<ProfileScreen />} />
+            </Route>
 
-          <Route 
-            path={AppRoutes.SOS} 
-            element={user ? <SosScreen /> : <Navigate to={AppRoutes.LOGIN} replace />} 
-          />
-          <Route path="*" element={<Navigate to={AppRoutes.LOGIN} replace />} />
-        </Routes>
+            <Route 
+              path={AppRoutes.SOS} 
+              element={user ? <SosScreen /> : <Navigate to={AppRoutes.LOGIN} replace />} 
+            />
+            <Route path="*" element={<Navigate to={AppRoutes.LOGIN} replace />} />
+          </Routes>
+        </div>
       </div>
 
       {/* 
         TabLayout:
-        Renderizado fora do container de rotas para garantir posicionamento 'fixed' absoluto 
-        sem interferência de contextos de empilhamento ou margens do conteúdo.
+        Fixed positioning at the bottom. 
+        Rendered outside the route container to persist across navigations.
       */}
       {showTabBar && <TabLayout />}
     </>

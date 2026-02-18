@@ -41,7 +41,7 @@ export const Wrapper: React.FC<WrapperProps> = ({
       <main 
         className={`
           flex-1 w-full relative z-10 flex flex-col 
-          pt-[max(1rem,env(safe-area-inset-top))]
+          pt-[env(safe-area-inset-top)] 
           pb-32
           ${!noPadding ? 'px-6' : ''} 
           ${centerContent ? 'justify-center items-center' : ''}
@@ -51,8 +51,6 @@ export const Wrapper: React.FC<WrapperProps> = ({
       >
         {children}
       </main>
-
-      {/* TabLayout removido daqui para evitar conflitos de stacking context. Agora reside em App.tsx */}
     </div>
   );
 };
