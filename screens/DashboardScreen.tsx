@@ -465,29 +465,38 @@ export const DashboardScreen: React.FC = () => {
                 </div>
               )}
 
-              {/* Liquid Progress Bar (Organic Pulse) */}
+              {/* HUD Progress Bar (Cyberpunk/Neon) */}
               <div className="w-full mt-8 px-2">
-                <div className="flex justify-between items-end mb-3">
+                <div className="flex justify-between items-end mb-2">
                   <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Nível de Clareza</span>
                   <span className={`text-[10px] font-mono transition-colors duration-500 ${isGoldenHour ? 'text-amber-300' : 'text-cyan-300'}`}>{(profile?.reality_check_points || 0)}/30 pts</span>
                 </div>
-                <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
+                
+                {/* HUD Container */}
+                <div className={`w-full h-7 rounded-lg overflow-hidden relative border ${
+                  isGoldenHour 
+                    ? 'bg-[#1a0b00] border-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.4)]' 
+                    : 'bg-[#130b1f] border-[#b026ff] shadow-[0_0_12px_rgba(176,38,255,0.4)]'
+                }`}>
                   <motion.div 
                     initial={{ width: 0 }}
                     animate={{ 
-                      width: `${Math.min(((profile?.reality_check_points || 0) / 30) * 100, 100)}%`,
-                      opacity: [0.8, 1, 0.8] 
+                      width: `${Math.min(((profile?.reality_check_points || 0) / 30) * 100, 100)}%` 
                     }}
-                    transition={{
-                      opacity: { repeat: Infinity, duration: 2, ease: "easeInOut" }
-                    }}
-                    className={`h-full rounded-full shadow-lg transition-all duration-1000 relative overflow-hidden ${
+                    transition={{ type: "spring", stiffness: 50, damping: 20 }}
+                    className={`h-full relative ${
                       isGoldenHour 
-                        ? 'bg-gradient-to-r from-amber-600 via-orange-500 to-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.5)]' 
-                        : 'bg-gradient-to-r from-violet-500 via-purple-500 to-cyan-400 shadow-[0_0_15px_rgba(167,139,250,0.5)]'
+                        ? 'bg-gradient-to-r from-amber-600 to-yellow-400' 
+                        : 'bg-gradient-to-r from-[#b026ff] via-violet-500 to-cyan-400'
                     }`}
                   >
-                    {/* Energy Flow Effect */}
+                    {/* 3D Top Reflection */}
+                    <div className="absolute top-0 left-0 right-0 h-[40%] bg-white/20" />
+                    
+                    {/* Scanline/Noise Effect */}
+                    <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay" />
+                    
+                    {/* Energy Pulse (Shimmer) */}
                     <div className="absolute inset-0 bg-white/20 w-full h-full -translate-x-full animate-[shimmer_2s_infinite]" />
                   </motion.div>
                 </div>
