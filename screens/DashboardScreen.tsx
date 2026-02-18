@@ -267,7 +267,7 @@ export const DashboardScreen: React.FC = () => {
         initial="hidden"
         animate="visible"
       >
-        <div className="w-full max-w-full px-5 pt-8 pb-32 flex flex-col items-center">
+        <div className="w-full max-w-full px-5 pt-8 pb-20 flex flex-col items-center">
           
           {/* HEADER: Date & Debug */}
           <header id="tour-timer" className="w-full flex items-center justify-between mb-8 px-1">
@@ -465,38 +465,29 @@ export const DashboardScreen: React.FC = () => {
                 </div>
               )}
 
-              {/* HUD Progress Bar (Cyberpunk/Neon) */}
+              {/* Liquid Progress Bar (Organic Pulse) */}
               <div className="w-full mt-8 px-2">
-                <div className="flex justify-between items-end mb-2">
+                <div className="flex justify-between items-end mb-3">
                   <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Nível de Clareza</span>
                   <span className={`text-[10px] font-mono transition-colors duration-500 ${isGoldenHour ? 'text-amber-300' : 'text-cyan-300'}`}>{(profile?.reality_check_points || 0)}/30 pts</span>
                 </div>
-                
-                {/* HUD Container */}
-                <div className={`w-full h-7 rounded-lg overflow-hidden relative border ${
-                  isGoldenHour 
-                    ? 'bg-[#1a0b00] border-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.4)]' 
-                    : 'bg-[#130b1f] border-[#b026ff] shadow-[0_0_12px_rgba(176,38,255,0.4)]'
-                }`}>
+                <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
                   <motion.div 
                     initial={{ width: 0 }}
                     animate={{ 
-                      width: `${Math.min(((profile?.reality_check_points || 0) / 30) * 100, 100)}%` 
+                      width: `${Math.min(((profile?.reality_check_points || 0) / 30) * 100, 100)}%`,
+                      opacity: [0.8, 1, 0.8] 
                     }}
-                    transition={{ type: "spring", stiffness: 50, damping: 20 }}
-                    className={`h-full relative ${
+                    transition={{
+                      opacity: { repeat: Infinity, duration: 2, ease: "easeInOut" }
+                    }}
+                    className={`h-full rounded-full shadow-lg transition-all duration-1000 relative overflow-hidden ${
                       isGoldenHour 
-                        ? 'bg-gradient-to-r from-amber-600 to-yellow-400' 
-                        : 'bg-gradient-to-r from-[#b026ff] via-violet-500 to-cyan-400'
+                        ? 'bg-gradient-to-r from-amber-600 via-orange-500 to-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.5)]' 
+                        : 'bg-gradient-to-r from-violet-500 via-purple-500 to-cyan-400 shadow-[0_0_15px_rgba(167,139,250,0.5)]'
                     }`}
                   >
-                    {/* 3D Top Reflection */}
-                    <div className="absolute top-0 left-0 right-0 h-[40%] bg-white/20" />
-                    
-                    {/* Scanline/Noise Effect */}
-                    <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay" />
-                    
-                    {/* Energy Pulse (Shimmer) */}
+                    {/* Energy Flow Effect */}
                     <div className="absolute inset-0 bg-white/20 w-full h-full -translate-x-full animate-[shimmer_2s_infinite]" />
                   </motion.div>
                 </div>

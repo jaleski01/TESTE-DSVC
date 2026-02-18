@@ -16,9 +16,9 @@ export const TabLayout: React.FC = () => {
 
   return (
     <div 
-      className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/5 pb-[env(safe-area-inset-bottom)] bg-black/60 backdrop-blur-xl"
+      className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/5 pb-[env(safe-area-inset-bottom)] bg-[#0F0A15]"
       style={{ 
-        height: '80px',
+        height: '68px',
         boxShadow: '0 -1px 0 rgba(255,255,255,0.03)' // Borda sutil de luz superior
       }}
     >
@@ -37,7 +37,7 @@ export const TabLayout: React.FC = () => {
           onClick={() => navigate(Routes.PROGRESS)} 
           label="Evolução"
         >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
         </TabButton>
 
         <TabButton 
@@ -75,7 +75,7 @@ const TabButton: React.FC<TabButtonProps> = ({ isActive, onClick, label, childre
       className={`
         relative flex flex-col items-center justify-center w-full h-full space-y-1.5 
         transition-all duration-300 ease-out active:scale-95 group
-        ${isActive ? 'text-violet-400' : 'text-white/40 hover:text-white/60'}
+        ${isActive ? 'text-violet-500' : 'text-zinc-600 hover:text-zinc-400'}
       `}
     >
       {/* Background Glow for Active State (Subtle) */}
@@ -85,7 +85,7 @@ const TabButton: React.FC<TabButtonProps> = ({ isActive, onClick, label, childre
 
       <div className="relative">
         <svg 
-          className={`w-6 h-6 transition-all duration-300 ${isActive ? 'drop-shadow-[0_0_8px_rgba(167,139,250,0.6)]' : ''}`}
+          className={`w-6 h-6 transition-all duration-300 ${isActive ? 'drop-shadow-[0_0_12px_rgba(139,92,246,1)]' : ''}`}
           fill={isActive ? "currentColor" : "none"} 
           viewBox="0 0 24 24" 
           stroke="currentColor" 
