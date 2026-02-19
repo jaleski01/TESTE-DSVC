@@ -351,38 +351,37 @@ export const OnboardingScreen: React.FC = () => {
                   <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-white">Projeção de Recuperação Neural</h4>
                 </div>
 
-                <div className="flex items-end justify-between gap-4 h-[160px] relative">
+                <div className="flex items-end justify-between gap-3 h-[160px] relative mt-4 border-b border-[#2E243D] pb-2">
                   {[
-                    { day: 'Dia 0', label: 'Hoje', h: 15, color: '#EF4444' },
-                    { day: 'Dia 30', label: 'Brain Fog', h: 45, color: '#EAB308' },
-                    { day: 'Dia 45', label: 'Controle', h: 70, color: '#10B981' },
-                    { day: 'Dia 90', label: 'Reboot', h: 100, color: '#8B5CF6' }
+                    { day: 'Dia 0', label: 'Hoje', h: 15 },
+                    { day: 'Dia 30', label: 'Brain Fog', h: 45 },
+                    { day: 'Dia 45', label: 'Controle', h: 70 },
+                    { day: 'Dia 90', label: 'Reboot', h: 100 }
                   ].map((bar, i) => (
-                    <div key={bar.day} className="flex-1 flex flex-col items-center h-full">
-                      {/* Container pai com altura fixa percentual baseada no dado real */}
-                      <div 
-                        className="w-full flex-1 flex flex-col justify-end items-center" 
-                        style={{ height: `${bar.h}%` }}
-                      >
+                    <div key={bar.day} className="flex flex-col items-center gap-2 group z-10 h-full justify-end flex-1">
+                      <div className="relative flex items-end h-full w-full justify-center px-1">
+                        {/* Fundo Padrão (Track Escuro) da barra */}
+                        <div className="absolute bottom-0 w-full max-w-[28px] bg-[#1F2937] rounded-t-sm h-full"></div>
+                        
+                        {/* Barra Preenchida Monocromática e Linear */}
                         <motion.div 
-                          initial={{ scaleY: 0 }}
-                          animate={{ scaleY: 1 }}
-                          transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1], delay: 0.5 + i * 0.15 }}
-                          style={{ 
-                            backgroundColor: bar.color, 
-                            transformOrigin: "bottom", // Garante que cresce de baixo para cima
-                            height: "100%", // Preenche o container pai
-                            width: "100%", 
-                            maxWidth: "40px" 
-                          }}
-                          className="rounded-t-lg shadow-[0_0_15px_rgba(0,0,0,0.3)] relative"
-                        />
+                          initial={{ height: "4px" }}
+                          animate={{ height: `${bar.h}%` }}
+                          transition={{ duration: 1.2, ease: "easeOut", delay: 0.3 + i * 0.15 }}
+                          className="w-full max-w-[28px] rounded-t-sm relative z-10"
+                          style={{ backgroundColor: '#8B5CF6', minHeight: '4px' }}
+                        >
+                          {bar.h === 100 && (
+                            <div className="absolute inset-0 bg-[#8B5CF6] blur-[6px] opacity-40"></div>
+                          )}
+                        </motion.div>
                       </div>
-                      <span className="text-[8px] font-black uppercase text-gray-500 mt-3 whitespace-nowrap">{bar.label}</span>
-                      <span className="text-[9px] font-bold text-gray-400 mt-1">{bar.day}</span>
+                      <div className="flex flex-col items-center pb-1">
+                        <span className="text-[9px] font-bold text-gray-400">{bar.label}</span>
+                        <span className="text-[8px] font-black uppercase text-gray-600 mt-0.5">{bar.day}</span>
+                      </div>
                     </div>
                   ))}
-                  <div className="absolute bottom-[24px] left-0 right-0 h-px bg-white/5"></div>
                 </div>
               </div>
 
