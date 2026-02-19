@@ -229,7 +229,7 @@ export const DashboardScreen: React.FC = () => {
 
   return (
     <Wrapper noPadding hideNavigation={false} disableDefaultBackground={true}> 
-      <div className={`fixed inset-0 overflow-hidden pointer-events-none z-0 transition-opacity duration-1000 ${isGoldenHour ? 'opacity-0' : 'opacity-100'}`}>
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0 transition-opacity duration-1000 opacity-100">
         <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-violet-900/10 rounded-full blur-[100px]" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] bg-cyan-900/10 rounded-full blur-[80px]" />
       </div>
@@ -243,26 +243,26 @@ export const DashboardScreen: React.FC = () => {
           
           <header className="w-full flex items-center justify-between mb-8 px-1">
             <div className="flex flex-col">
-              <span className={`text-xs font-medium ${isGoldenHour ? 'text-amber-200/60' : 'text-gray-400'}`}>
+              <span className="text-xs font-medium text-gray-400">
                 {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
               </span>
-              <h1 className={`text-xl font-bold tracking-tight ${isGoldenHour ? 'text-amber-50 drop-shadow-[0_0_10px_rgba(245,158,11,0.5)]' : 'text-white'}`}>
-                {isGoldenHour ? 'Dia de Glória' : 'Sua Jornada'}
+              <h1 className="text-xl font-bold tracking-tight text-white">
+                Sua Jornada
               </h1>
             </div>
-            <div onClick={handleStatusClick} className={`w-2 h-2 rounded-full cursor-pointer transition-all ${isGoldenHour ? 'bg-amber-400' : 'bg-emerald-500/50'}`} />
+            <div onClick={handleStatusClick} className="w-2 h-2 rounded-full cursor-pointer transition-all bg-emerald-500/50" />
           </header>
 
           <motion.section className="w-full mb-4 relative flex flex-col items-center justify-center py-6">
             <div className="relative z-10 flex flex-col items-center w-full">
-              <span className={`text-xs font-bold uppercase tracking-[0.2em] mb-2 ${isGoldenHour ? 'text-amber-300' : 'text-violet-300/70'}`}>
-                {isGoldenHour ? 'Marco Alcançado' : 'Foco Contínuo'}
+              <span className="text-xs font-bold uppercase tracking-[0.2em] mb-2 text-violet-300/70">
+                Foco Contínuo
               </span>
               <div className="flex items-baseline gap-2 mb-10">
-                <h2 className={`text-7xl font-light tracking-tighter ${isGoldenHour ? 'text-amber-100 drop-shadow-[0_0_25px_rgba(245,158,11,0.6)]' : 'text-white'}`}>
+                <h2 className="text-7xl font-light tracking-tighter text-white">
                   {profile?.currentStreak || 0}
                 </h2>
-                <span className={`text-sm font-medium uppercase ${isGoldenHour ? 'text-amber-200/70' : 'text-violet-200/50'}`}>
+                <span className="text-sm font-medium uppercase text-violet-200/50">
                   {(profile?.currentStreak || 0) === 1 ? 'Dia' : 'Dias'}
                 </span>
               </div>
@@ -274,33 +274,33 @@ export const DashboardScreen: React.FC = () => {
                     <span className="text-xs font-bold text-emerald-400 uppercase tracking-wide">Compromisso Honrado</span>
                   </div>
                   {showEpitaphCard && (
-                    <button onClick={() => setIsEpitaphModalOpen(true)} className="w-full group rounded-2xl border border-amber-500/30 p-4 bg-amber-900/20 backdrop-blur-md flex items-center justify-center gap-3">
-                        <Feather size={16} className="text-amber-400 animate-pulse" />
-                        <span className="text-xs font-black uppercase tracking-widest text-amber-100">Registrar Legado</span>
+                    <button onClick={() => setIsEpitaphModalOpen(true)} className="w-full group rounded-2xl border border-violet-500/30 p-4 bg-violet-900/20 backdrop-blur-md flex items-center justify-center gap-3">
+                        <Feather size={16} className="text-violet-400 animate-pulse" />
+                        <span className="text-xs font-black uppercase tracking-widest text-violet-100">Registrar Legado</span>
                     </button>
                   )}
                 </div>
               ) : (
                 <div className="w-full max-w-md mx-auto flex flex-col items-center gap-4">
                   {isGoldenHour ? (
-                    <button onClick={() => setIsCheckInModalOpen(true)} className="w-full bg-black/80 backdrop-blur-xl rounded-2xl p-5 flex items-center gap-4 border border-amber-500/30">
-                        <div className="w-10 h-10 rounded-full bg-amber-500 flex items-center justify-center"><Crown size={20} className="text-black" /></div>
+                    <button onClick={() => setIsCheckInModalOpen(true)} className="w-full bg-[#0F0A15]/80 backdrop-blur-xl rounded-2xl p-5 flex items-center gap-4 border border-violet-500/30">
+                        <div className="w-10 h-10 rounded-full bg-violet-500/20 flex items-center justify-center"><Crown size={20} className="text-violet-400" /></div>
                         <div className="flex-1 text-left"><h3 className="text-sm font-black text-white uppercase tracking-wide">Dia de Reflexão</h3></div>
-                        <Feather size={20} className="text-amber-500" />
+                        <Feather size={20} className="text-violet-400" />
                     </button>
                   ) : (
                     <HoldToConfirmButton onComplete={() => setIsCheckInModalOpen(true)} />
                   )}
 
-                  {/* AVISO DE EPITÁFIO RESTAURADO */}
+                  {/* AVISO DE EPITÁFIO DISPONÍVEL */}
                   {isUpcomingEpitaph && (
                     <motion.div 
                       initial={{ opacity: 0, y: -10 }} 
                       animate={{ opacity: 1, y: 0 }} 
-                      className="flex items-center justify-center gap-2 text-amber-400/80 bg-amber-500/10 py-2 px-5 rounded-full border border-amber-500/20 w-fit"
+                      className="flex items-center justify-center gap-2 text-violet-400/80 bg-violet-500/10 py-2 px-5 rounded-full border border-violet-500/20 w-fit"
                     >
-                      <Feather size={14} className="animate-pulse" />
-                      <span className="text-[10px] font-black uppercase tracking-widest">Epitáfio disponível após o check-in</span>
+                      <Feather size={14} className="text-violet-400 animate-pulse" />
+                      <span className="text-[10px] font-black uppercase tracking-widest text-violet-400">Epitáfio disponível</span>
                     </motion.div>
                   )}
                 </div>
@@ -311,11 +311,11 @@ export const DashboardScreen: React.FC = () => {
           {/* MISSION SELECTOR SECTION */}
           <motion.section className="w-full mb-10">
             <div className="flex items-center justify-between mb-4 px-2">
-              <h3 className={`text-sm font-semibold flex items-center gap-2 ${isGoldenHour ? 'text-amber-100' : 'text-white/90'}`}>
-                <Zap size={16} className={isGoldenHour ? 'text-amber-400' : 'text-violet-400'} />
+              <h3 className="text-sm font-semibold flex items-center gap-2 text-white/90">
+                <Zap size={16} className="text-violet-400" />
                 {acceptedMissions.length < 3 ? 'Selecionar Missões' : 'Missões Ativas'}
               </h3>
-              <div className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg border ${isGoldenHour ? 'text-amber-300 bg-amber-500/10 border-amber-500/20' : 'text-violet-300 bg-violet-500/10 border-violet-500/20'}`}>
+              <div className="flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg border text-violet-300 bg-violet-500/10 border-violet-500/20">
                 <span>{acceptedMissions.length}</span>
                 <span className="opacity-50">/</span>
                 <span>3</span>
@@ -326,11 +326,11 @@ export const DashboardScreen: React.FC = () => {
               {acceptedMissions.length < 3 && currentMission ? (
                 <MissionSwipeCard mission={currentMission} onSwipe={handleMissionSwipe} />
               ) : (
-                <div className={`w-full p-8 rounded-3xl border flex flex-col items-center text-center backdrop-blur-md transition-colors ${isGoldenHour ? 'border-amber-500/20 bg-amber-900/10' : 'border-white/5 bg-white/5'}`}>
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-4 ${isGoldenHour ? 'bg-amber-500' : 'bg-violet-500'}`}>
+                <div className="w-full p-8 rounded-3xl border border-white/5 bg-white/5 flex flex-col items-center text-center backdrop-blur-md transition-colors">
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center mb-4 bg-violet-500">
                     <Check size={24} className="text-white" />
                   </div>
-                  <h4 className={`text-base font-bold mb-2 ${isGoldenHour ? 'text-amber-100' : 'text-white'}`}>Arsenal Definido</h4>
+                  <h4 className="text-base font-bold mb-2 text-white">Arsenal Definido</h4>
                   <p className="text-sm text-gray-400 font-light max-w-[220px]">Suas 3 missões diárias estão prontas. Complete-as abaixo.</p>
                 </div>
               )}
@@ -340,8 +340,8 @@ export const DashboardScreen: React.FC = () => {
           {/* RITUALS SECTION */}
           <motion.div className="w-full">
             <div className="mb-4 px-2">
-              <h3 className={`text-sm font-semibold flex items-center gap-2 ${isGoldenHour ? 'text-amber-100' : 'text-white/90'}`}>
-                <Sparkles size={16} className={isGoldenHour ? 'text-amber-400' : 'text-violet-400'} />
+              <h3 className="text-sm font-semibold flex items-center gap-2 text-white/90">
+                <Sparkles size={16} className="text-violet-400" />
                 Rituais
               </h3>
             </div>
