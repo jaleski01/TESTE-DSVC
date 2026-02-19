@@ -34,6 +34,7 @@ export const DashboardScreen: React.FC = () => {
   const [acceptedMissions, setAcceptedMissions] = useState<DailyMission[]>([]);
   const [currentMission, setCurrentMission] = useState<DailyMission | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [missionsRefreshKey, setMissionsRefreshKey] = useState(0);
 
   // Debug State
   const [debugClicks, setDebugClicks] = useState(0);
@@ -108,6 +109,8 @@ export const DashboardScreen: React.FC = () => {
       
       if (newAccepted.length >= 3) {
         setCurrentMission(null);
+        // Instant switch: notify DailyHabits to refresh
+        setMissionsRefreshKey(prev => prev + 1);
         return;
       }
     }
@@ -241,7 +244,7 @@ export const DashboardScreen: React.FC = () => {
                   )}
                 </div>
               ) : (
-                <div className="w-full max-w-md mx-auto space-y-4">
+                <div className="w-full max-md mx-auto space-y-4">
                   {isGoldenHour ? (
                     <button onClick={() => setIsCheckInModalOpen(true)} className="w-full bg-black/80 backdrop-blur-xl rounded-2xl p-5 flex items-center gap-4 border border-amber-500/30">
                         <div className="w-10 h-10 rounded-full bg-amber-500 flex items-center justify-center"><Crown size={20} className="text-black" /></div>
@@ -291,7 +294,7 @@ export const DashboardScreen: React.FC = () => {
                 Rituais
               </h3>
             </div>
-            <DailyHabits profile={profile} />
+            <DailyHabits profile={profile} refreshTrigger={missionsRefreshKey} />
           </motion.div>
 
           <motion.div className="mt-8 w-full px-2">
