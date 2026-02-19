@@ -22,11 +22,6 @@ interface DailyCheckInModalProps {
 
 type CheckInStep = 'RELAPSE_Q' | 'EMOTION' | 'CONTEXT' | 'EPITAPH_INPUT' | 'SUCCESS_MSG' | 'FAILURE_MSG';
 
-/**
- * DailyCheckInModal - Versão Refatorada (Premium UI/UX)
- * Implementa Glassmorphism, desfoque profundo e feedback visual Neon.
- * Estritamente mantém a lógica de negócio original.
- */
 export const DailyCheckInModal: React.FC<DailyCheckInModalProps> = ({ 
   profile, 
   isEpitaphDay,
@@ -42,6 +37,7 @@ export const DailyCheckInModal: React.FC<DailyCheckInModalProps> = ({
   const [epitaphText, setEpitaphText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  // Regra central: Epitáfio aparece se não houve recaída E é dia de epitáfio E ainda não foi escrito.
   const shouldShowEpitaph = !isRelapse && isEpitaphDay && !hasWrittenEpitaphToday;
 
   const handleRelapseChoice = (didRelapse: boolean) => {
@@ -52,6 +48,7 @@ export const DailyCheckInModal: React.FC<DailyCheckInModalProps> = ({
   const handleCleanCheckIn = () => {
     setEmotion(null);
     setContext(null);
+    // BUG FIX 1: Direcionamento obrigatório para Epitáfio se a condição for atendida.
     if (shouldShowEpitaph) {
       setStep('EPITAPH_INPUT');
     } else {
@@ -63,6 +60,7 @@ export const DailyCheckInModal: React.FC<DailyCheckInModalProps> = ({
     if (isRelapse) {
       finishRelapse();
     } else {
+      // BUG FIX 1: Direcionamento obrigatório para Epitáfio se a condição for atendida.
       if (shouldShowEpitaph) {
         setStep('EPITAPH_INPUT');
       } else {
@@ -79,6 +77,7 @@ export const DailyCheckInModal: React.FC<DailyCheckInModalProps> = ({
     try {
       const today = new Date().toLocaleDateString('en-CA');
 
+      // Salva emoção/contexto se houver
       if (emotion && context) {
         const historyRef = doc(db, "users", user.uid, "daily_history", today);
         await setDoc(historyRef, {
@@ -89,6 +88,7 @@ export const DailyCheckInModal: React.FC<DailyCheckInModalProps> = ({
         }, { merge: true });
       }
 
+      // Salva Epitáfio se o usuário estiver na tela de input e tiver escrito algo
       if (shouldShowEpitaph && epitaphText.trim()) {
         const streakForEpitaph = (profile.currentStreak || 0) + 1;
         await saveEpitaph(user.uid, epitaphText, streakForEpitaph);
@@ -103,7 +103,7 @@ export const DailyCheckInModal: React.FC<DailyCheckInModalProps> = ({
             ...profile,
             currentStreak: result.newStreak,
             lastCheckInDate: today,
-            last_epitaph_date: shouldShowEpitaph ? today : profile.last_epitaph_date,
+            last_epitaph_date: shouldShowEpitaph && epitaphText.trim() ? today : profile.last_epitaph_date,
             unlockedAchievements: [
               ...(profile.unlockedAchievements || []),
               ...(result?.newAchievements?.map((a: any) => a.id) || [])
@@ -322,20 +322,17 @@ export const DailyCheckInModal: React.FC<DailyCheckInModalProps> = ({
 
   return createPortal(
     <div className="fixed inset-0 z-[10000] flex items-center justify-center p-6 sm:p-4">
-      {/* Backdrop Profundo e Translúcido */}
       <div 
         className="absolute inset-0 bg-void/70 backdrop-blur-xl animate-fadeIn" 
         onClick={onClose} 
       />
       
-      {/* Card Principal - Glassmorphism Estilo DSVC */}
       <motion.div 
         initial={{ opacity: 0, scale: 0.9, y: 30 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9, y: 30 }}
         className="w-full max-w-sm bg-glass-surface border border-glass-border rounded-[2.5rem] p-8 relative overflow-hidden shadow-[0_30px_60px_-12px_rgba(0,0,0,0.8),0_0_40px_rgba(139,92,246,0.1)] backdrop-blur-3xl min-h-[440px] flex flex-col justify-center"
       >
-        {/* Glow de Background Interno */}
         <div className="absolute -top-24 -right-24 w-48 h-48 bg-violet-600/10 rounded-full blur-[60px] pointer-events-none" />
         <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-indigo-600/10 rounded-full blur-[60px] pointer-events-none" />
 
