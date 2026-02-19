@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 import { COLORS, DAILY_MISSIONS, UserProfile, DailyMission } from '../types';
 import { updateAllProgressCaches } from '../services/progressService';
@@ -20,6 +19,7 @@ export const DailyHabits: React.FC<DailyHabitsProps> = ({ profile, refreshTrigge
   const SELECAO_KEY = `@daily_missions_selecao_${todayDate}`;
   const COMPLETED_KEY = `@daily_missions_progresso_${todayDate}`;
 
+  // Fallback para quando o Firestore não retorna dados (offline ou primeiro acesso sem sync)
   const loadDataFromStorage = () => {
     try {
       const savedMissions = localStorage.getItem(SELECAO_KEY);
@@ -32,14 +32,55 @@ export const DailyHabits: React.FC<DailyHabitsProps> = ({ profile, refreshTrigge
         setCompletedIds(JSON.parse(savedProgress));
       }
     } catch (error) {
-      console.error("Failed to load missions", error);
+      console.error("Failed to load missions from storage", error);
     }
   };
 
-  // Initial load and manual refresh trigger
   useEffect(() => {
-    loadDataFromStorage();
-  }, [SELECAO_KEY, COMPLETED_KEY, refreshTrigger]);
+    const fetchCloudProgress = async () => {
+      const user = auth.currentUser;
+      if (!user) {
+        loadDataFromStorage();
+        return;
+      }
+
+      try {
+        const historyRef = doc(db, "users", user.uid, "daily_history", todayDate);
+        const snap = await getDoc(historyRef);
+        
+        if (snap.exists()) {
+          const data = snap.data();
+          
+          // Sincroniza Missões Selecionadas
+          if (data.selected_missions) {
+            setMissions(data.selected_missions);
+            localStorage.setItem(SELECAO_KEY, JSON.stringify(data.selected_missions));
+          } else {
+            // Se o doc existe mas não tem missões (ex: log de gatilho), tenta local
+            const savedMissions = localStorage.getItem(SELECAO_KEY);
+            if (savedMissions) setMissions(JSON.parse(savedMissions));
+          }
+
+          // Sincroniza Progresso (IDs completados)
+          if (data.habits_ids) {
+            setCompletedIds(data.habits_ids);
+            localStorage.setItem(COMPLETED_KEY, JSON.stringify(data.habits_ids));
+          } else {
+            const savedProgress = localStorage.getItem(COMPLETED_KEY);
+            if (savedProgress) setCompletedIds(JSON.parse(savedProgress));
+          }
+        } else {
+          // Documento não existe na nuvem hoje, usa dados locais
+          loadDataFromStorage();
+        }
+      } catch (e) {
+        console.warn("[CloudSync] Falha ao buscar progresso na nuvem, usando fallback local", e);
+        loadDataFromStorage();
+      }
+    };
+
+    fetchCloudProgress();
+  }, [todayDate, refreshTrigger]);
 
   const syncProgressToDB = async (currentIds: string[]) => {
     const user = auth.currentUser;
@@ -52,6 +93,7 @@ export const DailyHabits: React.FC<DailyHabitsProps> = ({ profile, refreshTrigge
 
       const historyRef = doc(db, "users", user.uid, "daily_history", todayDate);
 
+      // Usa merge: true para não apagar a seleção de missões ou outros dados do dia
       await setDoc(historyRef, {
         date: todayDate,
         completed_count: count,
@@ -60,7 +102,9 @@ export const DailyHabits: React.FC<DailyHabitsProps> = ({ profile, refreshTrigge
         percentage: percentage,
         last_updated: new Date().toISOString()
       }, { merge: true });
-    } catch (error) { console.error(error); }
+    } catch (error) { 
+      console.error("[DailyHabits] Sync failed", error); 
+    }
   };
 
   const toggleHabit = (id: string) => {

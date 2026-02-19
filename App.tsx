@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { HashRouter, Routes, Route, Navigate, useLocation, Outlet } from 'react-router-dom';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
@@ -22,6 +21,8 @@ import { NotificationManager } from './components/NotificationManager';
 import { DataSyncManager } from './components/DataSyncManager';
 import { DataProvider } from './contexts/DataContext';
 import { PageTransition } from './components/PageTransition';
+
+const APP_VERSION = "1.0.1";
 
 const AppContent: React.FC<{ user: any; isOnboardingComplete: boolean }> = ({ user, isOnboardingComplete }) => {
   const location = useLocation();
@@ -71,6 +72,19 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Sistema de Limpeza de Cache Versionado
+    const storedVersion = localStorage.getItem("DESVICIAR_APP_VERSION");
+    if (storedVersion !== APP_VERSION) {
+      console.log(`[Version Control] Nova versão detectada: ${APP_VERSION}. Limpando caches locais...`);
+      Object.keys(localStorage).forEach(key => {
+        // Preserva apenas as chaves de persistência do Firebase para não deslogar o usuário
+        if (!key.startsWith('firebase:')) {
+          localStorage.removeItem(key);
+        }
+      });
+      localStorage.setItem("DESVICIAR_APP_VERSION", APP_VERSION);
+    }
+
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.ready.then(registration => {

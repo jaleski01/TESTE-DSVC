@@ -1,8 +1,7 @@
-
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../lib/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, setDoc } from 'firebase/firestore';
 import { Wrapper } from '../components/Wrapper';
 import { DailyHabits } from '../components/DailyHabits';
 import { ShortcutPrompt } from '../components/ShortcutPrompt';
@@ -95,7 +94,7 @@ export const DashboardScreen: React.FC = () => {
     if (profile) checkStreak();
   }, [profile?.uid, MISSION_STORAGE_KEY]);
 
-  const handleMissionSwipe = (direction: 'left' | 'right') => {
+  const handleMissionSwipe = async (direction: 'left' | 'right') => {
     if (!currentMission) return;
 
     if (typeof navigator !== 'undefined' && navigator.vibrate) {
@@ -109,7 +108,18 @@ export const DashboardScreen: React.FC = () => {
       
       if (newAccepted.length >= 3) {
         setCurrentMission(null);
-        // Instant switch: notify DailyHabits to refresh
+        // Sincroniza com o Firestore quando o arsenal é definido
+        if (auth.currentUser) {
+          try {
+            const historyRef = doc(db, "users", auth.currentUser.uid, "daily_history", todayStr);
+            await setDoc(historyRef, { 
+              selected_missions: newAccepted, 
+              date: todayStr 
+            }, { merge: true });
+          } catch (e) {
+            console.warn("Failed to sync missions to cloud", e);
+          }
+        }
         setMissionsRefreshKey(prev => prev + 1);
         return;
       }
