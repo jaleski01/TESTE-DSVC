@@ -1,26 +1,28 @@
+
+// Fix: Populate debug data to allow successful import in NeuroDebugCard component
 export const DEBUG_DATA = [
   {
-    id: 'stress',
-    trigger: 'Estresse',
-    lie: 'Só uma olhadinha para aliviar a pressão.',
-    truth: 'O alívio dura 5 minutos, a culpa dura dias. Isso não é relaxamento, é anestesia. O estresse voltará pior depois. O que você precisa é de descanso passivo, não de superestimulação.'
+    id: 1,
+    trigger: "Estresse",
+    lie: "Eu mereço esse alívio agora porque tive um dia difícil.",
+    truth: "O estresse é cansaço real; o vício é uma falsa solução que vai me deixar mais cansado amanhã."
   },
   {
-    id: 'boredom',
-    trigger: 'Tédio',
-    lie: 'Não tenho nada melhor para fazer agora.',
-    truth: 'O tédio é o precursor da criatividade e da motivação. Não o mate com dopamina barata. Faça 10 flexões ou arrume seu quarto agora.'
+    id: 2,
+    trigger: "Tédio",
+    lie: "Só vou dar uma olhadinha para passar o tempo.",
+    truth: "O tédio é o sinal de que meu cérebro está pronto para aprender algo novo ou descansar de verdade."
   },
   {
-    id: 'loneliness',
-    trigger: 'Solidão',
-    lie: 'Isso vai me fazer sentir conectado a alguém.',
-    truth: 'Pornografia isola, não conecta. Conexão real exige vulnerabilidade, risco e presença. Pixels na tela não preenchem o vazio, eles o aumentam.'
+    id: 3,
+    trigger: "Solidão",
+    lie: "Ninguém se importa, então tanto faz o que eu faço.",
+    truth: "O isolamento do vício é o que me mantém longe de conexões reais. Minha integridade me torna digno de conexão."
   },
   {
-    id: 'anxiety',
-    trigger: 'Ansiedade',
-    lie: 'Preciso desligar minha cabeça um pouco.',
-    truth: 'Você não vai desligar, vai fugir. E quando voltar, o problema ainda estará lá. Respire fundo 10 vezes agora e enfrente o que te assusta.'
+    id: 4,
+    trigger: "Insônia",
+    lie: "Isso vai me ajudar a relaxar e dormir mais rápido.",
+    truth: "Isso vai superestimular meu cérebro, destruir a qualidade do meu sono e me fazer acordar sem energia."
   }
 ];

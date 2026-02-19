@@ -36,12 +36,8 @@ export interface ProgressDataPackage {
 }
 
 const CACHE_KEY_PREFIX = '@progress_data_';
-
 const formatDateKey = (date: Date) => date.toLocaleDateString('en-CA');
 
-/**
- * Função Auxiliar Interna para processar dados brutos em um range específico (RAM Only)
- */
 const processRangeData = (
   range: number, 
   historyMap: Map<string, DailyHistoryRecord>, 
@@ -53,7 +49,6 @@ const processRangeData = (
   queryStartDate.setDate(today.getDate() - (range - 1));
   const queryStartDateStr = formatDateKey(queryStartDate);
 
-  // 1. Processar Histórico de Hábitos
   const processedChartData: ChartDataPoint[] = [];
   let totalPercentage = 0;
   let perfectCount = 0;
@@ -72,7 +67,7 @@ const processRangeData = (
 
     const record = historyMap.get(dateKey);
     const count = record?.completed_count ?? 0;
-    const totalTasks = record?.total_habits || 6; 
+    const totalTasks = record?.total_habits || 3; // Ajustado de 6 para 3
     const rawPercentage = (count / totalTasks) * 100;
     const value = Math.min(Math.round(rawPercentage), 100);
 
@@ -94,7 +89,6 @@ const processRangeData = (
     perfectDays: perfectCount
   };
 
-  // 2. Processar Insights de Gatilhos (Filtrar logs do range)
   const rangeTriggers = triggerLogs.filter(log => log.date_string >= queryStartDateStr);
   let triggerInsight: TriggerInsight = { totalLogs: 0, topEmotion: null, topContext: null, ranking: [] };
   
@@ -109,7 +103,6 @@ const processRangeData = (
 
     let maxE = { name: '', count: 0 };
     Object.entries(emotionCounts).forEach(([name, count]) => { if (count > maxE.count) maxE = { name, count }; });
-
     let maxC = { name: '', count: 0 };
     Object.entries(contextCounts).forEach(([name, count]) => { if (count > maxC.count) maxC = { name, count }; });
 
@@ -129,10 +122,6 @@ const processRangeData = (
   return { chartData: processedChartData, stats, triggerInsight };
 };
 
-/**
- * ATUALIZAÇÃO EM MASSA (Single Fetch, Multi-Cache)
- * Otimiza performance realizando uma única leitura de 90 dias e distribuindo para todos os caches.
- */
 export const updateAllProgressCaches = async (): Promise<void> => {
   const user = auth.currentUser;
   if (!user) return;
@@ -140,50 +129,31 @@ export const updateAllProgressCaches = async (): Promise<void> => {
   try {
     const userDocRef = doc(db, "users", user.uid);
     const userDocSnap = await getDoc(userDocRef);
-    
     let streakStartDate = new Date();
     if (userDocSnap.exists()) {
       const userData = userDocSnap.data();
-      if (userData.current_streak_start) {
-        streakStartDate = new Date(userData.current_streak_start);
-      }
+      if (userData.current_streak_start) streakStartDate = new Date(userData.current_streak_start);
     }
     streakStartDate.setHours(0, 0, 0, 0);
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
-    // Busca o range máximo: 90 dias
     const maxRange = 90;
     const queryStartDate = new Date(today);
     queryStartDate.setDate(today.getDate() - (maxRange - 1));
     const queryStartDateStr = formatDateKey(queryStartDate);
 
-    // Fetch Único
     const historyRef = collection(db, "users", user.uid, "daily_history");
-    const hQuery = query(
-      historyRef, 
-      where("date", ">=", queryStartDateStr),
-      orderBy("date", "desc")
-    );
-
+    const hQuery = query(historyRef, where("date", ">=", queryStartDateStr), orderBy("date", "desc"));
     const triggersRef = collection(db, "users", user.uid, "trigger_logs");
-    const tQuery = query(
-      triggersRef,
-      where('date_string', '>=', queryStartDateStr),
-      orderBy('date_string', 'desc')
-    );
+    const tQuery = query(triggersRef, where('date_string', '>=', queryStartDateStr), orderBy('date_string', 'desc'));
 
     const [hSnap, tSnap] = await Promise.all([getDocs(hQuery), getDocs(tQuery)]);
-
-    // Dados crus em memória
     const historyMap = new Map<string, DailyHistoryRecord>();
     hSnap.forEach(d => historyMap.set(d.data().date, d.data() as DailyHistoryRecord));
-    
     const triggerLogs: any[] = [];
     tSnap.forEach(d => triggerLogs.push(d.data()));
 
-    // Processar e salvar todos os ranges de uma vez
     const ranges = [7, 15, 30, 90];
     for (const range of ranges) {
       const packageData = processRangeData(range, historyMap, triggerLogs, streakStartDate, today);
@@ -192,17 +162,9 @@ export const updateAllProgressCaches = async (): Promise<void> => {
         data: packageData
       }));
     }
-
-    console.log(`[ProgressService] Todos os ${ranges.length} caches atualizados com sucesso.`);
-  } catch (error) {
-    console.error("Critical batch progress update failure:", error);
-    throw error;
-  }
+  } catch (error) { throw error; }
 };
 
-/**
- * Versão original para compatibilidade (carregamento sob demanda)
- */
 export const fetchAndCacheProgressData = async (range: number): Promise<ProgressDataPackage | null> => {
   const user = auth.currentUser;
   if (!user) return null;
@@ -210,13 +172,10 @@ export const fetchAndCacheProgressData = async (range: number): Promise<Progress
   try {
     const userDocRef = doc(db, "users", user.uid);
     const userDocSnap = await getDoc(userDocRef);
-    
     let streakStartDate = new Date();
     if (userDocSnap.exists()) {
       const userData = userDocSnap.data();
-      if (userData.current_streak_start) {
-        streakStartDate = new Date(userData.current_streak_start);
-      }
+      if (userData.current_streak_start) streakStartDate = new Date(userData.current_streak_start);
     }
     streakStartDate.setHours(0, 0, 0, 0);
 
@@ -227,37 +186,22 @@ export const fetchAndCacheProgressData = async (range: number): Promise<Progress
     const queryStartDateStr = formatDateKey(queryStartDate);
 
     const historyRef = collection(db, "users", user.uid, "daily_history");
-    const hQuery = query(
-      historyRef, 
-      where("date", ">=", queryStartDateStr),
-      orderBy("date", "desc")
-    );
-
+    const hQuery = query(historyRef, where("date", ">=", queryStartDateStr), orderBy("date", "desc"));
     const triggersRef = collection(db, "users", user.uid, "trigger_logs");
-    const tQuery = query(
-      triggersRef,
-      where('date_string', '>=', queryStartDateStr),
-      orderBy('date_string', 'desc')
-    );
+    const tQuery = query(triggersRef, where('date_string', '>=', queryStartDateStr), orderBy('date_string', 'desc'));
 
     const [hSnap, tSnap] = await Promise.all([getDocs(hQuery), getDocs(tQuery)]);
-
     const historyMap = new Map<string, DailyHistoryRecord>();
     hSnap.forEach(d => historyMap.set(d.data().date, d.data() as DailyHistoryRecord));
-
     const triggerLogs: any[] = [];
     tSnap.forEach(d => triggerLogs.push(d.data()));
 
     const result = processRangeData(range, historyMap, triggerLogs, streakStartDate, today);
-    
     localStorage.setItem(`${CACHE_KEY_PREFIX}${range}`, JSON.stringify({
       timestamp: Date.now(),
       data: result
     }));
 
     return result;
-  } catch (error) {
-    console.error("Progress service error:", error);
-    return null;
-  }
+  } catch (error) { return null; }
 };

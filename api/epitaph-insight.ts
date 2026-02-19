@@ -1,5 +1,7 @@
+
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { GoogleGenerativeAI } from "@google/generative-ai";
+// Fix: Use @google/genai as per current guidelines instead of deprecated @google/generative-ai
+import { GoogleGenAI } from "@google/genai";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // 1. Validação de Método
@@ -14,20 +16,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   // 2. Inicialização Segura (Server-Side)
-  const apiKey = process.env.GEMINI_API_KEY;
-  
-  if (!apiKey) {
-    console.error("CRITICAL: GEMINI_API_KEY não configurada no ambiente.");
+  // Fix: The API key must be obtained exclusively from the environment variable process.env.API_KEY
+  if (!process.env.API_KEY) {
+    console.error("CRITICAL: API_KEY não configurada no ambiente.");
     return res.status(500).json({ error: 'Erro de configuração do servidor.' });
   }
 
   try {
-    // Inicializa o SDK Estável
-    const genAI = new GoogleGenerativeAI(apiKey);
+    // Fix: Always use const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     
-    // Configura o modelo (Flash é ideal para velocidade/custo)
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
     // 3. Construção do Prompt
     const logsText = logs
       .map((l: any) => `Dia ${l.day_number} (${l.date}): "${l.content}"`)
@@ -50,9 +48,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     `;
 
     // 4. Geração de Conteúdo
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
+    // Fix: Use ai.models.generateContent and gemini-3-flash-preview for basic text tasks
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: prompt,
+    });
+    
+    // Fix: The GenerateContentResponse object features a text property (not a method, so do not call text())
+    const text = response.text;
 
     return res.status(200).json({ insight: text });
 
