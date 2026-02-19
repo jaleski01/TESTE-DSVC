@@ -40,29 +40,29 @@ export const DashboardScreen: React.FC = () => {
   const [debugClicks, setDebugClicks] = useState(0);
   const debugTimerRef = useRef<any>(null);
 
-  const todayStr = getTodayString();
-  const MISSION_STORAGE_KEY = `@daily_missions_selecao_${todayStr}`;
-  const currentStreak = profile?.currentStreak || 0;
+  // --- LÓGICA DO EPITÁFIO (BLINDADA) ---
+  const streakNum = Number(profile?.currentStreak || 0); // Prevenção de coerção de tipo silenciosa
+  const todayStr = getTodayString(); // Padronização estrita de data
   const isCheckedInToday = profile?.lastCheckInDate === todayStr;
+  const hasWrittenToday = profile?.last_epitaph_date === todayStr;
 
-  // --- LÓGICA DO EPITÁFIO ---
   let isEpitaphDay = false;
-  let effectiveDay = currentStreak;
+  let effectiveDay = streakNum;
 
   if (!isCheckedInToday) {
-    const potentialStreak = currentStreak + 1;
-    isEpitaphDay = (currentStreak === 0) || (potentialStreak > 0 && potentialStreak % 7 === 0);
-    effectiveDay = (currentStreak === 0) ? 0 : potentialStreak;
+    const potentialStreak = streakNum + 1;
+    isEpitaphDay = (streakNum === 0) || (potentialStreak > 0 && potentialStreak % 7 === 0);
+    effectiveDay = (streakNum === 0) ? 0 : potentialStreak;
   } else {
-    isEpitaphDay = (currentStreak === 1) || (currentStreak > 0 && currentStreak % 7 === 0);
-    effectiveDay = (currentStreak === 1) ? 0 : currentStreak;
+    isEpitaphDay = (streakNum === 1) || (streakNum > 0 && streakNum % 7 === 0);
+    effectiveDay = (streakNum === 1) ? 0 : streakNum;
   }
 
-  const isUpcomingEpitaph = !isCheckedInToday && (currentStreak === 0 || (currentStreak + 1) % 7 === 0);
-  const localToday = new Date().toLocaleDateString('en-CA');
-  const hasWrittenToday = profile?.last_epitaph_date === localToday;
-  const showEpitaphCard = isEpitaphDay && !hasWrittenToday;
-  const isGoldenHour = isEpitaphDay && !hasWrittenToday;
+  const isUpcomingEpitaph = !isCheckedInToday && isEpitaphDay;
+  const showEpitaphCard = isCheckedInToday && isEpitaphDay && !hasWrittenToday;
+  // ----------------------------------------
+
+  const MISSION_STORAGE_KEY = `@daily_missions_selecao_${todayStr}`;
 
   // Initialize Missions
   useEffect(() => {
@@ -109,7 +109,6 @@ export const DashboardScreen: React.FC = () => {
       
       if (newAccepted.length >= 3) {
         setCurrentMission(null);
-        // Sincroniza com o Firestore quando o arsenal é definido
         if (auth.currentUser) {
           try {
             const historyRef = doc(db, "users", auth.currentUser.uid, "daily_history", todayStr);
@@ -126,7 +125,6 @@ export const DashboardScreen: React.FC = () => {
       }
     }
 
-    // Carrega próxima missão
     const acceptedIds = direction === 'right' 
       ? [...acceptedMissions, currentMission].map(m => m.id)
       : acceptedMissions.map(m => m.id);
@@ -138,7 +136,6 @@ export const DashboardScreen: React.FC = () => {
   const handleDebugAction = async () => {
     if (!profile || !auth.currentUser) return;
     try {
-      // 1. Simula a passagem do tempo ajustando o check-in para ontem
       const yesterdayDate = new Date();
       yesterdayDate.setDate(yesterdayDate.getDate() - 1);
       const yesterdayString = yesterdayDate.toISOString().split('T')[0];
@@ -151,11 +148,9 @@ export const DashboardScreen: React.FC = () => {
       });
       updateLocalProfile({ ...profile, currentStreak: newStreak, lastCheckInDate: yesterdayString });
 
-      // 2. Invalidação de Cache Local (Força a limpeza das missões do dia real)
       localStorage.removeItem(`@daily_missions_selecao_${todayStr}`);
       localStorage.removeItem(`@daily_missions_progresso_${todayStr}`);
 
-      // 3. Reset do Estado no Firestore para o dia atual (Evita que o DailyHabits puxe os dados antigos da nuvem)
       const historyRef = doc(db, "users", auth.currentUser.uid, "daily_history", todayStr);
       await setDoc(historyRef, {
         selected_missions: null,
@@ -164,12 +159,9 @@ export const DashboardScreen: React.FC = () => {
         percentage: 0
       }, { merge: true });
 
-      // 4. Limpeza de Estados Locais da UI (Atualiza a interface em O(1))
       setAcceptedMissions([]);
-      // Sorteia uma nova missão inicial para a pilha
       const randomMission = DAILY_MISSIONS[Math.floor(Math.random() * DAILY_MISSIONS.length)];
       setCurrentMission(randomMission);
-      // Força o componente DailyHabits a re-renderizar lendo os dados vazios
       setMissionsRefreshKey(prev => prev + 1);
 
       alert(`DEBUG: Dia avançado para ${newStreak}. Arsenal de missões resetado para testes.`);
@@ -232,10 +224,10 @@ export const DashboardScreen: React.FC = () => {
       {/* --- UNIFIED ATMOSPHERE BACKGROUND (DYNAMIC) --- */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0 transition-opacity duration-1000 opacity-100">
         <div className={`absolute top-[-10%] left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full blur-[100px] transition-colors duration-1000 ${
-          isEpitaphDay ? 'bg-amber-900/10' : 'bg-violet-900/10'
+          isEpitaphDay ? 'bg-fuchsia-900/15' : 'bg-violet-900/10'
         }`} />
         <div className={`absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] rounded-full blur-[80px] transition-colors duration-1000 ${
-          isEpitaphDay ? 'bg-amber-600/5' : 'bg-cyan-900/10'
+          isEpitaphDay ? 'bg-purple-600/10' : 'bg-cyan-900/10'
         }`} />
       </div>
 
@@ -265,10 +257,10 @@ export const DashboardScreen: React.FC = () => {
               </span>
               <div className="flex items-baseline gap-2 mb-10">
                 <h2 className="text-7xl font-light tracking-tighter text-white">
-                  {profile?.currentStreak || 0}
+                  {streakNum}
                 </h2>
                 <span className="text-sm font-medium uppercase text-violet-200/50">
-                  {(profile?.currentStreak || 0) === 1 ? 'Dia' : 'Dias'}
+                  {streakNum === 1 ? 'Dia' : 'Dias'}
                 </span>
               </div>
 
@@ -287,25 +279,20 @@ export const DashboardScreen: React.FC = () => {
                 </div>
               ) : (
                 <div className="w-full max-w-md mx-auto flex flex-col items-center gap-4">
-                  {isGoldenHour ? (
-                    <button onClick={() => setIsCheckInModalOpen(true)} className="w-full bg-[#0F0A15]/80 backdrop-blur-xl rounded-2xl p-5 flex items-center gap-4 border border-violet-500/30">
-                        <div className="w-10 h-10 rounded-full bg-violet-500/20 flex items-center justify-center"><Crown size={20} className="text-violet-400" /></div>
-                        <div className="flex-1 text-left"><h3 className="text-sm font-black text-white uppercase tracking-wide">Dia de Reflexão</h3></div>
-                        <Feather size={20} className="text-violet-400" />
-                    </button>
-                  ) : (
-                    <HoldToConfirmButton onComplete={() => setIsCheckInModalOpen(true)} />
-                  )}
+                  <HoldToConfirmButton 
+                    onComplete={() => setIsCheckInModalOpen(true)} 
+                    isEpitaphDay={isUpcomingEpitaph} 
+                  />
 
-                  {/* AVISO DE EPITÁFIO DISPONÍVEL (AMBER) */}
+                  {/* AVISO DE EPITÁFIO DISPONÍVEL (VIOLET) */}
                   {isUpcomingEpitaph && (
                     <motion.div 
                       initial={{ opacity: 0, y: -10 }} 
                       animate={{ opacity: 1, y: 0 }} 
-                      className="flex items-center justify-center gap-2 text-amber-400/80 bg-amber-500/10 py-2 px-5 rounded-full border border-amber-500/20 w-fit"
+                      className="flex items-center justify-center gap-2 text-violet-400/80 bg-violet-500/10 py-2 px-5 rounded-full border border-violet-500/20 w-fit"
                     >
-                      <Feather size={14} className="text-amber-400 animate-pulse" />
-                      <span className="text-[10px] font-black uppercase tracking-widest text-amber-400">Epitáfio disponível</span>
+                      <Crown size={14} className="text-violet-400 animate-pulse" />
+                      <span className="text-[10px] font-black uppercase tracking-widest text-violet-400">Epitáfio disponível</span>
                     </motion.div>
                   )}
                 </div>
@@ -366,7 +353,7 @@ export const DashboardScreen: React.FC = () => {
       </motion.div>
 
       {showRecoveryModal && profile && (
-        <StreakRecoveryModal streakValue={profile.currentStreak || 0} onSuccess={handleRecoverySuccess} onFail={handleRecoveryFail} />
+        <StreakRecoveryModal streakValue={streakNum} onSuccess={handleRecoverySuccess} onFail={handleRecoveryFail} />
       )}
       {isCheckInModalOpen && profile && (
         <DailyCheckInModal profile={profile} isEpitaphDay={isEpitaphDay} hasWrittenEpitaphToday={hasWrittenToday} onClose={() => setIsCheckInModalOpen(false)} onSuccess={handleCheckInSuccess} />
