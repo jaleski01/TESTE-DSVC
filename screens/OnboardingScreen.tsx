@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
@@ -191,13 +192,7 @@ export const OnboardingScreen: React.FC = () => {
 
   return (
     <Wrapper noPadding hideNavigation disableDefaultBackground>
-      <div className="flex flex-col h-[100dvh] w-full bg-black overflow-hidden relative">
-        
-        <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-          <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-violet-900/10 rounded-full blur-[100px]" />
-          <div className="absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] bg-cyan-900/10 rounded-full blur-[80px]" />
-        </div>
-
+      <div className="flex flex-col flex-1 w-full bg-black overflow-hidden relative">
         <AnimatePresence mode="wait">
           {!showReport ? (
             <motion.div 
@@ -294,7 +289,7 @@ export const OnboardingScreen: React.FC = () => {
               key="report"
               initial={{ opacity: 0, y: 50 }}
               animate={{ opacity: 1, y: 0 }}
-              className="flex flex-col h-full w-full relative z-10 overflow-y-auto scrollbar-hide px-6 pt-12 pb-12"
+              className="flex flex-col flex-1 w-full relative z-10 overflow-y-auto scrollbar-hide px-6 pt-12 pb-12"
             >
               <div className="flex items-center justify-center mb-8">
                 <div className="w-16 h-16 rounded-full bg-violet-600/20 border border-violet-500/30 flex items-center justify-center shadow-[0_0_25px_rgba(139,92,246,0.3)]">

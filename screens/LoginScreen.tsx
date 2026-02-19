@@ -156,16 +156,7 @@ export const LoginScreen: React.FC = () => {
 
   return (
     <Wrapper noPadding hideNavigation disableDefaultBackground={true}>
-      {/* 
-        DYNAMIC ATMOSPHERE BACKGROUND (Idêntico à Dashboard)
-        Adiciona os orbes de luz para tirar o aspecto "totalmente preto"
-      */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-        <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-violet-900/15 rounded-full blur-[110px]" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] bg-cyan-900/10 rounded-full blur-[90px]" />
-      </div>
-
-      <div className="flex flex-col h-[100dvh] w-full bg-transparent overflow-hidden relative z-10">
+      <div className="flex flex-col flex-1 w-full bg-transparent overflow-hidden relative z-10">
         <div className="flex-1 overflow-y-auto w-full px-6 scrollbar-hide">
           <div className="flex flex-col items-center pt-24 pb-40">
             

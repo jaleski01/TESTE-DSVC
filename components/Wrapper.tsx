@@ -28,7 +28,7 @@ export const Wrapper: React.FC<WrapperProps> = ({
     <div 
       className={`relative flex flex-col h-[100dvh] w-full text-white overflow-hidden bg-void ${className}`}
     >
-      {/* --- UNIFIED ATMOSPHERE BACKGROUND (Extracted from Dashboard) --- */}
+      {/* --- UNIFIED ATMOSPHERE BACKGROUND --- */}
       {!disableDefaultBackground && (
         <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
           {/* Violet Orb (Top Center/Left) */}
@@ -43,10 +43,9 @@ export const Wrapper: React.FC<WrapperProps> = ({
         className={`
           flex-1 w-full relative z-10 flex flex-col 
           pt-[max(1rem,env(safe-area-inset-top))]
-          pb-16
+          ${!hideNavigation ? 'pb-20' : 'pb-[max(1rem,env(safe-area-inset-bottom))]'}
           ${!noPadding ? 'px-6' : ''} 
           ${centerContent ? 'justify-center items-center' : ''}
-          /* Ensure smooth scrolling within the container */
           overflow-hidden
         `}
       >
