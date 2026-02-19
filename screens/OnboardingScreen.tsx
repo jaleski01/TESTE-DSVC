@@ -358,25 +358,31 @@ export const OnboardingScreen: React.FC = () => {
                     { day: 'Dia 45', label: 'Controle', h: 70, color: '#10B981' },
                     { day: 'Dia 90', label: 'Reboot', h: 100, color: '#8B5CF6' }
                   ].map((bar, i) => (
-                    <div key={bar.day} className="flex-1 flex flex-col items-center group">
-                      <div className="relative w-full flex-1 flex flex-col justify-end items-center">
-                        {/* CORREÇÃO DO GRÁFICO: motion.div otimizado para renderização e animação */}
+                    <div key={bar.day} className="flex-1 flex flex-col items-center h-full">
+                      {/* Container pai com altura fixa percentual baseada no dado real */}
+                      <div 
+                        className="w-full flex-1 flex flex-col justify-end items-center" 
+                        style={{ height: `${bar.h}%` }}
+                      >
                         <motion.div 
-                          initial={{ height: "0%" }}
-                          animate={{ height: `${bar.h}%` }}
-                          transition={{ duration: 1.5, ease: "easeOut", delay: 0.5 + i * 0.2 }}
-                          style={{ backgroundColor: bar.color }}
-                          className="w-full max-w-[40px] rounded-t-lg shadow-lg relative group-hover:brightness-110 transition-all"
-                        >
-                           <div className="absolute inset-0 bg-white/10 opacity-30"></div>
-                        </motion.div>
-                        <span className="text-[8px] font-black uppercase text-gray-500 mt-2 whitespace-nowrap">{bar.label}</span>
-                        <span className="text-[10px] font-bold text-white mt-0.5">{bar.day}</span>
+                          initial={{ scaleY: 0 }}
+                          animate={{ scaleY: 1 }}
+                          transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1], delay: 0.5 + i * 0.15 }}
+                          style={{ 
+                            backgroundColor: bar.color, 
+                            transformOrigin: "bottom", // Garante que cresce de baixo para cima
+                            height: "100%", // Preenche o container pai
+                            width: "100%", 
+                            maxWidth: "40px" 
+                          }}
+                          className="rounded-t-lg shadow-[0_0_15px_rgba(0,0,0,0.3)] relative"
+                        />
                       </div>
+                      <span className="text-[8px] font-black uppercase text-gray-500 mt-3 whitespace-nowrap">{bar.label}</span>
+                      <span className="text-[9px] font-bold text-gray-400 mt-1">{bar.day}</span>
                     </div>
                   ))}
-                  
-                  <div className="absolute bottom-0 left-0 right-0 h-px bg-white/5"></div>
+                  <div className="absolute bottom-[24px] left-0 right-0 h-px bg-white/5"></div>
                 </div>
               </div>
 
@@ -396,7 +402,7 @@ export const OnboardingScreen: React.FC = () => {
                     isLoading={isSubmitting}
                     className="h-16 text-lg font-black uppercase tracking-widest bg-violet-600 shadow-[0_0_30px_rgba(139,92,246,0.4)]"
                   >
-                    ACEITAR DESAFIO DE {reportMetrics?.rebootDays} DIAS
+                    INICIAR DESAFIO
                   </Button>
                 </motion.div>
                 <button 
