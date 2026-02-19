@@ -112,16 +112,23 @@ export const DailyHabits: React.FC<DailyHabitsProps> = ({ profile, refreshTrigge
       navigator.vibrate(15);
     }
 
-    setCompletedIds(prev => {
-      const isCompleted = prev.includes(id);
-      let newHabits = isCompleted ? prev.filter(item => item !== id) : [...prev, id];
-      
+    // 1. Calcula o novo estado PRIMEIRO, fora do setter do React
+    const isCompleted = completedIds.includes(id);
+    const newHabits = isCompleted 
+      ? completedIds.filter(item => item !== id) 
+      : [...completedIds, id];
+    
+    // 2. Atualiza o estado da UI instantaneamente (Optimistic UI)
+    setCompletedIds(newHabits);
+    
+    // 3. Executa os side-effects de forma isolada
+    try {
       localStorage.setItem(COMPLETED_KEY, JSON.stringify(newHabits));
       updateAllProgressCaches().catch(console.error);
       syncProgressToDB(newHabits);
-      
-      return newHabits;
-    });
+    } catch (error) {
+      console.error("[DailyHabits] Falha ao executar side-effects do hábito", error);
+    }
   };
 
   const containerVariants = {

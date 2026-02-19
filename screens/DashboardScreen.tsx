@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../lib/firebase';
@@ -137,18 +138,44 @@ export const DashboardScreen: React.FC = () => {
   const handleDebugAction = async () => {
     if (!profile || !auth.currentUser) return;
     try {
+      // 1. Simula a passagem do tempo ajustando o check-in para ontem
       const yesterdayDate = new Date();
       yesterdayDate.setDate(yesterdayDate.getDate() - 1);
       const yesterdayString = yesterdayDate.toISOString().split('T')[0];
       const newStreak = (profile.currentStreak || 0) + 1;
+      
       const userRef = doc(db, 'users', auth.currentUser.uid);
       await updateDoc(userRef, {
         currentStreak: newStreak,
         lastCheckInDate: yesterdayString
       });
       updateLocalProfile({ ...profile, currentStreak: newStreak, lastCheckInDate: yesterdayString });
-      alert(`DEBUG: Dia avançado para ${newStreak}.`);
-    } catch (error) { console.error(error); }
+
+      // 2. Invalidação de Cache Local (Força a limpeza das missões do dia real)
+      localStorage.removeItem(`@daily_missions_selecao_${todayStr}`);
+      localStorage.removeItem(`@daily_missions_progresso_${todayStr}`);
+
+      // 3. Reset do Estado no Firestore para o dia atual (Evita que o DailyHabits puxe os dados antigos da nuvem)
+      const historyRef = doc(db, "users", auth.currentUser.uid, "daily_history", todayStr);
+      await setDoc(historyRef, {
+        selected_missions: null,
+        habits_ids: [],
+        completed_count: 0,
+        percentage: 0
+      }, { merge: true });
+
+      // 4. Limpeza de Estados Locais da UI (Atualiza a interface em O(1))
+      setAcceptedMissions([]);
+      // Sorteia uma nova missão inicial para a pilha
+      const randomMission = DAILY_MISSIONS[Math.floor(Math.random() * DAILY_MISSIONS.length)];
+      setCurrentMission(randomMission);
+      // Força o componente DailyHabits a re-renderizar lendo os dados vazios
+      setMissionsRefreshKey(prev => prev + 1);
+
+      alert(`DEBUG: Dia avançado para ${newStreak}. Arsenal de missões resetado para testes.`);
+    } catch (error) { 
+      console.error("Erro crítico na ação de debug:", error); 
+    }
   };
 
   const handleStatusClick = () => {
