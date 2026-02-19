@@ -80,7 +80,6 @@ export const DailyCheckInModal: React.FC<DailyCheckInModalProps> = ({
 
       // 1. Lógica Condicional de Salvamento:
       // Só salva no histórico diário se houver emoção e contexto (Gatilhos identificados).
-      // Se for "Dia Limpo" (ambos null), pula esta etapa para manter os logs puros.
       if (emotion && context) {
         const historyRef = doc(db, "users", user.uid, "daily_history", today);
         await setDoc(historyRef, {
@@ -158,182 +157,92 @@ export const DailyCheckInModal: React.FC<DailyCheckInModalProps> = ({
     }
   };
 
-  const variants = {
-    enter: { x: 50, opacity: 0 },
-    center: { x: 0, opacity: 1 },
-    exit: { x: -50, opacity: 0 }
-  };
-
-  const renderContent = () => {
-    switch (step) {
-      case 'RELAPSE_Q':
-        return (
-          <motion.div key="relapse" variants={variants} initial="enter" animate="center" exit="exit" className="text-center">
-            <h2 className="text-xl font-black text-white mb-2 uppercase italic">Honestidade Radical</h2>
-            <p className="text-gray-400 text-sm mb-8">Sua integridade vale mais que um número. Você venceu hoje?</p>
-            <div className="flex flex-col gap-3">
-              <button 
-                onClick={() => handleRelapseChoice(false)}
-                className="w-full py-5 rounded-xl bg-violet-600 text-white font-black uppercase tracking-widest shadow-[0_0_20px_rgba(139,92,246,0.3)] active:scale-95 transition-all"
-              >
-                Sim, Eu Venci
-              </button>
-              <button 
-                onClick={() => handleRelapseChoice(true)}
-                className="w-full py-4 rounded-xl border border-red-500/30 text-red-500 font-bold bg-red-500/10 hover:bg-red-500/20 active:scale-95 transition-all"
-              >
-                Não, eu recaí
-              </button>
-            </div>
-          </motion.div>
-        );
-
-      case 'EMOTION':
-        return (
-          <motion.div key="emotion" variants={variants} initial="enter" animate="center" exit="exit" className="flex flex-col h-full">
-            <h2 className="text-lg font-bold text-white mb-1 text-center">Diagnóstico Emocional</h2>
-            <p className="text-xs text-gray-500 text-center mb-4">Como você se sentiu predominantemente hoje?</p>
-            
-            {/* Opção de Check-in Limpo (Apenas se não for recaída) */}
-            {!isRelapse && (
-              <button
-                onClick={handleCleanCheckIn}
-                className="w-full mb-4 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/50 text-emerald-500 font-bold uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-emerald-500/20 active:scale-95 transition-all shadow-[0_0_15px_rgba(16,185,129,0.2)] shrink-0"
-              >
-                <ShieldCheck size={20} />
-                Dia Limpo - Sem Gatilhos
-              </button>
-            )}
-
-            <div className="grid grid-cols-2 gap-3 mb-6 overflow-y-auto scrollbar-hide flex-1">
-              {EMOTIONS.map((item) => (
-                <button
-                  key={item}
-                  onClick={() => setEmotion(item)}
-                  className={`p-3 rounded-xl border text-sm font-bold transition-all duration-200 ${
-                    emotion === item 
-                      ? 'bg-violet-600/20 border-violet-500 text-white shadow-[0_0_10px_rgba(139,92,246,0.3)]' 
-                      : 'border-[#374151] bg-[#1F2937] text-gray-400 active:scale-95'
-                  }`}
-                >
-                  {item}
-                </button>
-              ))}
-            </div>
-            
-            <Button 
-              onClick={() => setStep('CONTEXT')} 
-              disabled={!emotion}
-              className="mt-auto"
-            >
-              Próximo
-            </Button>
-          </motion.div>
-        );
-
-      case 'CONTEXT':
-        return (
-          <motion.div key="context" variants={variants} initial="enter" animate="center" exit="exit" className="flex flex-col h-full">
-            <h2 className="text-lg font-bold text-white mb-1 text-center">Contexto</h2>
-            <p className="text-xs text-gray-500 text-center mb-6">{isRelapse ? 'Onde você estava vulnerável?' : 'Onde você passou a maior parte do dia?'}</p>
-            
-            <div className="grid grid-cols-2 gap-3 mb-6 overflow-y-auto scrollbar-hide flex-1">
-              {CONTEXTS.map((item) => (
-                <button
-                  key={item}
-                  onClick={() => setContext(item)}
-                  className={`p-3 rounded-xl border text-sm font-bold transition-all duration-200 ${
-                    context === item 
-                      ? isRelapse 
-                        ? 'bg-red-600/20 border-red-500 text-white shadow-[0_0_10px_rgba(220,38,38,0.3)]'
-                        : 'bg-violet-600/20 border-violet-500 text-white shadow-[0_0_10px_rgba(139,92,246,0.3)]'
-                      : 'border-[#374151] bg-[#1F2937] text-gray-400 active:scale-95'
-                  }`}
-                >
-                  {item}
-                </button>
-              ))}
-            </div>
-            <Button 
-              onClick={handleContextNext} 
-              disabled={!context} 
-              isLoading={isLoading}
-              className={`mt-auto ${isRelapse ? 'bg-red-600 hover:bg-red-700' : 'bg-violet-600 hover:bg-violet-700'}`}
-            >
-              {isRelapse ? 'Confirmar Falha' : shouldShowEpitaph ? 'Próximo' : 'Confirmar Check-in'}
-            </Button>
-          </motion.div>
-        );
-
-      case 'EPITAPH_INPUT':
-        return (
-          <motion.div key="epitaph" variants={variants} initial="enter" animate="center" exit="exit" className="flex flex-col h-full">
-            <div className="flex items-center gap-2 mb-4">
-              <Feather size={20} className="text-amber-500" />
-              <h2 className="text-lg font-black text-white uppercase italic">Epitáfio do Dia</h2>
-            </div>
-            
-            <p className="text-xs text-gray-400 mb-4 leading-relaxed">
-              Hoje é um marco. Para confirmar sua vitória, registre brevemente o estado da sua mente e espírito. O que mudou?
-            </p>
-
-            <textarea
-              value={epitaphText}
-              onChange={(e) => setEpitaphText(e.target.value)}
-              placeholder="Descreva detalhadamente como você se sente mental, física e socialmente..."
-              className="flex-1 w-full bg-[#050505] border border-amber-500/30 rounded-xl p-4 text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-amber-500/50 resize-none text-sm mb-6 min-h-[120px]"
-              autoFocus
-            />
-
-            <Button 
-              onClick={finishVictory}
-              disabled={!epitaphText.trim()}
-              isLoading={isLoading}
-              className={`w-full font-bold uppercase tracking-widest ${
-                !epitaphText.trim() 
-                  ? 'opacity-50 cursor-not-allowed' 
-                  : 'bg-gradient-to-r from-amber-600 to-amber-500 text-black shadow-[0_0_20px_rgba(245,158,11,0.3)]'
-              }`}
-            >
-              Confirmar Vitória
-            </Button>
-          </motion.div>
-        );
-
-      case 'SUCCESS_MSG':
-        return (
-          <motion.div key="success" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center py-8">
-            <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6 border border-green-500/50 shadow-[0_0_30px_rgba(34,197,94,0.4)]">
-              <svg className="w-10 h-10 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-            </div>
-            <h2 className="text-2xl font-black text-white italic uppercase mb-2">Vitória Confirmada!</h2>
-            <p className="text-gray-400 text-sm">Mais um elo forjado na sua corrente de disciplina.</p>
-          </motion.div>
-        );
-
-      case 'FAILURE_MSG':
-        return (
-          <motion.div key="failure" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center py-8">
-            <div className="w-20 h-20 bg-red-600/20 rounded-full flex items-center justify-center mx-auto mb-6 border border-red-600/50 shadow-[0_0_30px_rgba(220,38,38,0.4)]">
-              <svg className="w-10 h-10 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-            </div>
-            <h2 className="text-2xl font-black text-white italic uppercase mb-2">Levante-se.</h2>
-            <p className="text-gray-400 text-sm">A honestidade é o primeiro passo da volta. Recomeçando o protocolo...</p>
-          </motion.div>
-        );
-      
-      default: return null;
-    }
-  };
-
   return createPortal(
     <div className="fixed inset-0 z-[10000] flex items-center justify-center p-6">
-      <div className="absolute inset-0 bg-black/95 backdrop-blur-md animate-fadeIn" />
-      <div className="w-full max-w-sm bg-[#0F0A15] border border-[#2E243D] rounded-3xl p-8 relative overflow-hidden shadow-2xl min-h-[420px] flex flex-col justify-center">
-        <AnimatePresence mode="wait">
-          {renderContent()}
-        </AnimatePresence>
-      </div>
+      {/* Backdrop overlay com desfoque nativo para profundidade */}
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="absolute inset-0 bg-black/60 backdrop-blur-md" 
+        onClick={onClose} 
+      />
+      
+      {/* Modal Container: Glassmorphism Premium */}
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        className={`w-full max-w-sm relative overflow-hidden rounded-[2rem] p-8 flex flex-col items-center text-center transition-all duration-500
+          bg-[#0F0A15]/70 backdrop-blur-2xl border
+          ${isEpitaphDay 
+            ? 'border-amber-500/30 shadow-[0_0_60px_rgba(245,158,11,0.15)]' 
+            : 'border-violet-500/30 shadow-[0_0_60px_rgba(139,92,246,0.15)]'
+          }
+        `}
+      >
+        {/* Efeito Glow de Fundo Interno (Sutil) */}
+        <div className={`absolute -top-24 -left-24 w-48 h-48 rounded-full blur-[80px] opacity-50 pointer-events-none
+          ${isEpitaphDay ? 'bg-amber-600' : 'bg-violet-600'}
+        `} />
+
+        {/* Ícone Dinâmico */}
+        <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-6 relative z-10 border
+          ${isEpitaphDay 
+            ? 'bg-amber-500/10 border-amber-500/40 shadow-[0_0_20px_rgba(245,158,11,0.2)] text-amber-400' 
+            : 'bg-violet-500/10 border-violet-500/40 shadow-[0_0_20px_rgba(139,92,246,0.2)] text-violet-400'
+          }
+        `}>
+          {isEpitaphDay ? (
+            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+            </svg>
+          ) : (
+            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          )}
+        </div>
+
+        {/* Textos da Interface */}
+        <div className="relative z-10 mb-8 w-full">
+          <h2 className={`text-xl font-black uppercase tracking-wide mb-2
+            ${isEpitaphDay ? 'text-amber-100' : 'text-white'}
+          `}>
+            {isEpitaphDay ? 'Marco de Evolução' : 'Consolidar Ofensiva'}
+          </h2>
+          <p className="text-gray-400 text-sm leading-relaxed px-2 font-medium">
+            {isEpitaphDay && !hasWrittenEpitaphToday 
+              ? 'Hoje é dia de registrar o seu legado no Epitáfio. Confirme sua ofensiva e eternize sua mente.'
+              : 'Você está no controle. Confirme para selar seu compromisso de hoje.'}
+          </p>
+        </div>
+
+        {/* Botões de Ação */}
+        <div className="flex flex-col w-full gap-3 relative z-10">
+          <button 
+            onClick={finishVictory} 
+            disabled={isLoading}    
+            className={`w-full py-4 rounded-xl font-black uppercase tracking-widest transition-all active:scale-[0.98]
+              ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}
+              ${isEpitaphDay 
+                ? 'bg-gradient-to-r from-amber-600 to-amber-500 text-black shadow-[0_0_20px_rgba(245,158,11,0.4)] hover:shadow-[0_0_30px_rgba(245,158,11,0.6)]' 
+                : 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-[0_0_20px_rgba(139,92,246,0.4)] hover:shadow-[0_0_30px_rgba(139,92,246,0.6)]'
+              }
+            `}
+          >
+            {isLoading ? 'Processando...' : 'Confirmar Dia'}
+          </button>
+          
+          <button 
+            onClick={onClose}
+            disabled={isLoading}
+            className="w-full py-4 rounded-xl text-gray-500 font-bold hover:text-white transition-colors uppercase text-xs tracking-widest"
+          >
+            Agora Não
+          </button>
+        </div>
+      </motion.div>
     </div>,
     document.body
   );
