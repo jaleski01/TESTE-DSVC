@@ -8,6 +8,7 @@ import { Button } from '../components/Button';
 import { COLORS, Routes } from '../types';
 import { QUESTIONS } from '../data/assessmentQuestions';
 import { ChevronLeft } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 
 interface Answer {
   score?: number;
@@ -41,7 +42,6 @@ export const OnboardingScreen: React.FC = () => {
           const data = userDocSnap.data();
           if (data.last_onboarding_step !== undefined) {
             if (data.last_onboarding_step >= totalQuestions) {
-              // Onboarding já deveria estar completo, mas se caiu aqui, redireciona
               window.location.href = '/';
             } else {
               setCurrentIndex(data.last_onboarding_step);
@@ -222,44 +222,53 @@ export const OnboardingScreen: React.FC = () => {
 
         <div 
           id="onboarding-scroll-container"
-          className="flex-1 overflow-y-auto w-full px-6 scrollbar-hide"
+          className="flex-1 overflow-y-auto w-full px-6 scrollbar-hide relative"
         >
-          <div className="flex flex-col pt-2 pb-40">
-            <div className="mb-8">
-              <h2 className="text-sm font-bold uppercase tracking-wider mb-3" style={{ color: COLORS.Primary }}>
-                {currentQuestion.category}
-              </h2>
-              <h1 className="text-2xl font-bold leading-tight text-white">
-                {currentQuestion.question}
-              </h1>
-            </div>
+          <AnimatePresence mode="wait">
+            <motion.div 
+              key={currentQuestion.id}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+              className="flex flex-col pt-2 pb-40"
+            >
+              <div className="mb-8">
+                <h2 className="text-sm font-bold uppercase tracking-wider mb-3" style={{ color: COLORS.Primary }}>
+                  {currentQuestion.category}
+                </h2>
+                <h1 className="text-2xl font-bold leading-tight text-white">
+                  {currentQuestion.question}
+                </h1>
+              </div>
 
-            <div className="flex flex-col space-y-3 mb-8">
-              {currentQuestion.options.map((option: any) => {
-                const isSelected = currentAnswer?.label === option.label;
-                return (
-                  <button
-                    key={option.id}
-                    onClick={() => handleSelectOption(option)}
-                    className="w-full text-left p-4 rounded-xl border transition-all duration-200 flex items-start group"
-                    style={{
-                      backgroundColor: isSelected ? 'rgba(139, 92, 246, 0.1)' : 'transparent',
-                      borderColor: isSelected ? COLORS.Primary : COLORS.Border,
-                    }}
-                  >
-                    <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 mr-4 shrink-0" style={{ borderColor: isSelected ? COLORS.Primary : COLORS.TextSecondary }}>
-                      {isSelected && <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS.Primary }} />}
-                    </div>
-                    <span className="text-base font-medium" style={{ color: isSelected ? COLORS.TextPrimary : COLORS.TextSecondary }}>{option.label}</span>
-                  </button>
-                );
-              })}
-            </div>
+              <div className="flex flex-col space-y-3 mb-8">
+                {currentQuestion.options.map((option: any) => {
+                  const isSelected = currentAnswer?.label === option.label;
+                  return (
+                    <button
+                      key={option.id}
+                      onClick={() => handleSelectOption(option)}
+                      className="w-full text-left p-4 rounded-xl border transition-all duration-200 flex items-start group"
+                      style={{
+                        backgroundColor: isSelected ? 'rgba(139, 92, 246, 0.1)' : 'transparent',
+                        borderColor: isSelected ? COLORS.Primary : COLORS.Border,
+                      }}
+                    >
+                      <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 mr-4 shrink-0" style={{ borderColor: isSelected ? COLORS.Primary : COLORS.TextSecondary }}>
+                        {isSelected && <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS.Primary }} />}
+                      </div>
+                      <span className="text-base font-medium" style={{ color: isSelected ? COLORS.TextPrimary : COLORS.TextSecondary }}>{option.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
 
-            <Button onClick={handleNext} isLoading={isSubmitting} disabled={!currentAnswer}>
-              {currentIndex === totalQuestions - 1 ? 'Finalizar' : 'Próximo'}
-            </Button>
-          </div>
+              <Button onClick={handleNext} isLoading={isSubmitting} disabled={!currentAnswer}>
+                {currentIndex === totalQuestions - 1 ? 'Finalizar' : 'Próximo'}
+              </Button>
+            </motion.div>
+          </AnimatePresence>
         </div>
       </div>
     </Wrapper>

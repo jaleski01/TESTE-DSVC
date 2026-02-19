@@ -1,8 +1,10 @@
+
 import React, { useEffect, useState } from 'react';
 import { HashRouter, Routes, Route, Navigate, useLocation, Outlet } from 'react-router-dom';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from './lib/firebase';
+import { AnimatePresence } from 'framer-motion';
 
 // Telas
 import { LoginScreen } from './screens/LoginScreen';
@@ -19,42 +21,46 @@ import { Routes as AppRoutes } from './types';
 import { NotificationManager } from './components/NotificationManager';
 import { DataSyncManager } from './components/DataSyncManager';
 import { DataProvider } from './contexts/DataContext';
+import { PageTransition } from './components/PageTransition';
 
 const AppContent: React.FC<{ user: any; isOnboardingComplete: boolean }> = ({ user, isOnboardingComplete }) => {
   const location = useLocation();
 
   return (
-    <div key={location.pathname} className="animate-page-transition w-full flex-1 flex flex-col overflow-hidden bg-transparent">
+    <div className="w-full h-[100dvh] flex flex-col overflow-hidden bg-black">
       {user && <DataSyncManager />}
       
-      <Routes location={location}>
-        <Route 
-          path={AppRoutes.LOGIN} 
-          element={user ? (isOnboardingComplete ? <Navigate to={AppRoutes.DASHBOARD} replace /> : <Navigate to={AppRoutes.ONBOARDING} replace />) : <LoginScreen />} 
-        />
-        <Route 
-          path={AppRoutes.SUPPORT} 
-          element={<SupportScreen />} 
-        />
-        <Route 
-          path={AppRoutes.ONBOARDING} 
-          element={user ? (isOnboardingComplete ? <Navigate to={AppRoutes.DASHBOARD} replace /> : <OnboardingScreen />) : <Navigate to={AppRoutes.LOGIN} replace />} 
-        />
-        
-        {/* Rotas Protegidas (Autenticação + Onboarding Completo) */}
-        <Route element={user && isOnboardingComplete ? <Outlet /> : <Navigate to={user ? AppRoutes.ONBOARDING : AppRoutes.LOGIN} replace />}>
-          <Route path={AppRoutes.DASHBOARD} element={<DashboardScreen />} />
-          <Route path={AppRoutes.PROGRESS} element={<ProgressScreen />} />
-          <Route path={AppRoutes.LEARNING} element={<LearningScreen />} />
-          <Route path={AppRoutes.PROFILE} element={<ProfileScreen />} />
-        </Route>
+      <AnimatePresence mode="wait">
+        <PageTransition id={location.pathname}>
+          <Routes location={location} key={location.pathname}>
+            <Route 
+              path={AppRoutes.LOGIN} 
+              element={user ? (isOnboardingComplete ? <Navigate to={AppRoutes.DASHBOARD} replace /> : <Navigate to={AppRoutes.ONBOARDING} replace />) : <LoginScreen />} 
+            />
+            <Route 
+              path={AppRoutes.SUPPORT} 
+              element={<SupportScreen />} 
+            />
+            <Route 
+              path={AppRoutes.ONBOARDING} 
+              element={user ? (isOnboardingComplete ? <Navigate to={AppRoutes.DASHBOARD} replace /> : <OnboardingScreen />) : <Navigate to={AppRoutes.LOGIN} replace />} 
+            />
+            
+            <Route element={user && isOnboardingComplete ? <Outlet /> : <Navigate to={user ? AppRoutes.ONBOARDING : AppRoutes.LOGIN} replace />}>
+              <Route path={AppRoutes.DASHBOARD} element={<DashboardScreen />} />
+              <Route path={AppRoutes.PROGRESS} element={<ProgressScreen />} />
+              <Route path={AppRoutes.LEARNING} element={<LearningScreen />} />
+              <Route path={AppRoutes.PROFILE} element={<ProfileScreen />} />
+            </Route>
 
-        <Route 
-          path={AppRoutes.SOS} 
-          element={user ? <SosScreen /> : <Navigate to={AppRoutes.LOGIN} replace />} 
-        />
-        <Route path="*" element={<Navigate to={AppRoutes.LOGIN} replace />} />
-      </Routes>
+            <Route 
+              path={AppRoutes.SOS} 
+              element={user ? <SosScreen /> : <Navigate to={AppRoutes.LOGIN} replace />} 
+            />
+            <Route path="*" element={<Navigate to={AppRoutes.LOGIN} replace />} />
+          </Routes>
+        </PageTransition>
+      </AnimatePresence>
     </div>
   );
 };
@@ -84,8 +90,6 @@ const App: React.FC = () => {
 
           if (userDocSnap.exists()) {
             const userData = userDocSnap.data();
-            
-            // Verificação de Assinatura
             const status = userData?.subscription_status;
             const blockedStatuses = ['canceled', 'unpaid', 'past_due'];
 
@@ -98,7 +102,6 @@ const App: React.FC = () => {
               setIsOnboardingComplete(!!userData?.onboarding_completed);
             }
           } else {
-            // Usuário novo sem documento no Firestore
             setUser(currentUser);
             setIsOnboardingComplete(false);
           }
@@ -131,10 +134,8 @@ const App: React.FC = () => {
       <div 
         className="h-[100dvh] w-full flex flex-col items-center justify-center text-white overflow-hidden bg-void relative"
       >
-        {/* Background Atmosphere */}
         <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-violet-900/10 rounded-full blur-[100px] pointer-events-none" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] bg-cyan-900/10 rounded-full blur-[80px] pointer-events-none" />
-
         <div className="w-10 h-10 rounded-full border-4 border-violet-500 border-t-transparent animate-spin mb-4 relative z-10"></div>
         <span className="text-[10px] font-bold tracking-[0.3em] text-gray-400 uppercase animate-pulse relative z-10">
           Validando Protocolo
