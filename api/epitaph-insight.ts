@@ -1,67 +1,82 @@
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-// Fix: Use @google/genai as per current guidelines instead of deprecated @google/generative-ai
 import { GoogleGenAI } from "@google/genai";
 
+/**
+ * Handler para geração de insights baseados nos logs de Epitáfio.
+ * Implementa segurança rigorosa e tratamento de erros para ambiente Serverless.
+ */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // 1. Validação de Método
+  // 1. Validação de Método HTTP
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
+    return res.status(405).json({ error: 'Método não permitido.' });
   }
 
   const { logs } = req.body;
 
+  // 2. Validação básica de entrada
   if (!logs || !Array.isArray(logs) || logs.length === 0) {
-    return res.status(400).json({ error: 'Logs inválidos ou vazios.' });
+    return res.status(400).json({ error: 'Dados de logs ausentes ou inválidos.' });
   }
 
-  // 2. Inicialização Segura (Server-Side)
-  // Fix: The API key must be obtained exclusively from the environment variable process.env.API_KEY
-  if (!process.env.API_KEY) {
-    console.error("CRITICAL: API_KEY não configurada no ambiente.");
-    return res.status(500).json({ error: 'Erro de configuração do servidor.' });
+  // 3. Verificação de Segurança da API Key (Ambiente Seguro)
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
+    console.error("[CRITICAL] API_KEY não encontrada nas variáveis de ambiente do Vercel.");
+    return res.status(500).json({ error: 'Erro de configuração interna do servidor.' });
   }
 
   try {
-    // Fix: Always use const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    
-    // 3. Construção do Prompt
+    // 4. Inicialização do Cliente GenAI (Padrão SDK Google)
+    const ai = new GoogleGenAI({ apiKey });
+
+    // 5. Construção do Prompt Contextualizado
     const logsText = logs
       .map((l: any) => `Dia ${l.day_number} (${l.date}): "${l.content}"`)
       .join('\n\n');
 
     const prompt = `
-      Aja como um analista comportamental estoico e mentor de alta performance. 
-      Analise estes registros de diário ("Epitáfio") de um homem em processo de recuperação.
+      Atue como um analista comportamental sênior e mentor estoico. 
+      Analise os seguintes registros diários (Epitáfios) de um indivíduo em jornada de superação de vício e alta performance.
       
-      LOGS DO USUÁRIO:
+      LOGS PARA ANÁLISE:
       ${logsText}
 
-      TAREFA:
-      Gere um resumo curto e profundo sobre a evolução psicológica dele.
-      
-      FORMATO:
-      Forneça exatamente 3 bullet points curtos e impactantes.
-      Foque na evolução do caráter e disciplina.
-      Use tom sério, marcial e encorajador.
+      OBJETIVO:
+      Sintetize a evolução psicológica, força de caráter e clareza mental demonstrada.
+
+      FORMATO OBRIGATÓRIO:
+      - Exatamente 3 bullet points curtos, diretos e impactantes.
+      - Tom marcial, solene e encorajador.
+      - Não use introduções ou saudações.
     `;
 
-    // 4. Geração de Conteúdo
-    // Fix: Use ai.models.generateContent and gemini-3-flash-preview for basic text tasks
+    // 6. Chamada à API Gemini (Modelo Flash para rapidez e eficiência em texto)
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: prompt,
     });
-    
-    // Fix: The GenerateContentResponse object features a text property (not a method, so do not call text())
-    const text = response.text;
 
-    return res.status(200).json({ insight: text });
+    // 7. Extração Segura da Resposta
+    const generatedText = response.text;
+
+    if (!generatedText) {
+      throw new Error("A API retornou uma resposta vazia.");
+    }
+
+    // 8. Resposta de Sucesso
+    return res.status(200).json({ insight: generatedText });
 
   } catch (error: any) {
-    console.error("Gemini API Error:", error);
-    // Retorna 500 mas loga o erro para debug no painel da Vercel
-    return res.status(500).json({ error: 'Falha ao processar insight.' });
+    // 9. Tratamento de Erro Robusto (Sem vazamento de segredos/stacktraces)
+    console.error("[GenAI Error] Falha na comunicação com o modelo:", error.message);
+    
+    // Diferencia erro de cota/limite se possível
+    const status = error.message?.includes('429') ? 429 : 500;
+    const message = status === 429 
+      ? 'Muitas solicitações. Tente novamente em alguns instantes.' 
+      : 'Ocorreu um erro ao processar sua análise de evolução.';
+
+    return res.status(status).json({ error: message });
   }
 }
