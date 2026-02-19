@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
@@ -7,7 +7,7 @@ import { Wrapper } from '../components/Wrapper';
 import { Button } from '../components/Button';
 import { COLORS, Routes } from '../types';
 import { QUESTIONS } from '../data/assessmentQuestions';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Brain, TrendingUp, AlertTriangle, Clock, ShieldCheck, Zap } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 interface Answer {
@@ -26,10 +26,42 @@ export const OnboardingScreen: React.FC = () => {
   const [answers, setAnswers] = useState<AnswersState>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [showReport, setShowReport] = useState(false);
 
   const currentQuestion = QUESTIONS[currentIndex];
   const totalQuestions = QUESTIONS.length;
   const progress = ((currentIndex + 1) / totalQuestions) * 100;
+
+  // --- REPORT CALCULATIONS ---
+  const reportMetrics = useMemo(() => {
+    if (!showReport) return null;
+
+    let totalScore = 0;
+    let timeLostValue = "7 horas";
+    let victoryMode = 'INDEFINIDO';
+    let focusPillar = 'INDEFINIDO';
+
+    // Fix: Explicitly cast Object.entries(answers) to avoid 'unknown' type errors for 'answer'
+    (Object.entries(answers) as [string, Answer][]).forEach(([idStr, answer]) => {
+      const id = parseInt(idStr);
+      if (id <= 15 && answer.score !== undefined) totalScore += answer.score;
+      if (id === 1 && answer.score !== undefined) {
+        if (answer.score === 0) timeLostValue = "7 horas";
+        else if (answer.score === 1) timeLostValue = "22 horas";
+        else if (answer.score === 3) timeLostValue = "60 horas";
+        else if (answer.score === 5) timeLostValue = "120 horas";
+      }
+      if (id === 16) victoryMode = answer.value || 'INDEFINIDO';
+      if (id === 17) focusPillar = answer.value || 'INDEFINIDO';
+    });
+
+    // Severity % (Max score is 15 questions * 5 = 75)
+    const severityPercent = Math.min(99, Math.round((totalScore / 75) * 100));
+    // Reboot Days
+    const rebootDays = Math.max(90, Math.round(45 + totalScore * 1.5));
+
+    return { totalScore, timeLostValue, severityPercent, rebootDays, victoryMode, focusPillar };
+  }, [showReport, answers]);
 
   useEffect(() => {
     const fetchSavedStep = async () => {
@@ -40,12 +72,12 @@ export const OnboardingScreen: React.FC = () => {
         
         if (userDocSnap.exists()) {
           const data = userDocSnap.data();
+          if (data.onboarding_completed) {
+            window.location.href = '/';
+            return;
+          }
           if (data.last_onboarding_step !== undefined) {
-            if (data.last_onboarding_step >= totalQuestions) {
-              window.location.href = '/';
-            } else {
-              setCurrentIndex(data.last_onboarding_step);
-            }
+            setCurrentIndex(Math.min(data.last_onboarding_step, totalQuestions - 1));
           }
           if (data.partial_answers) {
             setAnswers(data.partial_answers);
@@ -61,18 +93,6 @@ export const OnboardingScreen: React.FC = () => {
     fetchSavedStep();
   }, [totalQuestions]);
 
-  const handleBack = () => {
-    if (currentIndex > 0) {
-      const prevIndex = currentIndex - 1;
-      setCurrentIndex(prevIndex);
-      syncStep(prevIndex);
-      const scrollContainer = document.getElementById('onboarding-scroll-container');
-      if (scrollContainer) scrollContainer.scrollTo(0, 0);
-    } else {
-      navigate(-1);
-    }
-  };
-
   const syncStep = async (step: number, partialAnswers?: AnswersState) => {
     if (!auth.currentUser) return;
     try {
@@ -87,21 +107,19 @@ export const OnboardingScreen: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    if (currentIndex > 0) {
-      window.history.pushState(null, '', window.location.href);
+  const handleBack = () => {
+    if (showReport) {
+      setShowReport(false);
+      return;
     }
-
-    const handlePopState = (event: PopStateEvent) => {
-      if (currentIndex > 0) {
-        window.history.pushState(null, '', window.location.href);
-        handleBack();
-      }
-    };
-
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, [currentIndex]);
+    if (currentIndex > 0) {
+      const prevIndex = currentIndex - 1;
+      setCurrentIndex(prevIndex);
+      syncStep(prevIndex);
+    } else {
+      navigate(-1);
+    }
+  };
 
   const handleSelectOption = (option: any) => {
     const newAnswers = {
@@ -113,7 +131,7 @@ export const OnboardingScreen: React.FC = () => {
   };
 
   const handleFinishOnboarding = async () => {
-    if (!auth.currentUser) {
+    if (!auth.currentUser || !reportMetrics) {
       navigate(Routes.LOGIN);
       return;
     }
@@ -121,33 +139,14 @@ export const OnboardingScreen: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      let totalScore = 0;
-      let victoryMode = 'INDEFINIDO';
-      let focusPillar = 'INDEFINIDO';
-
-      Object.entries(answers).forEach(([questionIdStr, val]) => {
-        const questionId = parseInt(questionIdStr);
-        const answer = val as Answer;
-        
-        if (questionId <= 15 && answer.score !== undefined) {
-          totalScore += answer.score;
-        }
-        if (questionId === 16 && answer.value) {
-          victoryMode = answer.value;
-        }
-        if (questionId === 17 && answer.value) {
-          focusPillar = answer.value;
-        }
-      });
-
       const nowISO = new Date().toISOString();
-      
       const userProfile = {
         onboarding_completed: true,
         current_streak_start: nowISO,
-        victory_mode: victoryMode,
-        focus_pillar: focusPillar,
-        addiction_score: totalScore,
+        victory_mode: reportMetrics.victoryMode,
+        focus_pillar: reportMetrics.focusPillar,
+        addiction_score: reportMetrics.totalScore,
+        reboot_projection_days: reportMetrics.rebootDays,
         email: auth.currentUser.email,
         onboarding_completed_at: serverTimestamp(),
         last_updated: serverTimestamp(),
@@ -172,17 +171,16 @@ export const OnboardingScreen: React.FC = () => {
       setCurrentIndex(nextIndex);
       syncStep(nextIndex);
       const scrollContainer = document.getElementById('onboarding-scroll-container');
-      if (scrollContainer) scrollContainer.scrollTo(0, 0);
+      if (scrollContainer) scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
-      handleFinishOnboarding();
+      setShowReport(true);
     }
   };
 
   if (isInitialLoading) {
     return (
       <div 
-        className="h-[100dvh] w-full flex flex-col items-center justify-center text-white"
-        style={{ background: 'linear-gradient(to bottom, #000000 0%, #000000 25%, #2E1065 100%)' }}
+        className="h-[100dvh] w-full flex flex-col items-center justify-center text-white bg-black"
       >
         <div className="w-8 h-8 border-4 border-violet-500 border-t-transparent rounded-full animate-spin"></div>
       </div>
@@ -192,84 +190,237 @@ export const OnboardingScreen: React.FC = () => {
   const currentAnswer = answers[currentQuestion.id];
 
   return (
-    <Wrapper noPadding hideNavigation>
-      <div className="flex flex-col h-[100dvh] w-full bg-transparent overflow-hidden">
-        <div className="shrink-0 px-6 pt-6 mb-4">
-          <div className="flex items-center gap-3 mb-2">
-            <button 
-              onClick={handleBack}
-              className="p-1.5 -ml-1 rounded-full active:bg-white/10 transition-colors"
-              style={{ color: COLORS.TextSecondary }}
-            >
-              <ChevronLeft size={24} />
-            </button>
-            <div className="flex-1 flex justify-between items-end">
-              <span className="text-xs font-bold" style={{ color: COLORS.Primary }}>
-                QUESTÃO {currentIndex + 1} <span style={{ color: COLORS.TextSecondary }}> / {totalQuestions}</span>
-              </span>
-              <span className="text-xs" style={{ color: COLORS.TextSecondary }}>
-                {Math.round(progress)}%
-              </span>
-            </div>
-          </div>
-          <div className="w-full h-1 rounded-full bg-[#1C2533]">
-            <div 
-              className="h-full rounded-full transition-all duration-300 ease-out"
-              style={{ width: `${progress}%`, backgroundColor: COLORS.Primary }}
-            />
-          </div>
+    <Wrapper noPadding hideNavigation disableDefaultBackground>
+      <div className="flex flex-col h-[100dvh] w-full bg-black overflow-hidden relative">
+        
+        {/* Atmosphere background - consistent with theme */}
+        <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+          <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-violet-900/10 rounded-full blur-[100px]" />
+          <div className="absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] bg-cyan-900/10 rounded-full blur-[80px]" />
         </div>
 
-        <div 
-          id="onboarding-scroll-container"
-          className="flex-1 overflow-y-auto w-full px-6 scrollbar-hide relative"
-        >
-          <AnimatePresence mode="wait">
+        <AnimatePresence mode="wait">
+          {!showReport ? (
             <motion.div 
-              key={currentQuestion.id}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.25, ease: "easeOut" }}
-              className="flex flex-col pt-2 pb-40"
+              key="questions"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0, x: -50 }}
+              className="flex flex-col h-full w-full relative z-10"
             >
-              <div className="mb-8">
-                <h2 className="text-sm font-bold uppercase tracking-wider mb-3" style={{ color: COLORS.Primary }}>
-                  {currentQuestion.category}
-                </h2>
-                <h1 className="text-2xl font-bold leading-tight text-white">
-                  {currentQuestion.question}
-                </h1>
+              {/* Progress Header */}
+              <div className="shrink-0 px-6 pt-6 mb-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <button 
+                    onClick={handleBack}
+                    className="p-1.5 -ml-1 rounded-full active:bg-white/10 transition-colors text-gray-400"
+                  >
+                    <ChevronLeft size={24} />
+                  </button>
+                  <div className="flex-1 flex justify-between items-end">
+                    <span className="text-xs font-black uppercase tracking-widest text-violet-500">
+                      PROTOCOLO <span className="text-gray-500"> {currentIndex + 1} / {totalQuestions}</span>
+                    </span>
+                    <span className="text-[10px] font-mono font-bold text-gray-500">
+                      {Math.round(progress)}%
+                    </span>
+                  </div>
+                </div>
+                <div className="w-full h-1 rounded-full bg-white/5">
+                  <motion.div 
+                    className="h-full rounded-full bg-violet-600 shadow-[0_0_10px_rgba(139,92,246,0.5)]"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${progress}%` }}
+                    transition={{ duration: 0.5 }}
+                  />
+                </div>
               </div>
 
-              <div className="flex flex-col space-y-3 mb-8">
-                {currentQuestion.options.map((option: any) => {
-                  const isSelected = currentAnswer?.label === option.label;
-                  return (
-                    <button
-                      key={option.id}
-                      onClick={() => handleSelectOption(option)}
-                      className="w-full text-left p-4 rounded-xl border transition-all duration-200 flex items-start group"
-                      style={{
-                        backgroundColor: isSelected ? 'rgba(139, 92, 246, 0.1)' : 'transparent',
-                        borderColor: isSelected ? COLORS.Primary : COLORS.Border,
-                      }}
-                    >
-                      <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 mr-4 shrink-0" style={{ borderColor: isSelected ? COLORS.Primary : COLORS.TextSecondary }}>
-                        {isSelected && <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS.Primary }} />}
-                      </div>
-                      <span className="text-base font-medium" style={{ color: isSelected ? COLORS.TextPrimary : COLORS.TextSecondary }}>{option.label}</span>
-                    </button>
-                  );
-                })}
+              {/* Question Content */}
+              <div 
+                id="onboarding-scroll-container"
+                className="flex-1 overflow-y-auto w-full px-6 scrollbar-hide pb-32"
+              >
+                <AnimatePresence mode="wait">
+                  <motion.div 
+                    key={currentQuestion.id}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ duration: 0.25 }}
+                    className="flex flex-col pt-4"
+                  >
+                    <div className="mb-8">
+                      <span className="text-[10px] font-black uppercase tracking-[0.3em] text-violet-500 mb-2 block">
+                        {currentQuestion.category}
+                      </span>
+                      <h1 className="text-2xl font-bold leading-tight text-white italic">
+                        {currentQuestion.question}
+                      </h1>
+                    </div>
+
+                    <div className="flex flex-col space-y-3 mb-8">
+                      {currentQuestion.options.map((option: any) => {
+                        const isSelected = currentAnswer?.label === option.label;
+                        return (
+                          <button
+                            key={option.id}
+                            onClick={() => handleSelectOption(option)}
+                            className={`w-full text-left p-5 rounded-2xl border transition-all duration-300 flex items-start gap-4 ${
+                              isSelected 
+                                ? 'bg-violet-600/10 border-violet-500 shadow-[0_0_20px_rgba(139,92,246,0.1)]' 
+                                : 'bg-[#0F0A15]/60 border-[#2E243D] hover:border-violet-500/30'
+                            }`}
+                          >
+                            <div className={`w-5 h-5 rounded-full border-2 mt-0.5 shrink-0 flex items-center justify-center ${isSelected ? 'border-violet-500' : 'border-gray-700'}`}>
+                              {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-violet-500" />}
+                            </div>
+                            <span className={`text-base font-semibold leading-snug ${isSelected ? 'text-white' : 'text-gray-400'}`}>
+                              {option.label}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
+                </AnimatePresence>
               </div>
 
-              <Button onClick={handleNext} isLoading={isSubmitting} disabled={!currentAnswer}>
-                {currentIndex === totalQuestions - 1 ? 'Finalizar' : 'Próximo'}
-              </Button>
+              {/* Fixed Bottom CTA for Questions */}
+              <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black via-black/80 to-transparent">
+                <Button onClick={handleNext} disabled={!currentAnswer} className="shadow-lg shadow-violet-900/20">
+                  {currentIndex === totalQuestions - 1 ? 'Gerar Análise' : 'Próxima Questão'}
+                </Button>
+              </div>
             </motion.div>
-          </AnimatePresence>
-        </div>
+          ) : (
+            // --- EVOLUTION AND SHOCK REPORT SCREEN ---
+            <motion.div 
+              key="report"
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-col h-full w-full relative z-10 overflow-y-auto scrollbar-hide px-6 pt-12 pb-32"
+            >
+              <div className="flex items-center justify-center mb-8">
+                <div className="w-16 h-16 rounded-full bg-violet-600/20 border border-violet-500/30 flex items-center justify-center shadow-[0_0_25px_rgba(139,92,246,0.3)]">
+                  <Brain size={32} className="text-violet-500" />
+                </div>
+              </div>
+
+              <h1 className="text-3xl font-black text-white italic uppercase tracking-tighter text-center mb-2">
+                Diagnóstico Concluído
+              </h1>
+              <p className="text-center text-gray-500 text-sm font-bold uppercase tracking-widest mb-10">
+                A verdade sobre seu cérebro e seu tempo
+              </p>
+
+              {/* Metrics Grid */}
+              <div className="grid grid-cols-1 gap-4 mb-10">
+                {/* Metric: Time Lost */}
+                <div className="p-5 rounded-2xl bg-red-950/20 border border-red-500/20 flex items-center gap-5">
+                  <div className="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center shrink-0">
+                    <Clock className="text-red-500" size={24} />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-black uppercase text-red-500 tracking-widest">Tempo Perdido / Mês</span>
+                    <h3 className="text-2xl font-black text-white italic">{reportMetrics?.timeLostValue}</h3>
+                    <p className="text-[10px] text-gray-500 leading-tight">Você está incinerando seu recurso mais valioso.</p>
+                  </div>
+                </div>
+
+                {/* Metric: Severity */}
+                <div className="p-5 rounded-2xl bg-orange-950/20 border border-orange-500/20 flex items-center gap-5">
+                  <div className="w-12 h-12 rounded-xl bg-orange-500/10 flex items-center justify-center shrink-0">
+                    <AlertTriangle className="text-orange-500" size={24} />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-black uppercase text-orange-500 tracking-widest">Dependência Dopaminérgica</span>
+                    <h3 className="text-2xl font-black text-white italic">{reportMetrics?.severityPercent}%</h3>
+                    <p className="text-[10px] text-gray-500 leading-tight">Acima da média da população saudável.</p>
+                  </div>
+                </div>
+
+                {/* Metric: Reboot Days */}
+                <div className="p-5 rounded-2xl bg-violet-950/20 border border-violet-500/20 flex items-center gap-5">
+                  <div className="w-12 h-12 rounded-xl bg-violet-500/10 flex items-center justify-center shrink-0">
+                    <Zap className="text-violet-500" size={24} />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-black uppercase text-violet-500 tracking-widest">Protocolo de Reboot</span>
+                    <h3 className="text-2xl font-black text-white italic">{reportMetrics?.rebootDays} DIAS</h3>
+                    <p className="text-[10px] text-gray-500 leading-tight">Tempo estimado para regeneração neural completa.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Recovery Projection Chart */}
+              <div className="w-full bg-[#0F0A15] border border-[#2E243D] rounded-3xl p-6 mb-12">
+                <div className="flex items-center gap-2 mb-8">
+                  <TrendingUp size={16} className="text-violet-500" />
+                  <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-white">Projeção de Recuperação Neural</h4>
+                </div>
+
+                <div className="flex items-end justify-between gap-4 h-[160px] relative">
+                  {/* Chart Bars */}
+                  {[
+                    { day: 'Dia 0', label: 'Hoje', h: 15, color: '#EF4444' },
+                    { day: 'Dia 30', label: 'Brain Fog', h: 45, color: '#EAB308' },
+                    { day: 'Dia 45', label: 'Controle', h: 70, color: '#10B981' },
+                    { day: 'Dia 90', label: 'Reboot', h: 100, color: '#8B5CF6' }
+                  ].map((bar, i) => (
+                    <div key={bar.day} className="flex-1 flex flex-col items-center group">
+                      <div className="relative w-full flex-1 flex flex-col justify-end items-center">
+                        <motion.div 
+                          className="w-8 sm:w-10 rounded-t-lg relative overflow-hidden"
+                          style={{ backgroundColor: bar.color }}
+                          initial={{ height: 0 }}
+                          animate={{ height: `${bar.h}%` }}
+                          transition={{ delay: 0.5 + (i * 0.2), duration: 1, ease: "easeOut" }}
+                        >
+                           <div className="absolute inset-0 bg-white/10 opacity-50"></div>
+                        </motion.div>
+                        <span className="text-[8px] font-black uppercase text-gray-500 mt-2 whitespace-nowrap">{bar.label}</span>
+                        <span className="text-[10px] font-bold text-white mt-0.5">{bar.day}</span>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {/* Legend helper line */}
+                  <div className="absolute bottom-0 left-0 right-0 h-px bg-white/5"></div>
+                </div>
+              </div>
+
+              {/* Motivational Quote / Conclusion */}
+              <div className="px-4 text-center mb-12">
+                <p className="text-sm text-gray-400 italic leading-relaxed">
+                  "O vício é o roubo da sua liberdade em parcelas diárias. O protocolo não é uma punição, é o resgate do homem que você deveria ser."
+                </p>
+              </div>
+
+              {/* Fixed Final CTA */}
+              <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black via-black/90 to-transparent z-50">
+                <motion.div
+                  animate={{ scale: [1, 1.02, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  <Button 
+                    onClick={handleFinishOnboarding} 
+                    isLoading={isSubmitting}
+                    className="h-16 text-lg font-black uppercase tracking-widest bg-violet-600 shadow-[0_0_30px_rgba(139,92,246,0.4)]"
+                  >
+                    ACEITAR DESAFIO DE {reportMetrics?.rebootDays} DIAS
+                  </Button>
+                </motion.div>
+                <button 
+                  onClick={() => setShowReport(false)}
+                  className="w-full text-center mt-4 text-[10px] font-bold text-gray-600 uppercase tracking-widest hover:text-white transition-colors"
+                >
+                  Revisar Diagnóstico
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </Wrapper>
   );
