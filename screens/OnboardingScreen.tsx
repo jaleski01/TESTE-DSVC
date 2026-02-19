@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
@@ -295,7 +294,7 @@ export const OnboardingScreen: React.FC = () => {
               key="report"
               initial={{ opacity: 0, y: 50 }}
               animate={{ opacity: 1, y: 0 }}
-              className="flex flex-col h-full w-full relative z-10 overflow-y-auto scrollbar-hide px-6 pt-12 pb-32"
+              className="flex flex-col h-full w-full relative z-10 overflow-y-auto scrollbar-hide px-6 pt-12 pb-12"
             >
               <div className="flex items-center justify-center mb-8">
                 <div className="w-16 h-16 rounded-full bg-violet-600/20 border border-violet-500/30 flex items-center justify-center shadow-[0_0_25px_rgba(139,92,246,0.3)]">
@@ -391,7 +390,8 @@ export const OnboardingScreen: React.FC = () => {
                 </p>
               </div>
 
-              <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black via-black/90 to-transparent z-50">
+              {/* Scrollable Final CTA */}
+              <div className="w-full mt-10 mb-8 flex flex-col gap-4 relative z-10">
                 <motion.div
                   animate={{ scale: [1, 1.02, 1] }}
                   transition={{ duration: 2, repeat: Infinity }}
@@ -399,14 +399,14 @@ export const OnboardingScreen: React.FC = () => {
                   <Button 
                     onClick={handleFinishOnboarding} 
                     isLoading={isSubmitting}
-                    className="h-16 text-lg font-black uppercase tracking-widest bg-violet-600 shadow-[0_0_30px_rgba(139,92,246,0.4)]"
+                    className="h-16 text-lg font-black uppercase tracking-widest bg-violet-600 shadow-[0_0_30px_rgba(139,92,246,0.4)] w-full"
                   >
                     INICIAR DESAFIO
                   </Button>
                 </motion.div>
                 <button 
                   onClick={() => setShowReport(false)}
-                  className="w-full text-center mt-4 text-[10px] font-bold text-gray-600 uppercase tracking-widest hover:text-white transition-colors"
+                  className="w-full text-center mt-2 pb-6 text-[10px] font-bold text-gray-500 uppercase tracking-widest hover:text-white transition-colors"
                 >
                   Revisar Diagnóstico
                 </button>
