@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -16,6 +15,7 @@ import {
   TriggerInsight 
 } from '../services/progressService';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useData } from '../contexts/DataContext';
 
 const RANGES = [7, 15, 30, 90];
 const MILESTONES = [3, 7, 15, 30, 90];
@@ -37,8 +37,7 @@ interface PathPoint {
 export const ProgressScreen: React.FC = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TabType>('JOURNEY');
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+  const { userProfile: profile, loading: isLoadingProfile } = useData();
   const [showRewardAlert, setShowRewardAlert] = useState(false);
   const [isClaiming, setIsClaiming] = useState(false);
   
@@ -87,32 +86,6 @@ export const ProgressScreen: React.FC = () => {
     return generatePathData(progressPoints);
   }, [profile, journeyPoints]);
 
-  // --- INITIALIZATION & BACKGROUND SYNC ---
-  const loadProfile = async (uid: string) => {
-    try {
-      const docRef = doc(db, "users", uid);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        const data = docSnap.data() as UserProfile;
-        setProfile(data);
-        localStorage.setItem('user_profile', JSON.stringify(data));
-      }
-    } catch (error) {
-      console.error("Error fetching profile:", error);
-    } finally {
-      setIsLoadingProfile(false);
-    }
-  };
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        await loadProfile(user.uid);
-      }
-    });
-    return () => unsubscribe();
-  }, []);
-
   const handleClaimReward = async (day: number) => {
     if (!profile || !auth.currentUser || isClaiming) return;
     
@@ -124,9 +97,10 @@ export const ProgressScreen: React.FC = () => {
       setIsClaiming(true);
       try {
         await claimStreakReward(auth.currentUser.uid, rewardId);
-        await loadProfile(auth.currentUser.uid);
-        setShowRewardAlert(true);
+        // Em vez de loadProfile local, usamos o refresh do DataContext se necessário, 
+        // mas aqui vamos assumir que o sistema de sync cuida da atualização.
         if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+        setShowRewardAlert(true);
         setTimeout(() => setShowRewardAlert(false), 5000);
       } catch (e) {
         console.error("Error claiming reward", e);
@@ -180,42 +154,25 @@ export const ProgressScreen: React.FC = () => {
     refreshAnalysisData(selectedRange);
   }, [selectedRange]);
 
-  // ANIMATED INITIAL SCROLL
+  // ANIMATED INITIAL SCROLL OTIMIZADO
   useEffect(() => {
-    if (activeTab === 'JOURNEY' && currentDayNodeRef.current && journeyContainerRef.current && !isLoadingProfile) {
+    if (activeTab === 'JOURNEY' && currentDayNodeRef.current && journeyContainerRef.current && !isLoadingProfile && profile) {
       const container = journeyContainerRef.current;
       const targetElement = currentDayNodeRef.current;
       
       const targetPosition = targetElement.offsetTop - (container.clientHeight / 2) + (targetElement.clientHeight / 2);
-      const startPosition = container.scrollTop;
-      const distance = targetPosition - startPosition;
-      const duration = 2000;
-      let startTime: number | null = null;
-
-      const easeInOutQuad = (t: number) => {
-        return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
-      };
-
-      const animation = (currentTime: number) => {
-        if (startTime === null) startTime = currentTime;
-        const timeElapsed = currentTime - startTime;
-        const progress = Math.min(timeElapsed / duration, 1);
-        const ease = easeInOutQuad(progress);
-
-        container.scrollTop = startPosition + (distance * ease);
-
-        if (timeElapsed < duration) {
-          requestAnimationFrame(animation);
-        }
-      };
-
-      const timer = setTimeout(() => {
-        requestAnimationFrame(animation);
-      }, 300);
-
-      return () => clearTimeout(timer);
+      
+      // Ajusta a rolagem instantaneamente nos bastidores antes da UI ser revelada
+      // e aplica um smooth scroll final para elegância.
+      container.style.scrollBehavior = 'auto';
+      container.scrollTop = targetPosition - 50; 
+      
+      setTimeout(() => {
+        container.style.scrollBehavior = 'smooth';
+        container.scrollTop = targetPosition;
+      }, 50);
     }
-  }, [activeTab, isLoadingProfile, journeyPoints]);
+  }, [activeTab, isLoadingProfile, profile?.currentStreak]);
 
   useEffect(() => {
     if (activeTab === 'ANALYSIS' && chartData.length > 0 && chartScrollRef.current) {

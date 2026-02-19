@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
 
@@ -8,20 +7,16 @@ interface PageTransitionProps {
   id?: string;
 }
 
-/**
- * PageTransition - Camada de animação acelerada por hardware.
- * Simula a sensação de profundidade e fluidez do iOS.
- */
 export const PageTransition: React.FC<PageTransitionProps> = ({ children, className = '', id }) => {
   return (
     <motion.div
       key={id}
-      initial={{ opacity: 0, scale: 0.98, y: 8 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 1.02, y: -8 }}
+      initial={{ opacity: 0, x: 10 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -10 }}
       transition={{ 
-        duration: 0.28, 
-        ease: [0.32, 0.72, 0, 1] // Custom iOS-like Cubic Bezier
+        duration: 0.35, 
+        ease: [0.22, 1, 0.36, 1] // Curva de aceleração nativa da Apple (easeOut)
       }}
       className={`w-full flex-1 flex flex-col overflow-hidden bg-transparent ${className}`}
       style={{ willChange: 'transform, opacity' }}
