@@ -41,7 +41,6 @@ export const OnboardingScreen: React.FC = () => {
     let victoryMode = 'INDEFINIDO';
     let focusPillar = 'INDEFINIDO';
 
-    // Fix: Explicitly cast Object.entries(answers) to avoid 'unknown' type errors for 'answer'
     (Object.entries(answers) as [string, Answer][]).forEach(([idStr, answer]) => {
       const id = parseInt(idStr);
       if (id <= 15 && answer.score !== undefined) totalScore += answer.score;
@@ -55,10 +54,12 @@ export const OnboardingScreen: React.FC = () => {
       if (id === 17) focusPillar = answer.value || 'INDEFINIDO';
     });
 
-    // Severity % (Max score is 15 questions * 5 = 75)
+    // Severidade % (Max score is 15 questions * 5 = 75)
     const severityPercent = Math.min(99, Math.round((totalScore / 75) * 100));
-    // Reboot Days
-    const rebootDays = Math.max(90, Math.round(45 + totalScore * 1.5));
+    
+    // CORREÇÃO DA MATEMÁTICA: Escala entre 45 e 90 dias baseada no score (max 75)
+    const calculatedDays = Math.round(45 + (totalScore / 75) * 45);
+    const rebootDays = Math.min(90, Math.max(45, calculatedDays));
 
     return { totalScore, timeLostValue, severityPercent, rebootDays, victoryMode, focusPillar };
   }, [showReport, answers]);
@@ -193,7 +194,6 @@ export const OnboardingScreen: React.FC = () => {
     <Wrapper noPadding hideNavigation disableDefaultBackground>
       <div className="flex flex-col h-[100dvh] w-full bg-black overflow-hidden relative">
         
-        {/* Atmosphere background - consistent with theme */}
         <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
           <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-violet-900/10 rounded-full blur-[100px]" />
           <div className="absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] bg-cyan-900/10 rounded-full blur-[80px]" />
@@ -208,7 +208,6 @@ export const OnboardingScreen: React.FC = () => {
               exit={{ opacity: 0, x: -50 }}
               className="flex flex-col h-full w-full relative z-10"
             >
-              {/* Progress Header */}
               <div className="shrink-0 px-6 pt-6 mb-4">
                 <div className="flex items-center gap-3 mb-2">
                   <button 
@@ -236,7 +235,6 @@ export const OnboardingScreen: React.FC = () => {
                 </div>
               </div>
 
-              {/* Question Content */}
               <div 
                 id="onboarding-scroll-container"
                 className="flex-1 overflow-y-auto w-full px-6 scrollbar-hide pb-32"
@@ -286,7 +284,6 @@ export const OnboardingScreen: React.FC = () => {
                 </AnimatePresence>
               </div>
 
-              {/* Fixed Bottom CTA for Questions */}
               <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black via-black/80 to-transparent">
                 <Button onClick={handleNext} disabled={!currentAnswer} className="shadow-lg shadow-violet-900/20">
                   {currentIndex === totalQuestions - 1 ? 'Gerar Análise' : 'Próxima Questão'}
@@ -294,7 +291,6 @@ export const OnboardingScreen: React.FC = () => {
               </div>
             </motion.div>
           ) : (
-            // --- EVOLUTION AND SHOCK REPORT SCREEN ---
             <motion.div 
               key="report"
               initial={{ opacity: 0, y: 50 }}
@@ -314,9 +310,7 @@ export const OnboardingScreen: React.FC = () => {
                 A verdade sobre seu cérebro e seu tempo
               </p>
 
-              {/* Metrics Grid */}
               <div className="grid grid-cols-1 gap-4 mb-10">
-                {/* Metric: Time Lost */}
                 <div className="p-5 rounded-2xl bg-red-950/20 border border-red-500/20 flex items-center gap-5">
                   <div className="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center shrink-0">
                     <Clock className="text-red-500" size={24} />
@@ -328,7 +322,6 @@ export const OnboardingScreen: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Metric: Severity */}
                 <div className="p-5 rounded-2xl bg-orange-950/20 border border-orange-500/20 flex items-center gap-5">
                   <div className="w-12 h-12 rounded-xl bg-orange-500/10 flex items-center justify-center shrink-0">
                     <AlertTriangle className="text-orange-500" size={24} />
@@ -340,7 +333,6 @@ export const OnboardingScreen: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Metric: Reboot Days */}
                 <div className="p-5 rounded-2xl bg-violet-950/20 border border-violet-500/20 flex items-center gap-5">
                   <div className="w-12 h-12 rounded-xl bg-violet-500/10 flex items-center justify-center shrink-0">
                     <Zap className="text-violet-500" size={24} />
@@ -353,7 +345,6 @@ export const OnboardingScreen: React.FC = () => {
                 </div>
               </div>
 
-              {/* Recovery Projection Chart */}
               <div className="w-full bg-[#0F0A15] border border-[#2E243D] rounded-3xl p-6 mb-12">
                 <div className="flex items-center gap-2 mb-8">
                   <TrendingUp size={16} className="text-violet-500" />
@@ -361,7 +352,6 @@ export const OnboardingScreen: React.FC = () => {
                 </div>
 
                 <div className="flex items-end justify-between gap-4 h-[160px] relative">
-                  {/* Chart Bars */}
                   {[
                     { day: 'Dia 0', label: 'Hoje', h: 15, color: '#EF4444' },
                     { day: 'Dia 30', label: 'Brain Fog', h: 45, color: '#EAB308' },
@@ -370,14 +360,15 @@ export const OnboardingScreen: React.FC = () => {
                   ].map((bar, i) => (
                     <div key={bar.day} className="flex-1 flex flex-col items-center group">
                       <div className="relative w-full flex-1 flex flex-col justify-end items-center">
+                        {/* CORREÇÃO DO GRÁFICO: motion.div otimizado para renderização e animação */}
                         <motion.div 
-                          className="w-8 sm:w-10 rounded-t-lg relative overflow-hidden"
-                          style={{ backgroundColor: bar.color }}
-                          initial={{ height: 0 }}
+                          initial={{ height: "0%" }}
                           animate={{ height: `${bar.h}%` }}
-                          transition={{ delay: 0.5 + (i * 0.2), duration: 1, ease: "easeOut" }}
+                          transition={{ duration: 1.5, ease: "easeOut", delay: 0.5 + i * 0.2 }}
+                          style={{ backgroundColor: bar.color }}
+                          className="w-full max-w-[40px] rounded-t-lg shadow-lg relative group-hover:brightness-110 transition-all"
                         >
-                           <div className="absolute inset-0 bg-white/10 opacity-50"></div>
+                           <div className="absolute inset-0 bg-white/10 opacity-30"></div>
                         </motion.div>
                         <span className="text-[8px] font-black uppercase text-gray-500 mt-2 whitespace-nowrap">{bar.label}</span>
                         <span className="text-[10px] font-bold text-white mt-0.5">{bar.day}</span>
@@ -385,19 +376,16 @@ export const OnboardingScreen: React.FC = () => {
                     </div>
                   ))}
                   
-                  {/* Legend helper line */}
                   <div className="absolute bottom-0 left-0 right-0 h-px bg-white/5"></div>
                 </div>
               </div>
 
-              {/* Motivational Quote / Conclusion */}
               <div className="px-4 text-center mb-12">
                 <p className="text-sm text-gray-400 italic leading-relaxed">
                   "O vício é o roubo da sua liberdade em parcelas diárias. O protocolo não é uma punição, é o resgate do homem que você deveria ser."
                 </p>
               </div>
 
-              {/* Fixed Final CTA */}
               <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black via-black/90 to-transparent z-50">
                 <motion.div
                   animate={{ scale: [1, 1.02, 1] }}
