@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth } from '../lib/firebase';
@@ -147,24 +148,46 @@ export const ProgressScreen: React.FC = () => {
     refreshAnalysisData(selectedRange);
   }, [selectedRange]);
 
-  // SCROLL INTELIGENTE COM ANIMAÇÃO ÚNICA POR SESSÃO
+  // SCROLL INTELIGENTE COM ANIMAÇÃO ÚNICA POR SESSÃO (REFINADO 1.5s)
   useEffect(() => {
     if (activeTab === 'JOURNEY' && currentDayNodeRef.current && journeyContainerRef.current && !isLoadingProfile && profile) {
       const container = journeyContainerRef.current;
       const targetElement = currentDayNodeRef.current;
+      
+      // Cálculo do destino centralizado
       const targetPosition = targetElement.offsetTop - (container.clientHeight / 2) + (targetElement.clientHeight / 2);
 
       if (!hasScrolledThisSession) {
-        // Primeira vez: Animação de descida elegante
+        // --- ANIMAÇÃO DE DESCIDA CONTROLADA (1.5s) ---
+        const startPosition = container.scrollTop;
+        const distance = targetPosition - startPosition;
+        const duration = 1500; // 1.5 segundos exatos
+        let startTimestamp: number | null = null;
+
+        // Função de easing para suavidade (easeInOutQuad)
+        const ease = (t: number) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+
+        const step = (timestamp: number) => {
+          if (!startTimestamp) startTimestamp = timestamp;
+          const elapsed = timestamp - startTimestamp;
+          const progress = Math.min(elapsed / duration, 1);
+
+          container.scrollTop = startPosition + distance * ease(progress);
+
+          if (elapsed < duration) {
+            window.requestAnimationFrame(step);
+          } else {
+            setHasScrolledThisSession(true);
+          }
+        };
+
+        // Pequeno delay inicial para garantir que a transição de tela terminou
         setTimeout(() => {
-          container.scrollTo({
-            top: targetPosition,
-            behavior: 'smooth'
-          });
-          setHasScrolledThisSession(true);
-        }, 300);
+          window.requestAnimationFrame(step);
+        }, 350);
+        
       } else {
-        // Demais vezes: Salto instantâneo para manter a agilidade
+        // Se já scrollou nesta sessão, apenas pula para a posição (Instantâneo)
         container.scrollTo({ top: targetPosition, behavior: 'auto' });
       }
     }
