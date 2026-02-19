@@ -25,14 +25,20 @@ export const DailyHabits: React.FC<DailyHabitsProps> = ({ profile, refreshTrigge
       const savedMissions = localStorage.getItem(SELECAO_KEY);
       if (savedMissions) {
         setMissions(JSON.parse(savedMissions));
+      } else {
+        setMissions([]); // CORREÇÃO: Força a limpeza do estado se não houver cache
       }
 
       const savedProgress = localStorage.getItem(COMPLETED_KEY);
       if (savedProgress) {
         setCompletedIds(JSON.parse(savedProgress));
+      } else {
+        setCompletedIds([]); // CORREÇÃO: Força a limpeza do estado se não houver cache
       }
     } catch (error) {
       console.error("Failed to load missions from storage", error);
+      setMissions([]);
+      setCompletedIds([]);
     }
   };
 
@@ -56,9 +62,13 @@ export const DailyHabits: React.FC<DailyHabitsProps> = ({ profile, refreshTrigge
             setMissions(data.selected_missions);
             localStorage.setItem(SELECAO_KEY, JSON.stringify(data.selected_missions));
           } else {
-            // Se o doc existe mas não tem missões (ex: log de gatilho), tenta local
+            // Se o doc existe mas não tem missões, tenta local. Se não tiver local, reseta.
             const savedMissions = localStorage.getItem(SELECAO_KEY);
-            if (savedMissions) setMissions(JSON.parse(savedMissions));
+            if (savedMissions) {
+              setMissions(JSON.parse(savedMissions));
+            } else {
+              setMissions([]); // CORREÇÃO: Reset reativo
+            }
           }
 
           // Sincroniza Progresso (IDs completados)
@@ -67,7 +77,11 @@ export const DailyHabits: React.FC<DailyHabitsProps> = ({ profile, refreshTrigge
             localStorage.setItem(COMPLETED_KEY, JSON.stringify(data.habits_ids));
           } else {
             const savedProgress = localStorage.getItem(COMPLETED_KEY);
-            if (savedProgress) setCompletedIds(JSON.parse(savedProgress));
+            if (savedProgress) {
+              setCompletedIds(JSON.parse(savedProgress));
+            } else {
+              setCompletedIds([]); // CORREÇÃO: Reset reativo
+            }
           }
         } else {
           // Documento não existe na nuvem hoje, usa dados locais
