@@ -281,14 +281,28 @@ export const DashboardScreen: React.FC = () => {
                   )}
                 </div>
               ) : (
-                <div className="w-full max-md mx-auto space-y-4">
+                <div className="w-full max-w-md mx-auto flex flex-col items-center gap-4">
                   {isGoldenHour ? (
                     <button onClick={() => setIsCheckInModalOpen(true)} className="w-full bg-black/80 backdrop-blur-xl rounded-2xl p-5 flex items-center gap-4 border border-amber-500/30">
                         <div className="w-10 h-10 rounded-full bg-amber-500 flex items-center justify-center"><Crown size={20} className="text-black" /></div>
                         <div className="flex-1 text-left"><h3 className="text-sm font-black text-white uppercase tracking-wide">Dia de Reflexão</h3></div>
                         <Feather size={20} className="text-amber-500" />
                     </button>
-                  ) : <HoldToConfirmButton onComplete={() => setIsCheckInModalOpen(true)} />}
+                  ) : (
+                    <HoldToConfirmButton onComplete={() => setIsCheckInModalOpen(true)} />
+                  )}
+
+                  {/* AVISO DE EPITÁFIO RESTAURADO */}
+                  {isUpcomingEpitaph && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: -10 }} 
+                      animate={{ opacity: 1, y: 0 }} 
+                      className="flex items-center justify-center gap-2 text-amber-400/80 bg-amber-500/10 py-2 px-5 rounded-full border border-amber-500/20 w-fit"
+                    >
+                      <Feather size={14} className="animate-pulse" />
+                      <span className="text-[10px] font-black uppercase tracking-widest">Epitáfio disponível após o check-in</span>
+                    </motion.div>
+                  )}
                 </div>
               )}
             </div>
