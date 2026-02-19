@@ -1,10 +1,8 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
-import { doc, getDoc } from 'firebase/firestore';
-import { onAuthStateChanged } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
-import { auth, db } from '../lib/firebase';
+import { auth } from '../lib/firebase';
 import { Wrapper } from '../components/Wrapper';
-import { COLORS, UserProfile, Routes } from '../types';
+import { COLORS, Routes } from '../types';
 import { claimStreakReward } from '../services/gamificationService';
 import { 
   fetchAndCacheProgressData, 
@@ -40,6 +38,7 @@ export const ProgressScreen: React.FC = () => {
   const { userProfile: profile, loading: isLoadingProfile } = useData();
   const [showRewardAlert, setShowRewardAlert] = useState(false);
   const [isClaiming, setIsClaiming] = useState(false);
+  const [hasScrolledThisSession, setHasScrolledThisSession] = useState(false);
   
   // New State for Universal Milestone Unlock
   const [selectedUnlockDay, setSelectedUnlockDay] = useState<number | null>(null);
@@ -78,10 +77,7 @@ export const ProgressScreen: React.FC = () => {
   const progressPathData = useMemo(() => {
     if (!profile) return "";
     const streak = profile.currentStreak || 0;
-    
-    // CORREÇÃO: Alinhamento estrito com a Dashboard.
     const activeDay = streak === 0 ? 1 : streak;
-    
     const progressPoints = journeyPoints.slice(0, activeDay);
     return generatePathData(progressPoints);
   }, [profile, journeyPoints]);
@@ -89,7 +85,6 @@ export const ProgressScreen: React.FC = () => {
   const handleClaimReward = async (day: number) => {
     if (!profile || !auth.currentUser || isClaiming) return;
     
-    // Processamento específico para o Dia 3 (único que tem lógica de 'claim' explícito no banco por enquanto)
     if (day === 3 && (profile.currentStreak || 0) >= 3) {
       const rewardId = 'reward_coolidge_day3';
       if (profile.claimed_rewards?.includes(rewardId)) return;
@@ -97,8 +92,6 @@ export const ProgressScreen: React.FC = () => {
       setIsClaiming(true);
       try {
         await claimStreakReward(auth.currentUser.uid, rewardId);
-        // Em vez de loadProfile local, usamos o refresh do DataContext se necessário, 
-        // mas aqui vamos assumir que o sistema de sync cuida da atualização.
         if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
         setShowRewardAlert(true);
         setTimeout(() => setShowRewardAlert(false), 5000);
@@ -154,23 +147,26 @@ export const ProgressScreen: React.FC = () => {
     refreshAnalysisData(selectedRange);
   }, [selectedRange]);
 
-  // ANIMATED INITIAL SCROLL OTIMIZADO
+  // SCROLL INTELIGENTE COM ANIMAÇÃO ÚNICA POR SESSÃO
   useEffect(() => {
     if (activeTab === 'JOURNEY' && currentDayNodeRef.current && journeyContainerRef.current && !isLoadingProfile && profile) {
       const container = journeyContainerRef.current;
       const targetElement = currentDayNodeRef.current;
-      
       const targetPosition = targetElement.offsetTop - (container.clientHeight / 2) + (targetElement.clientHeight / 2);
-      
-      // Ajusta a rolagem instantaneamente nos bastidores antes da UI ser revelada
-      // e aplica um smooth scroll final para elegância.
-      container.style.scrollBehavior = 'auto';
-      container.scrollTop = targetPosition - 50; 
-      
-      setTimeout(() => {
-        container.style.scrollBehavior = 'smooth';
-        container.scrollTop = targetPosition;
-      }, 50);
+
+      if (!hasScrolledThisSession) {
+        // Primeira vez: Animação de descida elegante
+        setTimeout(() => {
+          container.scrollTo({
+            top: targetPosition,
+            behavior: 'smooth'
+          });
+          setHasScrolledThisSession(true);
+        }, 300);
+      } else {
+        // Demais vezes: Salto instantâneo para manter a agilidade
+        container.scrollTo({ top: targetPosition, behavior: 'auto' });
+      }
     }
   }, [activeTab, isLoadingProfile, profile?.currentStreak]);
 
@@ -257,8 +253,8 @@ export const ProgressScreen: React.FC = () => {
           {/* --- TAB: OFENSIVA (JOURNEY) --- */}
           <div 
             ref={journeyContainerRef}
-            className={`absolute inset-0 overflow-y-auto scrollbar-hide w-full transition-opacity duration-300 ${
-              activeTab === 'JOURNEY' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
+            className={`absolute inset-0 overflow-y-auto scrollbar-hide w-full transition-all duration-700 ease-[0.32,0.72,0,1] ${
+              activeTab === 'JOURNEY' ? 'opacity-100 z-10 scale-100' : 'opacity-0 z-0 pointer-events-none scale-[0.98]'
             }`}
           >
             <div 
@@ -297,11 +293,7 @@ export const ProgressScreen: React.FC = () => {
                 const isCurrent = pt.day === activeDay;
                 const isCompleted = pt.day < activeDay; 
                 const isLocked = pt.day > activeDay;
-                
-                // Special Days handling (3, 7, 15, 30, 90)
                 const isSpecialDay = MILESTONES.includes(pt.day);
-                
-                // Logic: A milestone is unlocked if user reached it or passed it
                 const isUnlockedMilestone = isSpecialDay && currentStreak >= pt.day;
 
                 const labelSide = pt.x < 50 ? 'right' : 'left';
@@ -309,13 +301,12 @@ export const ProgressScreen: React.FC = () => {
                 const renderIcon = () => {
                   if (isSpecialDay) {
                     const iconColor = isUnlockedMilestone ? 'text-black' : (isLocked ? 'text-gray-600' : 'text-white');
-                    
                     const renderIconForDay = () => {
-                      if (pt.day === 3) return <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />; // Bolt
-                      if (pt.day === 7) return <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />; // Chevron
-                      if (pt.day === 15) return <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />; // Shield
-                      if (pt.day === 30) return <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />; // Sun
-                      if (pt.day === 90) return <path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-.363 1.118l-3.976 2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />; // Star
+                      if (pt.day === 3) return <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />;
+                      if (pt.day === 7) return <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />;
+                      if (pt.day === 15) return <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />;
+                      if (pt.day === 30) return <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />;
+                      if (pt.day === 90) return <path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-.363 1.118l-3.976 2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />;
                       return null;
                     };
 
@@ -325,8 +316,6 @@ export const ProgressScreen: React.FC = () => {
                       </svg>
                     );
                   }
-
-                  // REGULAR DAYS
                   return (
                     <span className={`text-2xl font-black ${isCompleted ? 'text-white' : (isLocked ? 'text-gray-600' : 'text-white')}`}>
                       {pt.day}
@@ -397,8 +386,8 @@ export const ProgressScreen: React.FC = () => {
 
           {/* --- TAB: ANÁLISE (ANALYSIS) --- */}
           <div 
-            className={`absolute inset-0 overflow-y-auto scrollbar-hide w-full px-5 pt-3 pb-32 flex flex-col transition-opacity duration-300 ${
-              activeTab === 'ANALYSIS' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
+            className={`absolute inset-0 overflow-y-auto scrollbar-hide w-full px-5 pt-3 pb-32 flex flex-col transition-all duration-700 ease-[0.32,0.72,0,1] ${
+              activeTab === 'ANALYSIS' ? 'opacity-100 z-10 scale-100' : 'opacity-0 z-0 pointer-events-none scale-[0.98]'
             }`}
           >
             <div className="w-full max-w-full flex flex-col">

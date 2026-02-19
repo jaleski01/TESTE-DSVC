@@ -1,18 +1,17 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Wrapper } from '../components/Wrapper';
-import { COLORS, UserProfile } from '../types';
+import { COLORS } from '../types';
 import { LEARNING_MODULES, LearningModule } from '../data/learningModules';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth, db } from '../lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Copy, Activity, Brain, ArrowLeft, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Copy, Activity, Brain, ArrowLeft, CheckCircle, AlertTriangle, Lock } from 'lucide-react';
 import { NeuroDebugSwipe } from '../components/NeuroDebugSwipe';
 import { REALITY_CHECK_DATA, RealityFact } from '../data/realityCheckData';
+import { useData } from '../contexts/DataContext';
+import { LearningSkeleton } from '../components/LearningSkeleton';
 
 export const LearningScreen: React.FC = () => {
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const { userProfile: profile, loading } = useData();
   const [selectedModule, setSelectedModule] = useState<LearningModule | null>(null);
   const [showFutureMilestones, setShowFutureMilestones] = useState(false);
   const [selectedDNS, setSelectedDNS] = useState<'ANDROID' | 'iOS'>('ANDROID');
@@ -23,21 +22,9 @@ export const LearningScreen: React.FC = () => {
   const [neuroFeedback, setNeuroFeedback] = useState<RealityFact | null>(null);
   const [neuroComplete, setNeuroComplete] = useState(false);
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        const docRef = doc(db, "users", user.uid);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          setProfile(docSnap.data() as UserProfile);
-        }
-      }
-    });
-    return () => unsubscribe();
-  }, []);
-
   const currentStreak = profile?.currentStreak || 0;
 
+  // Optimized Instant Calculation for filter
   const baseModules = LEARNING_MODULES.filter((m) => {
     if (!m.requiredStreak) return true;
     if (m.requiredStreak === 3) return true;
@@ -100,7 +87,7 @@ export const LearningScreen: React.FC = () => {
   };
 
   const renderModuleCard = (module: LearningModule) => {
-    const currentStreak = profile?.currentStreak || 0;
+    // CRITICAL FIX: Instant calculation from current streak to avoid visual flickering
     const isLocked = !!module.requiredStreak && currentStreak < module.requiredStreak;
     const isUnlockedReward = !!module.requiredStreak && currentStreak >= module.requiredStreak;
     const isSpecial = module.isSpecialReward;
@@ -110,10 +97,10 @@ export const LearningScreen: React.FC = () => {
     const DisplayIcon = isUnlockedReward ? RewardIcon : module.icon;
     
     const cardColors = isUnlockedReward ? {
-        start: '#B45309',
-        end: '#FBBF24',
+        start: '#451a03', // Deep Amber
+        end: '#1a1a1a', 
         text: '#FFFFFF',
-        accent: '#FDE047'
+        accent: '#F59E0B' // Success Amber
     } : {
         start: module.colors?.start || module.gradientStart || '#000000',
         end: module.colors?.end || module.gradientEnd || '#1a1a1a',
@@ -127,35 +114,52 @@ export const LearningScreen: React.FC = () => {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         onClick={() => handleModuleClick(module, isLocked)}
-        className={`flex flex-col w-full p-4 rounded-2xl border transition-all relative overflow-hidden group cursor-pointer ${isLocked ? 'border-gray-800/50 grayscale' : 'border-[#1F2937] hover:border-white/20'} ${isSpecial && !isLocked ? 'shadow-[0_0_30px_rgba(234,179,8,0.15)]' : ''}`}
-        style={{ background: isLocked ? `linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%)` : `linear-gradient(135deg, ${cardColors.start} 0%, ${cardColors.end} 100%)` }}
+        className={`flex flex-col w-full p-4 rounded-3xl border transition-all relative overflow-hidden group cursor-pointer ${
+          isLocked ? 'border-gray-800/50 grayscale' : isUnlockedReward ? 'border-amber-500/20 shadow-[0_0_20px_rgba(245,158,11,0.1)]' : 'border-[#1F2937] hover:border-white/20'
+        }`}
+        style={{ 
+          background: isLocked 
+            ? `linear-gradient(135deg, #0a0a0a 0%, #15101a 100%)` 
+            : `linear-gradient(135deg, ${cardColors.start} 0%, ${cardColors.end} 100%)` 
+        }}
       >
         <div className={`flex items-center w-full transition-all duration-500 ${isLocked ? 'blur-md opacity-40 select-none pointer-events-none' : ''}`}>
-          <div className={`w-14 h-14 rounded-xl flex-shrink-0 flex items-center justify-center bg-black/40 border mr-4 shadow-lg backdrop-blur-sm ${isSpecial ? 'border-yellow-500/30' : 'border-white/5'}`}>
+          <div className={`w-14 h-14 rounded-2xl flex-shrink-0 flex items-center justify-center bg-black/40 border mr-4 shadow-lg backdrop-blur-sm ${
+            isUnlockedReward ? 'border-amber-500/30' : 'border-white/5'
+          }`}>
             {getIcon(isLocked ? 'lock' : DisplayIcon, isLocked ? '#4B5563' : cardColors.accent)}
           </div>
           <div className="flex-1 text-left z-10 min-w-0">
             <span className="text-[9px] font-black uppercase tracking-[0.2em] mb-1.5 block opacity-80" style={{ color: cardColors.accent }}>{module.category}</span>
             <h3 className="text-base font-black leading-none mb-1.5 truncate italic" style={{ color: cardColors.text }}>{module.title}</h3>
-            <p className={`text-xs truncate tracking-tight ${isUnlockedReward ? 'text-black font-semibold' : 'text-gray-400 font-bold'}`}>{module.subtitle}</p>
+            <p className={`text-xs truncate tracking-tight ${isUnlockedReward ? 'text-amber-200/70 font-semibold' : 'text-gray-400 font-bold'}`}>{module.subtitle}</p>
           </div>
-          {!isSpecial && !isLocked && (
+          {!isLocked && (
              <div className="opacity-30 group-hover:opacity-100 transition-opacity z-10 ml-2 flex-shrink-0">
-               <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" /></svg>
+               <ChevronRight size={18} className={isUnlockedReward ? 'text-amber-500' : 'text-gray-500'} />
              </div>
           )}
         </div>
+        
         {isLocked && (
-          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/40 backdrop-blur-[1px]">
+          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/20 backdrop-blur-[2px]">
              <div className="w-10 h-10 rounded-full bg-black/60 border border-white/10 flex items-center justify-center mb-2 shadow-2xl">
-                <svg className="w-5 h-5 text-white/80" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                <Lock size={18} className="text-white/60" />
              </div>
-             <span className="text-[10px] font-black uppercase tracking-[0.2em] py-1 px-4 rounded-full border border-white/10 bg-black/60 text-center" style={{ color: cardColors.accent }}>Desbloqueado no {module.requiredStreak}º dia de ofensiva</span>
+             <span className="text-[10px] font-black uppercase tracking-[0.2em] py-1 px-4 rounded-full border border-white/10 bg-black/60 text-center" style={{ color: cardColors.accent }}>
+               Marco de {module.requiredStreak} Dias
+             </span>
           </div>
         )}
       </motion.div>
     );
   };
+
+  const ChevronRight = ({ size, className }: { size: number, className: string }) => (
+    <svg className={className} width={size} height={size} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+    </svg>
+  );
 
   return (
     <Wrapper noPadding>
@@ -165,28 +169,58 @@ export const LearningScreen: React.FC = () => {
             <h1 className="text-xl font-bold text-white tracking-wide uppercase italic">Base de Dados</h1>
             <p className="text-xs font-bold tracking-widest" style={{ color: COLORS.TextSecondary }}>PROTOCOLO DE DESENSIIBILIZAÇÃO</p>
           </div>
-          <div className="flex flex-col gap-5 w-full">
-            {baseModules.map(renderModuleCard)}
-            {futureModules.length > 0 && (
-              <div className="flex flex-col gap-5 mt-4">
-                <button onClick={() => setShowFutureMilestones(!showFutureMilestones)} className="w-full py-4 px-6 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between group active:scale-[0.98] transition-all">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
-                      <svg className={`w-5 h-5 text-gray-400 transition-transform duration-300 ${showFutureMilestones ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                    </div>
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">{showFutureMilestones ? 'Ocultar metas de longo prazo' : 'Ver metas de longo prazo'}</span>
+
+          <AnimatePresence mode="wait">
+            {loading ? (
+              <motion.div 
+                key="skeleton"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
+                <LearningSkeleton />
+              </motion.div>
+            ) : (
+              <motion.div 
+                key="content"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex flex-col gap-5 w-full"
+              >
+                {baseModules.map(renderModuleCard)}
+                
+                {futureModules.length > 0 && (
+                  <div className="flex flex-col gap-5 mt-4">
+                    <button 
+                      onClick={() => setShowFutureMilestones(!showFutureMilestones)} 
+                      className="w-full py-4 px-6 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-between group active:scale-[0.98] transition-all"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
+                          <svg className={`w-5 h-5 text-gray-400 transition-transform duration-300 ${showFutureMilestones ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                        </div>
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
+                          {showFutureMilestones ? 'Ocultar metas de longo prazo' : 'Ver metas de longo prazo'}
+                        </span>
+                      </div>
+                    </button>
+                    <AnimatePresence>
+                      {showFutureMilestones && (
+                        <motion.div 
+                          initial={{ opacity: 0, height: 0 }} 
+                          animate={{ opacity: 1, height: 'auto' }} 
+                          exit={{ opacity: 0, height: 0 }} 
+                          className="flex flex-col gap-5 overflow-hidden"
+                        >
+                          {futureModules.map(renderModuleCard)}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
-                </button>
-                <AnimatePresence>
-                  {showFutureMilestones && (
-                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="flex flex-col gap-5 overflow-hidden">
-                      {futureModules.map(renderModuleCard)}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+                )}
+              </motion.div>
             )}
-          </div>
+          </AnimatePresence>
         </div>
       </div>
 
