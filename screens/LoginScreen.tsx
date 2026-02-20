@@ -156,6 +156,14 @@ export const LoginScreen: React.FC = () => {
 
   return (
     <Wrapper noPadding hideNavigation disableDefaultBackground={true}>
+      {/* --- UNIFIED ATMOSPHERE BACKGROUND (MATCHING DASHBOARD) --- */}
+      <div className="fixed inset-0 pointer-events-none z-0 bg-black">
+        <div className="absolute inset-0 opacity-100">
+          <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full blur-[100px] bg-violet-900/10" />
+          <div className="absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] rounded-full blur-[80px] bg-cyan-900/10" />
+        </div>
+      </div>
+
       <div className="flex flex-col flex-1 w-full bg-transparent overflow-hidden relative z-10">
         <div className="flex-1 overflow-y-auto w-full px-6 scrollbar-hide">
           <div className="flex flex-col items-center pt-24 pb-40">
@@ -194,7 +202,7 @@ export const LoginScreen: React.FC = () => {
                     Acesse o sistema para prosseguir sua jornada.
                   </p>
 
-                  <div className="w-full max-w-sm">
+                  <div className="w-full max-sm">
                     {loginStep === 'EMAIL' && (
                       <form onSubmit={handleContinue} className="space-y-5">
                         {error && (
@@ -275,7 +283,7 @@ export const LoginScreen: React.FC = () => {
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  className="w-full max-w-sm flex flex-col items-center"
+                  className="w-full max-sm flex flex-col items-center"
                 >
                   <div className="w-20 h-20 bg-violet-500/20 rounded-full flex items-center justify-center mb-6 text-violet-500">
                      <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
