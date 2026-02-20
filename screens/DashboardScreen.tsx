@@ -60,6 +60,9 @@ export const DashboardScreen: React.FC = () => {
 
   const isUpcomingEpitaph = !isCheckedInToday && isEpitaphDay;
   const showEpitaphCard = isCheckedInToday && isEpitaphDay && !hasWrittenToday;
+  
+  // Nova variável para controlar o background amarelo estritamente APÓS a ofensiva no dia de epitáfio
+  const isEpitaphBackgroundActive = isEpitaphDay && isCheckedInToday;
   // ----------------------------------------
 
   const MISSION_STORAGE_KEY = `@daily_missions_selecao_${todayStr}`;
@@ -136,21 +139,31 @@ export const DashboardScreen: React.FC = () => {
   const handleDebugAction = async () => {
     if (!profile || !auth.currentUser) return;
     try {
-      const yesterdayDate = new Date();
-      yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-      const yesterdayString = yesterdayDate.toISOString().split('T')[0];
+      // 1. Simula a passagem do tempo com segurança extrema (Subtrai 2 dias no fuso local para anular race conditions de UTC)
+      const pastDate = new Date();
+      pastDate.setDate(pastDate.getDate() - 2);
+      const pastString = pastDate.toLocaleDateString('en-CA'); 
       const newStreak = (profile.currentStreak || 0) + 1;
       
       const userRef = doc(db, 'users', auth.currentUser.uid);
       await updateDoc(userRef, {
         currentStreak: newStreak,
-        lastCheckInDate: yesterdayString
+        lastCheckInDate: pastString, // Força a ofensiva a ficar pendente
+        last_epitaph_date: pastString // Força o epitáfio a ficar disponível novamente
       });
-      updateLocalProfile({ ...profile, currentStreak: newStreak, lastCheckInDate: yesterdayString });
+      
+      updateLocalProfile({ 
+        ...profile, 
+        currentStreak: newStreak, 
+        lastCheckInDate: pastString,
+        last_epitaph_date: pastString
+      });
 
+      // 2. Invalidação de Cache Local (Força a limpeza das missões do dia real)
       localStorage.removeItem(`@daily_missions_selecao_${todayStr}`);
       localStorage.removeItem(`@daily_missions_progresso_${todayStr}`);
 
+      // 3. Reset do Estado no Firestore para o dia atual 
       const historyRef = doc(db, "users", auth.currentUser.uid, "daily_history", todayStr);
       await setDoc(historyRef, {
         selected_missions: null,
@@ -159,12 +172,13 @@ export const DashboardScreen: React.FC = () => {
         percentage: 0
       }, { merge: true });
 
+      // 4. Limpeza de Estados Locais da UI
       setAcceptedMissions([]);
       const randomMission = DAILY_MISSIONS[Math.floor(Math.random() * DAILY_MISSIONS.length)];
       setCurrentMission(randomMission);
       setMissionsRefreshKey(prev => prev + 1);
 
-      alert(`DEBUG: Dia avançado para ${newStreak}. Arsenal de missões resetado para testes.`);
+      alert(`DEBUG: Dia avançado para ${newStreak}. Ofensiva e missões foram resetadas com sucesso.`);
     } catch (error) { 
       console.error("Erro crítico na ação de debug:", error); 
     }
@@ -224,10 +238,10 @@ export const DashboardScreen: React.FC = () => {
       {/* --- UNIFIED ATMOSPHERE BACKGROUND (DYNAMIC) --- */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0 transition-opacity duration-1000 opacity-100">
         <div className={`absolute top-[-10%] left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full blur-[100px] transition-colors duration-1000 ${
-          isEpitaphDay ? 'bg-fuchsia-900/15' : 'bg-violet-900/10'
+          isEpitaphBackgroundActive ? 'bg-amber-900/10' : 'bg-violet-900/10'
         }`} />
         <div className={`absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] rounded-full blur-[80px] transition-colors duration-1000 ${
-          isEpitaphDay ? 'bg-purple-600/10' : 'bg-cyan-900/10'
+          isEpitaphBackgroundActive ? 'bg-amber-600/5' : 'bg-cyan-900/10'
         }`} />
       </div>
 
