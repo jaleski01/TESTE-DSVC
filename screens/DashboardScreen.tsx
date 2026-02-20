@@ -238,10 +238,12 @@ export const DashboardScreen: React.FC = () => {
       {/* --- UNIFIED ATMOSPHERE BACKGROUND (DYNAMIC) --- */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0 transition-opacity duration-1000 opacity-100">
         <div className={`absolute top-[-10%] left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full blur-[100px] transition-colors duration-1000 ${
-          isEpitaphBackgroundActive ? 'bg-amber-900/10' : 'bg-violet-900/10'
+          // DESIGN CHANGE: Intensified amber color and opacity
+          isEpitaphBackgroundActive ? 'bg-amber-500/25' : 'bg-violet-900/10'
         }`} />
         <div className={`absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] rounded-full blur-[80px] transition-colors duration-1000 ${
-          isEpitaphBackgroundActive ? 'bg-amber-600/5' : 'bg-cyan-900/10'
+          // DESIGN CHANGE: Intensified yellow color and opacity
+          isEpitaphBackgroundActive ? 'bg-yellow-500/20' : 'bg-cyan-900/10'
         }`} />
       </div>
 
@@ -298,15 +300,18 @@ export const DashboardScreen: React.FC = () => {
                     isEpitaphDay={isUpcomingEpitaph} 
                   />
 
-                  {/* AVISO DE EPITÁFIO DISPONÍVEL (VIOLET) */}
+                  {/* AVISO DE EPITÁFIO DISPONÍVEL (AMBER/PEN DESIGN) */}
                   {isUpcomingEpitaph && (
                     <motion.div 
                       initial={{ opacity: 0, y: -10 }} 
                       animate={{ opacity: 1, y: 0 }} 
-                      className="flex items-center justify-center gap-2 text-violet-400/80 bg-violet-500/10 py-2 px-5 rounded-full border border-violet-500/20 w-fit"
+                      // DESIGN CHANGE: Changed all violet classes to amber theme
+                      className="flex items-center justify-center gap-2 text-amber-400/90 bg-amber-500/10 py-2 px-5 rounded-full border border-amber-500/20 w-fit"
                     >
-                      <Crown size={14} className="text-violet-400 animate-pulse" />
-                      <span className="text-[10px] font-black uppercase tracking-widest text-violet-400">Epitáfio disponível</span>
+                      {/* DESIGN CHANGE: Replaced Crown with Feather icon and amber color */}
+                      <Feather size={14} className="text-amber-400 animate-pulse" />
+                      {/* DESIGN CHANGE: Changed text color to amber */}
+                      <span className="text-[10px] font-black uppercase tracking-widest text-amber-400">Epitáfio disponível</span>
                     </motion.div>
                   )}
                 </div>
