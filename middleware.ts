@@ -1,21 +1,27 @@
+// middleware.ts
+// Implementação Framework-Agnostic (Web API padrão) para Vercel Edge Middleware
 
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+export const config = {
+  matcher: '/api/:path*',
+};
 
 /**
- * CONFIGURAÇÃO DE SEGURANÇA - RATE LIMIT
+ * CONFIGURAÇÃO DE SEGURANÇA - RATE LIMIT (Camada Rasa)
  * Limite: 30 requisições por minuto por IP.
- * Nota: Como o middleware roda em Edge, o Map é instanciado por região/instância.
+ * Nota técnica: Em ambientes Edge serverless, variáveis globais (Map) são mantidas 
+ * apenas durante o tempo de vida do "isolate" (instância) naquela região. 
+ * É uma proteção útil contra spam básico de um único nó, mas não substitui um WAF.
  */
 const rateLimitMap = new Map<string, { count: number; lastReset: number }>();
 
-export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  const ip = request.ip || request.headers.get('x-forwarded-for') || 'anonymous';
+export default function middleware(request: Request) {
+  const url = new URL(request.url);
+  const pathname = url.pathname;
+  const ip = request.headers.get('x-forwarded-for') || 'anonymous';
 
   // 1. Apenas processa rotas de API
   if (!pathname.startsWith('/api/')) {
-    return NextResponse.next();
+    return; // Retornar vazio no middleware da Vercel permite que a requisição prossiga
   }
 
   // 2. PROTEÇÃO DE ROTA CRON (AUTORIZAÇÃO DE BORDA)
@@ -25,7 +31,7 @@ export function middleware(request: NextRequest) {
 
     if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
       console.warn(`[Security] Bloqueio de acesso não autorizado ao Cron via IP: ${ip}`);
-      return new NextResponse(JSON.stringify({ error: 'Unauthorized' }), {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: { 'Content-Type': 'application/json' },
       });
@@ -50,7 +56,7 @@ export function middleware(request: NextRequest) {
 
   if (rateData.count > limit) {
     console.warn(`[Security] Rate limit excedido para IP: ${ip} na rota: ${pathname}`);
-    return new NextResponse(JSON.stringify({ error: 'Too Many Requests' }), {
+    return new Response(JSON.stringify({ error: 'Too Many Requests' }), {
       status: 429,
       headers: { 
         'Content-Type': 'application/json',
@@ -59,10 +65,6 @@ export function middleware(request: NextRequest) {
     });
   }
 
-  // Permite a requisição prosseguir para a Serverless Function
-  return NextResponse.next();
+  // Permite a requisição prosseguir (equivalente ao NextResponse.next())
+  return;
 }
-
-export const config = {
-  matcher: '/api/:path*',
-};
