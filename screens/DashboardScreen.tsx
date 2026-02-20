@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../lib/firebase';
@@ -236,15 +235,29 @@ export const DashboardScreen: React.FC = () => {
   return (
     <Wrapper noPadding hideNavigation={false} disableDefaultBackground={true}> 
       {/* --- UNIFIED ATMOSPHERE BACKGROUND (DYNAMIC) --- */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0 transition-opacity duration-1000 opacity-100">
-        <div className={`absolute top-[-10%] left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full blur-[100px] transition-colors duration-1000 ${
-          // DESIGN CHANGE: Intensified amber color and opacity
-          isEpitaphBackgroundActive ? 'bg-amber-500/25' : 'bg-violet-900/10'
-        }`} />
-        <div className={`absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] rounded-full blur-[80px] transition-colors duration-1000 ${
-          // DESIGN CHANGE: Intensified yellow color and opacity
-          isEpitaphBackgroundActive ? 'bg-yellow-500/20' : 'bg-cyan-900/10'
-        }`} />
+      <div className="fixed inset-0 pointer-events-none z-0 bg-black">
+        
+        {/* BACKGROUND PADRÃO (ANTES DA OFENSIVA OU DIAS NORMAIS) */}
+        <div className={`absolute inset-0 transition-opacity duration-1000 ${isEpitaphBackgroundActive ? 'opacity-0' : 'opacity-100'}`}>
+          <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full blur-[100px] bg-violet-900/10" />
+          <div className="absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] rounded-full blur-[80px] bg-cyan-900/10" />
+        </div>
+
+        {/* BACKGROUND PREMIUM DARK (ESTRITAMENTE APÓS OFENSIVA CONCLUÍDA NO EPITÁFIO) */}
+        <div className={`absolute inset-0 transition-opacity duration-1000 ${isEpitaphBackgroundActive ? 'opacity-100' : 'opacity-0'}`}>
+          {/* Gradiente Radial Principal (Glow Âmbar Superior) */}
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#2A1F00] via-[#050400] to-[#000000]" />
+          
+          {/* Overlay de Vignette (Escurecimento profundo das bordas para focar no centro) */}
+          <div className="absolute inset-0 shadow-[inset_0_0_150px_rgba(0,0,0,0.9)]" />
+
+          {/* Anti-Banding Noise Filter (Prevenção de serrilhado no gradiente escuro) */}
+          <div 
+            className="absolute inset-0 opacity-[0.02] mix-blend-screen" 
+            style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")' }}
+          />
+        </div>
+
       </div>
 
       <motion.div 
@@ -297,7 +310,6 @@ export const DashboardScreen: React.FC = () => {
                 <div className="w-full max-w-md mx-auto flex flex-col items-center gap-4">
                   <HoldToConfirmButton 
                     onComplete={() => setIsCheckInModalOpen(true)} 
-                    isEpitaphDay={isUpcomingEpitaph} 
                   />
 
                   {/* AVISO DE EPITÁFIO DISPONÍVEL (AMBER/PEN DESIGN) */}
@@ -305,12 +317,9 @@ export const DashboardScreen: React.FC = () => {
                     <motion.div 
                       initial={{ opacity: 0, y: -10 }} 
                       animate={{ opacity: 1, y: 0 }} 
-                      // DESIGN CHANGE: Changed all violet classes to amber theme
                       className="flex items-center justify-center gap-2 text-amber-400/90 bg-amber-500/10 py-2 px-5 rounded-full border border-amber-500/20 w-fit"
                     >
-                      {/* DESIGN CHANGE: Replaced Crown with Feather icon and amber color */}
                       <Feather size={14} className="text-amber-400 animate-pulse" />
-                      {/* DESIGN CHANGE: Changed text color to amber */}
                       <span className="text-[10px] font-black uppercase tracking-widest text-amber-400">Epitáfio disponível</span>
                     </motion.div>
                   )}
