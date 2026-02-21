@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Wrapper } from '../components/Wrapper';
 import { COLORS } from '../types';
 import { LEARNING_MODULES, LearningModule } from '../data/learningModules';
@@ -12,6 +12,7 @@ import { LearningSkeleton } from '../components/LearningSkeleton';
 
 export const LearningScreen: React.FC = () => {
   const { userProfile: profile, loading } = useData();
+  const [showSkeleton, setShowSkeleton] = useState(false);
   const [selectedModule, setSelectedModule] = useState<LearningModule | null>(null);
   const [showFutureMilestones, setShowFutureMilestones] = useState(false);
   const [selectedDNS, setSelectedDNS] = useState<'ANDROID' | 'iOS'>('ANDROID');
@@ -21,6 +22,16 @@ export const LearningScreen: React.FC = () => {
   const [neuroIndex, setNeuroIndex] = useState(0);
   const [neuroFeedback, setNeuroFeedback] = useState<RealityFact | null>(null);
   const [neuroComplete, setNeuroComplete] = useState(false);
+
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    if (loading) {
+      timeoutId = setTimeout(() => setShowSkeleton(true), 150);
+    } else {
+      setShowSkeleton(false);
+    }
+    return () => clearTimeout(timeoutId);
+  }, [loading]);
 
   const currentStreak = profile?.currentStreak || 0;
 
@@ -172,14 +183,16 @@ export const LearningScreen: React.FC = () => {
 
           <AnimatePresence mode="wait">
             {loading ? (
-              <motion.div 
-                key="skeleton"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-              >
-                <LearningSkeleton />
-              </motion.div>
+              showSkeleton ? (
+                <motion.div 
+                  key="skeleton"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                >
+                  <LearningSkeleton />
+                </motion.div>
+              ) : null
             ) : (
               <motion.div 
                 key="content"
